@@ -10,8 +10,6 @@ function Page() {
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-slate-600 text-white">
       <Button
-        variant={"default"}
-        className="capitalize bg-black p-2 rounded-md hover:bg-black/90"
         onClick={async () =>
           signIn.social({
             provider: "google",
