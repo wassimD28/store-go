@@ -1,7 +1,7 @@
 "use client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signUpSchema } from "@/lib/validations/auth.schema";
+import { signInSchema } from "@/lib/validations/auth.schema";
 import { Button } from "@/client/components/ui/button";
 import {
   Form,
@@ -15,90 +15,56 @@ import { Input } from "@/client/components/ui/input";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
-import { signUp } from "@/lib/auth-client";
+import { signIn } from "@/lib/auth-client";
 import toast from "react-hot-toast";
 
-
-export function SignUpForm() {
+export function SignInForm() {
   // Track form submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize form with proper types and validation
-  const form = useForm<z.infer<typeof signUpSchema>>({
-    resolver: zodResolver(signUpSchema),
+  const form = useForm<z.infer<typeof signInSchema>>({
+    resolver: zodResolver(signInSchema),
     defaultValues: {
       email: "",
       password: "",
-      name: "",
     },
     // Enable validation on change and blur
     mode: "onBlur",
   });
-  
+
   // Create a wrapper for the form action to handle client-side validation
-  const onSubmit = async (values: z.infer<typeof signUpSchema>) => {
-    const { name , email, password } = values
-    const toastId = toast.loading("Creating account...", {duration: Infinity});
+  const onSubmit = async (values: z.infer<typeof signInSchema>) => {
+    const { email, password } = values;
+    const toastId = toast.loading("Sign In...");
     setIsSubmitting(true);
-    await signUp.email({
-      email,
-      password,
-      name,
-      callbackURL: "/sign-in",
-    },{
-      onError: () => {
-        toast.error("An error occurred", { id: toastId });
-        setIsSubmitting(false);
+    await signIn.email(
+      {
+        email,
+        password,
+        callbackURL: "/dashboard",
       },
-      onSuccess: () => {
-        toast.success(
-          "Account created successfully! Please check your email to verify your account.",
-          { id: toastId }
-        );
-        setIsSubmitting(false);
-        form.reset();
-        
-      },
-    })
+      {
+        onError: () => {
+          toast.error("An error occurred while Sign In", { id: toastId });
+          setIsSubmitting(false);
+        },
+        onSuccess: () => {
+          toast.success(
+            "You have successfully signed.",
+            { id: toastId }
+          );
+          setIsSubmitting(false);
+          form.reset();
+        },
+      }
+    );
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="space-y-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Name</FormLabel>
-                <FormControl>
-                  <Input
-                    className={cn(
-                      !!form.formState.errors.name &&
-                        "bg-destructive-foreground border-destructive focus:border-none placeholder:text-destructive/70"
-                    )}
-                    {...field}
-                    onChange={(e) => {
-                      field.onChange(e);
-                      if (form.formState.touchedFields.name) {
-                        form.trigger("name");
-                      }
-                    }}
-                    placeholder="John Doe"
-                    // Disable autocomplete to prevent interference
-                    autoComplete="off"
-                    // Add aria-invalid for accessibility
-                    aria-invalid={!!form.formState.errors.name}
-                    // Disable during submission
-                    disabled={isSubmitting}
-                  />
-                </FormControl>
-                <FormMessage>{form.formState.errors.name?.message}</FormMessage>
-              </FormItem>
-            )}
-          />
-
           <FormField
             control={form.control}
             name="email"
@@ -170,7 +136,7 @@ export function SignUpForm() {
           className="w-full"
           disabled={isSubmitting || !form.formState.isValid}
         >
-          {isSubmitting ? "Creating Account..." : "Create Account"}
+          {isSubmitting ? "Sign In..." : "Sign In"}
         </Button>
       </form>
     </Form>
