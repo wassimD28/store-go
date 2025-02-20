@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   AudioWaveform,
   BookOpen,
@@ -12,28 +12,23 @@ import {
   PieChart,
   Settings2,
   SquareTerminal,
-} from "lucide-react"
+} from "lucide-react";
 
-import { NavMain } from "@/client/components/nav-main"
-import { NavProjects } from "@/client/components/nav-projects"
-import { NavUser } from "@/client/components/nav-user"
-import { TeamSwitcher } from "@/client/components/team-switcher"
+import { NavMain } from "@/client/components/nav-main";
+import { NavProjects } from "@/client/components/nav-projects";
+import { NavUser } from "@/client/components/nav-user";
+import { TeamSwitcher } from "@/client/components/team-switcher";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-} from "@/client/components/ui/sidebar"
-import { useSession } from "@/lib/auth-client"
+} from "@/client/components/ui/sidebar";
+import { useSession } from "@/lib/auth-client";
 
 // This is sample data.
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   teams: [
     {
       name: "Acme Inc",
@@ -155,13 +150,18 @@ const data = {
       icon: Map,
     },
   ],
-}
+};
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-    const { data:userData } = useSession()
+  const { data: sessionData } = useSession();
+  if (!sessionData?.session) return null;
+  const user = {
+    name: sessionData?.user?.name ?? "",
+    email: sessionData?.user?.email ?? "",
+    avatar: sessionData?.user?.image ?? "/avatars/shadcn.jpg",
+  };
 
-    if (!userData?.session) return null
-    return (
+  return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
@@ -171,9 +171,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }

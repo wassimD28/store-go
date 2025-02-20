@@ -17,9 +17,11 @@ import { cn } from "@/lib/utils";
 import { z } from "zod";
 import { signUp } from "@/lib/auth-client";
 import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 
 export function SignUpForm() {
+  const router = useRouter()
   // Track form submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -44,7 +46,7 @@ export function SignUpForm() {
       email,
       password,
       name,
-      callbackURL: "/dashboard",
+      callbackURL: "/verified-email",
     },{
       onError: () => {
         toast.error("An error occurred", { id: toastId , duration: 5000 });
@@ -57,7 +59,7 @@ export function SignUpForm() {
         );
         setIsSubmitting(false);
         form.reset();
-        
+        router.push('/waiting-verification')
       },
     })
   };
