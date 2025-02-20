@@ -21,7 +21,7 @@ export default function SignUpPage() {
       callbackURL: "/dashboard",
     });
   return (
-    <div className=" w-full flex justify-center items-center p-8 relative max-sm:flex-col" >
+    <div className=" w-full h-svh flex justify-center items-center p-8 relative max-sm:flex-col" >
       <Button
         className="absolute border border-foreground/20 right-5 top-5 max-sm:relative max-sm:top-auto max-sm:right-auto max-sm:self-end max-sm:mb-5"
         variant={"ghost"}

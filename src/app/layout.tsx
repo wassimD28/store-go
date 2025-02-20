@@ -3,7 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/client/providers/theme.provider";
 import { Toaster } from "react-hot-toast";
-import NavBar from "@/client/components/navBar";
+import { SidebarProvider } from "@/client/components/ui/sidebar";
+import { AppSidebar } from "@/client/components/app-sidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -50,21 +51,22 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
-          <NavBar/>
-          {children}
-          <Toaster
-            toastOptions={{
-              className: `!bg-background !text-foreground border border-border`,
-              style: {
-                background: `hsl(var(--background))`,
-                color: `hsl(var(--foreground))`,
-                borderColor: `hsl(var(--border))`,
-              },
-              // Ensure proper animation and transition
-              duration: 4000,
-              position: "bottom-right",
-            }}
-          />
+          <SidebarProvider>
+            <AppSidebar/>
+            {children}
+            <Toaster
+              toastOptions={{
+                className: `!bg-background !text-foreground border border-border`,
+                style: {
+                  background: `hsl(var(--background))`,
+                  color: `hsl(var(--foreground))`,
+                  borderColor: `hsl(var(--border))`,
+                },
+                duration: 4000,
+                position: "bottom-right",
+              }}
+            />
+          </SidebarProvider>
         </ThemeProvider>
       </body>
     </html>

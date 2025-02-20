@@ -3,15 +3,16 @@ import axios from "axios";
 interface SendEmailParams {
   to: string;
   subject: string;
-  htmlContent: string;
+  text: string;
 }
 
 export async function sendEmail({
   to,
   subject,
-  htmlContent,
+  text,
 }: SendEmailParams): Promise<void> {
   const apiKey = process.env.BREVO_API_KEY;
+
   if (!apiKey) {
     throw new Error("BREVO_API_KEY is not set in the environment");
   }
@@ -20,7 +21,7 @@ export async function sendEmail({
     sender: { name: "storeGo", email: process.env.EMAIL_VERIFICATION_SENDER },
     to: [{ email: to }],
     subject,
-    htmlContent,
+    textContent: text,
   };
 
   await axios.post("https://api.brevo.com/v3/smtp/email", data, {

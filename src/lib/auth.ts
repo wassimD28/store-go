@@ -17,16 +17,11 @@ export const auth = betterAuth({
   emailVerification: {
     sendOnSignUp: true,
     autoSignInAfterVerification: true,
-    sendVerificationEmail: async ({ user, token }) => {
-      const verificationURL = `${process.env.BETTER_AUTH_URL}/verify-email?token=${token}&callbackURL=${process.env.EMAIL_VERIFICATION_CALLBACK_URL}`;
+    sendVerificationEmail: async ({ user, url, token }, request) => {
       await sendEmail({
         to: user.email,
-        subject: "Store-go Verification",
-        htmlContent: `
-          <h1>Verify your email</h1>
-          <p>To complete your registration, please click the following link:</p>
-          <a href="${verificationURL}">Verify Email</a>
-        `,
+        subject: "Verify your email address",
+        text: `Click the link to verify your email: ${url}`,
       });
     },
   },

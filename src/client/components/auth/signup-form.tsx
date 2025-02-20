@@ -44,16 +44,16 @@ export function SignUpForm() {
       email,
       password,
       name,
-      callbackURL: "/sign-in",
+      callbackURL: "/dashboard",
     },{
       onError: () => {
-        toast.error("An error occurred", { id: toastId });
+        toast.error("An error occurred", { id: toastId , duration: 5000 });
         setIsSubmitting(false);
       },
       onSuccess: () => {
         toast.success(
           "Account created successfully! Please check your email to verify your account.",
-          { id: toastId }
+          { id: toastId , duration: 5000 }
         );
         setIsSubmitting(false);
         form.reset();
