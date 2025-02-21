@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import {
   AudioWaveform,
   BookOpen,
@@ -14,10 +13,10 @@ import {
   SquareTerminal,
 } from "lucide-react";
 
-import { NavMain } from "@/client/components/nav-main";
-import { NavProjects } from "@/client/components/nav-projects";
-import { NavUser } from "@/client/components/nav-user";
-import { TeamSwitcher } from "@/client/components/team-switcher";
+import { NavMain } from "@/client/components/sidebar/nav-main";
+import { NavProjects } from "@/client/components/sidebar/nav-projects";
+import { NavUser } from "@/client/components/sidebar/nav-user";
+import { TeamSwitcher } from "@/client/components/sidebar/team-switcher";
 import {
   Sidebar,
   SidebarContent,
@@ -25,7 +24,8 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/client/components/ui/sidebar";
-import { useSession } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client";
+import { ComponentProps } from "react";
 
 // This is sample data.
 const data = {
@@ -152,13 +152,13 @@ const data = {
   ],
 };
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { data: sessionData } = useSession();
-  if (!sessionData?.session) return null;
+export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
+  const { data: sessionData } = authClient.useSession();
+
   const user = {
     name: sessionData?.user?.name ?? "",
     email: sessionData?.user?.email ?? "",
-    avatar: sessionData?.user?.image ?? "/avatars/shadcn.jpg",
+    avatar: sessionData?.user?.image ?? "/unknown-user.svg",
   };
 
   return (

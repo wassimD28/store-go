@@ -29,7 +29,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/client/components/ui/sidebar";
-import { signOut } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 
 export function NavUser({
@@ -106,7 +106,7 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => {
-                signOut({
+                authClient.signOut({
                   fetchOptions: {
                     onSuccess: () => {
                       router.push("/sign-in");

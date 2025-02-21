@@ -15,7 +15,7 @@ import { Input } from "@/client/components/ui/input";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
-import { signIn } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client";
 import toast from "react-hot-toast";
 
 export function SignInForm() {
@@ -38,7 +38,7 @@ export function SignInForm() {
     const { email, password } = values;
     const toastId = toast.loading("Sign In...");
     setIsSubmitting(true);
-    await signIn.email(
+    await authClient.signIn.email(
       {
         email,
         password,

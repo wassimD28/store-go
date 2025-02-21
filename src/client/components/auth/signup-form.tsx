@@ -15,7 +15,7 @@ import { Input } from "@/client/components/ui/input";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
-import { signUp } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
@@ -42,7 +42,7 @@ export function SignUpForm() {
     const { name , email, password } = values
     const toastId = toast.loading("Creating account...", {duration: Infinity});
     setIsSubmitting(true);
-    await signUp.email({
+    await authClient.signUp.email({
       email,
       password,
       name,

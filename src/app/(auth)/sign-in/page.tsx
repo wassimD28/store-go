@@ -2,19 +2,19 @@
 import { SignInForm } from "@/client/components/auth/signin-form";
 import { Button } from "@/client/components/ui/button";
 import { Card } from "@/client/components/ui/card";
-import { signIn, useSession } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect } from "react";
 
 export default function SignInPage() {
 
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
   useEffect(() => {
     console.log("session :", session);
   }, [session]);
   const onSignUp = async () =>
-    signIn.social({
+    authClient.signIn.social({
       provider: "google",
       callbackURL: "/dashboard",
     });
