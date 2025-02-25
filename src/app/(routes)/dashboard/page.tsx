@@ -1,5 +1,5 @@
 "use client"
-import { ImageUploader } from "@/client/components/imageUploader";
+import IKimageUploader from "@/client/components/IKimageUploader";
 import MobileLivePreview from "@/client/components/live-preview/mobile";
 import {
   Breadcrumb,
@@ -66,7 +66,7 @@ export default function Page() {
             </span>
             <span className="flex flex-col gap-2">
               <Label className="text-xl">Logo</Label>
-              <ImageUploader onUpload={setLogoUrl} />
+              <IKimageUploader onUploadSuccess={setLogoUrl}/>
               <p className="text-sm font-light text-muted-foreground">
                 Upload a square image (512 × 512px) in PNG or SVG format for
                 best results.
