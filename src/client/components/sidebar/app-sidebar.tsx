@@ -8,9 +8,11 @@ import {
   Frame,
   GalleryVerticalEnd,
   Map,
+  Moon,
   PieChart,
   Settings2,
   SquareTerminal,
+  Sun,
 } from "lucide-react";
 
 import { NavMain } from "@/client/components/sidebar/nav-main";
@@ -23,9 +25,12 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
+  useSidebar,
 } from "@/client/components/ui/sidebar";
 import { authClient } from "@/lib/auth-client";
 import { ComponentProps } from "react";
+import { useDarkMode } from "@/client/store/useDarkMode.store";
+import { Button } from "../ui/button";
 
 // This is sample data.
 const data = {
@@ -154,6 +159,8 @@ const data = {
 
 export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
   const { data: sessionData } = authClient.useSession();
+  const { darkMode , toggleDarkMode} = useDarkMode()
+  const { isMobile } = useSidebar();
 
   const user = {
     name: sessionData?.user?.name ?? "",
@@ -169,9 +176,18 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain items={data.navMain} />
         <NavProjects projects={data.projects} />
+        <div className="px-2 group-data-[collapsible=icon]:hidden">
+          <Button
+            className=" border border-foreground/20"
+            variant={"ghost"}
+            onClick={() => toggleDarkMode()}
+          >
+            {darkMode ? <Sun /> : <Moon />}
+          </Button>
+        </div>
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={user} />
+        <NavUser user={user} isMobile={isMobile} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

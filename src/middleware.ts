@@ -1,67 +1,62 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Define public routes that don't require authentication
-const publicRoutes = [
+// Routes that should redirect to dashboard when user is already logged in
+const redirectToDashboardRoutes = [
   "/sign-in",
   "/sign-up",
   "/verified-email",
   "/waiting-verification",
+  "/",
 ];
 
-// Define routes that require authentication
+// Routes that require authentication to access
 const protectedRoutes = ["/dashboard"];
 
 export async function middleware(request: NextRequest) {
-  
-  // Get the pathname of the request
   const path = request.nextUrl.pathname;
 
-  // Instead of auth.getSession (which isn’t defined), use your server-side logic.
-  // For example, if your library provides a method to verify or parse the session
-  // from the request cookies, use that:
+  // Check authentication status from session token
   const sessionToken = request.cookies.get("storeGo.session_token")?.value;
-  const isAuthenticated = Boolean(sessionToken); // or verify token validity
+  const isAuthenticated = Boolean(sessionToken);
 
-  // Check if the requested path is in protected routes
-  const isProtectedRoute = protectedRoutes.some(
-    (route) => path.startsWith(route) || path === route
+  // More precise matching for redirect routes - use exact matches
+  const shouldRedirectToDashboard = redirectToDashboardRoutes.includes(path);
+
+  // For protected routes, we still want to check if it starts with the path
+  // to cover nested dashboard routes
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    path.startsWith(route)
   );
 
-  // Check if the requested path is in public routes
-  const isPublicRoute = publicRoutes.some(
-    (route) => path.startsWith(route) || path === route
-  );
+  // Handle redirection to dashboard for authenticated users
+  // BUT only if they're not already on a dashboard route
+  if (
+    shouldRedirectToDashboard &&
+    isAuthenticated &&
+    !path.startsWith("/dashboard")
+  ) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
 
-  // If the route is protected and user is not authenticated,
-  // redirect to sign-in page
+  // Handle protection for dashboard routes
   if (isProtectedRoute && !isAuthenticated) {
     const signInUrl = new URL("/sign-in", request.url);
-    // Store the original URL to redirect back after authentication
     signInUrl.searchParams.set("callbackUrl", path);
     return NextResponse.redirect(signInUrl);
   }
 
-  // If the user is authenticated and trying to access public routes
-  // (like sign-in), redirect them to dashboard
-  if (isPublicRoute && isAuthenticated) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
-
-  // Allow the request to continue
+  // Allow all other requests to proceed
   return NextResponse.next();
 }
 
-// Configure which routes to run the middleware on
 export const config = {
   matcher: [
-    // Match all protected routes
+    "/",
     "/dashboard/:path*",
-    // Match all auth routes
     "/sign-in",
     "/sign-up",
     "/verified-email",
     "/waiting-verification",
-    // Add more routes as needed
   ],
 };

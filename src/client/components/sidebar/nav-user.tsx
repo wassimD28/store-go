@@ -1,5 +1,3 @@
-"use client";
-
 import {
   BadgeCheck,
   Bell,
@@ -27,22 +25,19 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/client/components/ui/sidebar";
 import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 
-export function NavUser({
-  user,
-}: {
+interface NavUserProps {
   user: {
     name: string;
     email: string;
     avatar: string;
   };
-}) {
-  const { isMobile } = useSidebar();
-  const router = useRouter();
+  isMobile: boolean;
+}
+export function NavUser({ user, isMobile }: NavUserProps) {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -109,7 +104,7 @@ export function NavUser({
                 authClient.signOut({
                   fetchOptions: {
                     onSuccess: () => {
-                      router.push("/sign-in");
+                      redirect("/sign-in");
                     },
                   },
                 });
