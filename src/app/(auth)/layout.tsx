@@ -1,11 +1,12 @@
-"use client"
+"use client";
 import { Button } from "@/client/components/ui/button";
 import { useDarkMode } from "@/client/store/useDarkMode.store";
 import { Sun, Moon } from "lucide-react";
 import { ReactNode } from "react";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-    const { darkMode, toggleDarkMode } = useDarkMode();
+  const { darkMode, toggleDarkMode } = useDarkMode();
+  console.log("NEXT_PUBLIC_BASE_URL:", process.env.NEXT_PUBLIC_BASE_URL!);
   return (
     <div className="w-svw h-svh">
       <Button
