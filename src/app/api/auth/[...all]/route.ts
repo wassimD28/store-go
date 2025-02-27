@@ -6,6 +6,7 @@ const app = new Hono()
 
   // Auth endpoints
   .all("*", async (c) => {
+    console.log('Auth route triggerd')
     const response = await auth.handler(c.req.raw);
     return new Response(response.body, response);
   });

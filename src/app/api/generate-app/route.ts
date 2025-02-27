@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 
     // Your domain for the callback
     const callbackUrl = `${
-      process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+      process.env.NEXT_PUBLIC_BASE_URL
     }/api/app-generation-callback`;
 
     // Make sure to update the GitHub repository URL to your own repository
