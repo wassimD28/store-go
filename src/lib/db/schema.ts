@@ -6,6 +6,7 @@ import {
   uuid,
   jsonb,
   varchar,
+  decimal,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
@@ -82,4 +83,33 @@ export const stores = pgTable("stores", {
   appUrl: varchar("app_url", { length: 500 }),
   lastGeneratedAt: timestamp("last_generated_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Define app categories table
+export const appCategories = pgTable("app_categories", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  storeId: uuid("store_id")
+    .notNull()
+    .references(() => stores.id),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Define app products table
+export const appProducts = pgTable("app_products", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  storeId: uuid("store_id")
+    .notNull()
+    .references(() => stores.id),
+  categoryId: uuid("category_id")
+    .references(() => appCategories.id),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  price: decimal("price", { precision: 10, scale: 2 }),
+  imageUrl: varchar("image_url", { length: 500 }),
+  inStock: boolean("in_stock").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
