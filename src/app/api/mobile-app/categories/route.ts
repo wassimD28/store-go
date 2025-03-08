@@ -1,27 +1,36 @@
 import { Hono } from "hono";
 import { handle } from "hono/vercel";
 
-// Option 1: If you want to use basePath
-const app = new Hono().basePath("/api/mobile-app/categories")
-  .get("/", async (c) => {
-    return c.json({
-      message: "Categories route is working correctly!",
-      status: "success",
-      timestamp: new Date().toISOString()
-    });
+import { CategoryController } from "@/server/controllers/category.controller";
+
+// Create the Hono app for category endpoints
+const app = new Hono().basePath("/api/mobile-app/categories");
+
+// Root route - basic information
+app.get("/", (c) => {
+  return c.json({
+    message: "Categories API endpoint for mobile app",
+    status: "success",
+    timestamp: new Date().toISOString()
   });
+});
 
-// Option 2: Alternative approach without basePath
-// const app = new Hono()
-//   .get("/api/mobile-app/categories", async (c) => {
-//     return c.json({
-//       message: "Categories route is working correctly!",
-//       status: "success",
-//       timestamp: new Date().toISOString()
-//     });
-//   });
+// Retrieve all categories
+app.get("/list", CategoryController.getAllCategories);
 
-// Export the handle function to make the Hono app compatible with Vercel serverless functions
+// Get category by ID
+app.get("/:id", CategoryController.getCategoryById);
+
+// Create a new category
+app.post("/create", CategoryController.createCategory);
+
+// Update a category
+app.put("/:id", CategoryController.updateCategory);
+
+// Delete a category
+app.delete("/:id", CategoryController.deleteCategory);
+
+// Export a single handler for Vercel
 export const GET = handle(app);
 export const POST = handle(app);
 export const PUT = handle(app);
