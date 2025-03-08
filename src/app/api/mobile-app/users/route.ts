@@ -3,12 +3,12 @@ import { Hono } from "hono";
 import { UserController } from "../../../../server/controllers/user.controller";
 import { handle } from "hono/vercel";
 
-const app = new Hono().basePath("/api/mobile-app/categories");
+const app = new Hono().basePath("/api/mobile-app/users");
 
 
-app.get("/list", UserController.getAllUsers);
+app.get("/", UserController.getAllUsers);
 
-app.post("/create", UserController.createUser);
+app.post("/", UserController.createUser);
 
 export const GET = handle(app);
 export const POST = handle(app);

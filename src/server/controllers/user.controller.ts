@@ -1,5 +1,7 @@
 import { Context } from "hono";
 import { UserRepository, UserCreateInput, UserUpdateInput } from "@/server/repositories/user.repository";
+import { UserValidator } from "../validations/validator/user.validator";
+import { ValidationError } from "../validations/errors/validation.error";
 
 export class UserController {
   static async getAllUsers(c: Context) {
@@ -51,34 +53,28 @@ export class UserController {
 
   static async createUser(c: Context) {
     try {
-      const body = await c.req.json();
-
-      const requiredFields = ["name", "email"];
-      for (const field of requiredFields) {
-        if (!(field in body)) {
-          return c.json({
-            status: "error",
-            message: `Missing required field: ${field}`
-          }, 400);
-        }
-      }
-
-      const userData: UserCreateInput = {
-        name: body.name,
-        email: body.email,
-        description: body.description || "",
-        status: body.status || true
-      };
-
-      const newUser = await UserRepository.create(userData);
+      const validatedData = await UserValidator.validateCreate(c);
+      
+      const newUser = await UserRepository.create(validatedData);
 
       return c.json({
         status: "success",
         message: "User created successfully",
         data: newUser
       }, 201);
-    } catch (error) {
+    } catch (error : any) {
       console.error("Error in createUser:", error);
+
+      // Handle ValidationError specifically
+      if (error instanceof ValidationError) {
+        return c.json({
+          status: "error",
+          message: error.message,
+          errors: error.errors
+        }, 400);
+      }
+
+      // Handle other errors
       return c.json({
         status: "error",
         message: "Failed to create user"
