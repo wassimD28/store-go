@@ -1,12 +1,11 @@
 import {
-  pgTable,
-  text,
-  timestamp,
   boolean,
   uuid,
   jsonb,
-  varchar,
+  
 } from "drizzle-orm/pg-core";
+import { integer, pgTable, serial, text, timestamp, varchar, decimal, json } from 'drizzle-orm/pg-core';
+
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -71,6 +70,7 @@ export const generationJobs = pgTable("generation_jobs", {
   downloadUrl: varchar("download_url", { length: 500 }),
 });
 
+
 // Define a stores table (simplified)
 export const stores = pgTable("stores", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -83,3 +83,37 @@ export const stores = pgTable("stores", {
   lastGeneratedAt: timestamp("last_generated_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+
+
+
+
+export const appCategories = pgTable('app_categories', {
+  id: serial('id').primaryKey(),
+  store_id: integer('store_id').notNull(),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: text('description'),
+  imageUrl: varchar('image_url', { length: 255 }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+export const appProducts = pgTable('app_products', {
+  id: serial('id').primaryKey(),
+  category_id: integer('category_id').references(() => appCategories.id),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: text('description'),
+  price: decimal('price', { precision: 10, scale: 2 }).notNull(),
+  attributes: json('attributes').default({}),
+  image_urls: json('image_urls').default([]),
+  stock_quantity: integer('stock_quantity').default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+// Type definitions for the tables
+export type AppCategory = typeof appCategories.$inferSelect;
+export type NewAppCategory = Omit<AppCategory, 'id' | 'createdAt' | 'updatedAt'>;
+
+export type AppProduct = typeof appProducts.$inferSelect;
+export type NewAppProduct = Omit<AppProduct, 'id' | 'createdAt' | 'updatedAt'>;
