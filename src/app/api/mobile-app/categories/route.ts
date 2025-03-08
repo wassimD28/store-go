@@ -1,4 +1,3 @@
-// src/app/mobile-app/categories/route.ts
 import { Hono } from "hono";
 import { handle } from "hono/vercel";
 import { CategoryController } from "@/server/controllers/category.controller";
