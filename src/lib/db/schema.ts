@@ -85,35 +85,95 @@ export const stores = pgTable("stores", {
 });
 
 
-
-
-
-export const appCategories = pgTable('app_categories', {
-  id: serial('id').primaryKey(),
-  store_id: integer('store_id').notNull(),
-  name: varchar('name', { length: 100 }).notNull(),
-  description: text('description'),
-  imageUrl: varchar('image_url', { length: 255 }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
+// AppUser table schema
+export const AppUser = pgTable("app_user", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  description: text("description"),
+  status: boolean("status").default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow() 
 });
 
-export const appProducts = pgTable('app_products', {
-  id: serial('id').primaryKey(),
-  category_id: integer('category_id').references(() => appCategories.id),
-  name: varchar('name', { length: 100 }).notNull(),
-  description: text('description'),
-  price: decimal('price', { precision: 10, scale: 2 }).notNull(),
-  attributes: json('attributes').default({}),
-  image_urls: json('image_urls').default([]),
-  stock_quantity: integer('stock_quantity').default(0),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
+// AppOrder table schema
+export const AppOrder = pgTable("app_order", {
+  id: serial("id").primaryKey(),
+  app_user_id: integer("app_user_id").notNull().references(() => AppUser.id),
+  address_id: integer("address_id").notNull().references(() => AppAddress.id),
+  data_amount: decimal("data_amount", { precision: 10, scale: 2 }).notNull(),
+  order_date: timestamp("order_date").defaultNow(),
+  status: varchar("status", { length: 50 }).notNull(),
+  payment_status: varchar("payment_status", { length: 50 }).notNull()
 });
 
-// Type definitions for the tables
-export type AppCategory = typeof appCategories.$inferSelect;
-export type NewAppCategory = Omit<AppCategory, 'id' | 'createdAt' | 'updatedAt'>;
+// AppAddress table schema
+export const AppAddress = pgTable("app_address", {
+  id: serial("id").primaryKey(),
+  app_user_id: integer("app_user_id").notNull().references(() => AppUser.id),
+  email: varchar("email", { length: 255 }).notNull(),
+  city: varchar("city", { length: 100 }).notNull(),
+  status: varchar("status", { length: 50 }).notNull(),
+  postalCode: varchar("postalCode", { length: 20 }).notNull(),
+  country: varchar("country", { length: 100 }).notNull(),
+  isDefault: boolean("isDefault").default(false)
+});
 
-export type AppProduct = typeof appProducts.$inferSelect;
-export type NewAppProduct = Omit<AppProduct, 'id' | 'createdAt' | 'updatedAt'>;
+// AppPayment table schema
+export const AppPayment = pgTable("app_payment", {
+  id: serial("id").primaryKey(),
+  order_id: integer("order_id").notNull().references(() => AppOrder.id),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  payment_date: timestamp("payment_date").defaultNow(),
+  payment_method: varchar("payment_method", { length: 50 }).notNull()
+});
+
+// AppCollection table schema
+export const AppCollection = pgTable("app_collection", {
+  id: serial("id").primaryKey(),
+  order_id: integer("order_id").notNull().references(() => AppOrder.id),
+  quantity: integer("quantity").notNull(),
+  unit_price: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull()
+});
+
+// AppFactory table schema
+export const AppFactory = pgTable("app_factory", {
+  id: serial("id").primaryKey(),
+  app_user_id: integer("app_user_id").notNull().references(() => AppUser.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  snapshot: text("snapshot")
+});
+
+// AppWishlist table schema
+export const AppWishlist = pgTable("app_wishlist", {
+  id: serial("id").primaryKey(),
+  product_id: integer("product_id").notNull().references(() => AppProduct.id),
+  added_date: timestamp("added_date").defaultNow()
+});
+
+// AppCategory table schema
+export const AppCategory = pgTable("app_category", {
+  id: serial("id").primaryKey(),
+  app_user_id: integer("app_user_id").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  imageUrl: varchar("imageUrl", { length: 500 }),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow()
+});
+
+// AppProduct table schema
+export const AppProduct = pgTable("app_product", {
+  id: serial("id").primaryKey(),
+  category_id: integer("category_id").notNull().references(() => AppCategory.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  attributes: json("attributes").default({}),
+  image_urls: text("image_urls"),
+  stock_quantity: integer("stock_quantity").default(0),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow()
+});

@@ -2,9 +2,6 @@ import { Hono } from "hono";
 import { handle } from "hono/vercel";
 import { ProductController } from "@/server/controllers/product.controller";
 
-// Initialize the product controller
-const productController = new ProductController();
-
 // Create the Hono app for product endpoints
 const app = new Hono().basePath("/api/mobile-app/products");
 
@@ -18,22 +15,29 @@ app.get("/", (c) => {
 });
 
 // Retrieve all products
-app.get("/list", async (c) => await productController.getAllProducts(c));
+app.get("/list", ProductController.getAllProducts);
 
-// Retrieve a product by ID
-app.get("/:id", async (c) => await productController.getProductById(c));
+// Get products by category ID
+app.get("/category/:categoryId", ProductController.getProductsByCategory);
+
+// Get product by ID
+app.get("/:id", ProductController.getProductById);
 
 // Create a new product
-app.post("/create", async (c) => await productController.createProduct(c));
+app.post("/create", ProductController.createProduct);
 
 // Update a product
-app.put("/:id/update", async (c) => await productController.updateProduct(c));
+app.put("/:id", ProductController.updateProduct);
 
 // Delete a product
-app.delete("/:id/delete", async (c) => await productController.deleteProduct(c));
+app.delete("/:id", ProductController.deleteProduct);
 
-// Export request handlers for Vercel
+// Update product stock quantity
+app.patch("/:id/stock", ProductController.updateProductStock);
+
+// Export a single handler for Vercel
 export const GET = handle(app);
 export const POST = handle(app);
 export const PUT = handle(app);
+export const PATCH = handle(app);
 export const DELETE = handle(app);

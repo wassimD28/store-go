@@ -1,105 +1,171 @@
-import { Context } from 'hono';
-import { CategoryRepository } from '../repositories/category.repository';
-import { ProductRepository } from '../repositories/product.repository';
-
-// Initialize repositories for categories and products
-const categoryRepo = new CategoryRepository();
-const productRepo = new ProductRepository();
+import { Context } from "hono";
+import { CategoryRepository, CategoryCreateInput, CategoryUpdateInput } from "@/server/repositories/category.repository";
 
 export class CategoryController {
-  // Retrieve all categories
-  async getAllCategories(c: Context) {
+  static async getAllCategories(c: Context) {
     try {
-      console.log("Attempting to fetch all categories");
-      const categories = await categoryRepo.findAll();
-      console.log("Categories fetched:", categories);
-      return c.json(categories, 200);
+      const categories = await CategoryRepository.findAll();
+      return c.json({
+        status: "success",
+        data: categories
+      });
     } catch (error) {
-      console.error('Error fetching categories:', error);
-      return c.json({ error: 'Failed to fetch categories' }, 500);
+      console.error("Error in getAllCategories:", error);
+      return c.json({
+        status: "error",
+        message: "Failed to fetch categories"
+      }, 500);
     }
   }
 
-  // Retrieve a single category by its ID
-  async getCategoryById(c: Context) {
+  static async getCategoryById(c: Context) {
     try {
-      const id = parseInt(c.req.param('id')); // Parse the ID from the request parameters
-      const category = await categoryRepo.findById(id);
-      
+      const id = parseInt(c.req.param("id"));
+      if (isNaN(id)) {
+        return c.json({
+          status: "error",
+          message: "Invalid category ID"
+        }, 400);
+      }
+
+      const category = await CategoryRepository.findById(id);
       if (!category) {
-        return c.json({ error: 'Category not found' }, 404);
+        return c.json({
+          status: "error",
+          message: "Category not found"
+        }, 404);
       }
-      
-      return c.json(category, 200);
+
+      return c.json({
+        status: "success",
+        data: category
+      });
     } catch (error) {
-      console.error('Error fetching category:', error);
-      return c.json({ error: 'Failed to fetch category' }, 500);
+      console.error("Error in getCategoryById:", error);
+      return c.json({
+        status: "error",
+        message: "Failed to fetch category"
+      }, 500);
     }
   }
 
-  // Create a new category
-  async createCategory(c: Context) {
+  static async createCategory(c: Context) {
     try {
-      const body = await c.req.json(); // Extract data from request body
-      const newCategory = await categoryRepo.create(body); // Create category in the repository
-      return c.json(newCategory, 201);
+      const body = await c.req.json();
+      
+      // Validate required fields
+      const requiredFields = ["app_user_id", "name"];
+      for (const field of requiredFields) {
+        if (!(field in body)) {
+          return c.json({
+            status: "error",
+            message: `Missing required field: ${field}`
+          }, 400);
+        }
+      }
+
+      const categoryData: CategoryCreateInput = {
+        app_user_id: body.app_user_id,
+        name: body.name,
+        description: body.description || "",
+        imageUrl: body.imageUrl || ""
+      };
+
+      const newCategory = await CategoryRepository.create(categoryData);
+      
+      return c.json({
+        status: "success",
+        message: "Category created successfully",
+        data: newCategory
+      }, 201);
     } catch (error) {
-      console.error('Error creating category:', error);
-      return c.json({ error: 'Failed to create category' }, 500);
+      console.error("Error in createCategory:", error);
+      return c.json({
+        status: "error",
+        message: "Failed to create category"
+      }, 500);
     }
   }
 
-  // Update an existing category by its ID
-  async updateCategory(c: Context) {
+  static async updateCategory(c: Context) {
     try {
-      const id = parseInt(c.req.param('id')); // Parse category ID from request parameters
-      const body = await c.req.json(); // Extract update data from request body
-      const updatedCategory = await categoryRepo.update(id, body);
-      
-      if (!updatedCategory) {
-        return c.json({ error: 'Category not found' }, 404);
+      const id = parseInt(c.req.param("id"));
+      if (isNaN(id)) {
+        return c.json({
+          status: "error",
+          message: "Invalid category ID"
+        }, 400);
       }
+
+      const body = await c.req.json();
+      const updateData: CategoryUpdateInput = {};
+
+      // Only include fields that are present in the request
+      if ("name" in body) updateData.name = body.name;
+      if ("description" in body) updateData.description = body.description;
+      if ("imageUrl" in body) updateData.imageUrl = body.imageUrl;
+
+      if (Object.keys(updateData).length === 0) {
+        return c.json({
+          status: "error",
+          message: "No valid fields provided for update"
+        }, 400);
+      }
+
+      const existingCategory = await CategoryRepository.findById(id);
+      if (!existingCategory) {
+        return c.json({
+          status: "error",
+          message: "Category not found"
+        }, 404);
+      }
+
+      const updatedCategory = await CategoryRepository.update(id, updateData);
       
-      return c.json(updatedCategory, 200);
+      return c.json({
+        status: "success",
+        message: "Category updated successfully",
+        data: updatedCategory
+      });
     } catch (error) {
-      console.error('Error updating category:', error);
-      return c.json({ error: 'Failed to update category' }, 500);
+      console.error("Error in updateCategory:", error);
+      return c.json({
+        status: "error",
+        message: "Failed to update category"
+      }, 500);
     }
   }
 
-  // Delete a category by its ID
-  async deleteCategory(c: Context) {
+  static async deleteCategory(c: Context) {
     try {
-      const id = parseInt(c.req.param('id')); // Parse category ID from request parameters
-      const success = await categoryRepo.delete(id); // Attempt to delete category
-      
-      if (!success) {
-        return c.json({ error: 'Category not found' }, 404);
+      const id = parseInt(c.req.param("id"));
+      if (isNaN(id)) {
+        return c.json({
+          status: "error",
+          message: "Invalid category ID"
+        }, 400);
       }
-      
-      // Return 204 No Content if deletion is successful
-      return new Response(null, { status: 204 });
-    } catch (error) {
-      console.error('Error deleting category:', error);
-      return c.json({ error: 'Failed to delete category' }, 500);
-    }
-  }
 
-  // Retrieve all products that belong to a specific category
-  async getCategoryProducts(c: Context) {
-    try {
-      const categoryId = parseInt(c.req.param('id')); // Parse category ID from request parameters
-      const category = await categoryRepo.findById(categoryId); // Check if the category exists
-      
-      if (!category) {
-        return c.json({ error: 'Category not found' }, 404);
+      const existingCategory = await CategoryRepository.findById(id);
+      if (!existingCategory) {
+        return c.json({
+          status: "error",
+          message: "Category not found"
+        }, 404);
       }
+
+      await CategoryRepository.delete(id);
       
-      const products = await productRepo.findByCategoryId(categoryId); // Retrieve products by category ID
-      return c.json(products, 200);
+      return c.json({
+        status: "success",
+        message: "Category deleted successfully"
+      });
     } catch (error) {
-      console.error('Error fetching category products:', error);
-      return c.json({ error: 'Failed to fetch category products' }, 500);
+      console.error("Error in deleteCategory:", error);
+      return c.json({
+        status: "error",
+        message: "Failed to delete category"
+      }, 500);
     }
   }
 }

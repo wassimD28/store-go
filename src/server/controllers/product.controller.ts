@@ -1,97 +1,245 @@
-import { Context } from 'hono';
-import { ProductRepository } from '../repositories/product.repository';
-import { CategoryRepository } from '../repositories/category.repository';
-
-const productRepo = new ProductRepository();
-const categoryRepo = new CategoryRepository();
+import { Context } from "hono";
+import { ProductRepository, ProductCreateInput, ProductUpdateInput } from "@/server/repositories/product.repository";
 
 export class ProductController {
-  async getAllProducts(c: Context) {
+  static async getAllProducts(c: Context) {
     try {
-      const products = await productRepo.findAll();
-      return c.json(products, 200);
+      const products = await ProductRepository.findAll();
+      return c.json({
+        status: "success",
+        data: products
+      });
     } catch (error) {
-      console.error('Error fetching products:', error);
-      return c.json({ error: 'Failed to fetch products' }, 500);
+      console.error("Error in getAllProducts:", error);
+      return c.json({
+        status: "error",
+        message: "Failed to fetch products"
+      }, 500);
     }
   }
 
-  async getProductById(c: Context) {
+  static async getProductById(c: Context) {
     try {
-      const id = parseInt(c.req.param('id'));
-      const product = await productRepo.findById(id);
-      
+      const id = parseInt(c.req.param("id"));
+      if (isNaN(id)) {
+        return c.json({
+          status: "error",
+          message: "Invalid product ID"
+        }, 400);
+      }
+
+      const product = await ProductRepository.findById(id);
       if (!product) {
-        return c.json({ error: 'Product not found' }, 404);
+        return c.json({
+          status: "error",
+          message: "Product not found"
+        }, 404);
       }
-      
-      return c.json(product, 200);
+
+      return c.json({
+        status: "success",
+        data: product
+      });
     } catch (error) {
-      console.error('Error fetching product:', error);
-      return c.json({ error: 'Failed to fetch product' }, 500);
+      console.error("Error in getProductById:", error);
+      return c.json({
+        status: "error",
+        message: "Failed to fetch product"
+      }, 500);
     }
   }
 
-  async createProduct(c: Context) {
+  static async getProductsByCategory(c: Context) {
+    try {
+      const categoryId = parseInt(c.req.param("categoryId"));
+      if (isNaN(categoryId)) {
+        return c.json({
+          status: "error",
+          message: "Invalid category ID"
+        }, 400);
+      }
+
+      const products = await ProductRepository.findByCategory(categoryId);
+      
+      return c.json({
+        status: "success",
+        data: products
+      });
+    } catch (error) {
+      console.error("Error in getProductsByCategory:", error);
+      return c.json({
+        status: "error",
+        message: "Failed to fetch products by category"
+      }, 500);
+    }
+  }
+
+  static async createProduct(c: Context) {
     try {
       const body = await c.req.json();
       
-      // Validate category exists if category_id is provided
-      if (body.category_id) {
-        const category = await categoryRepo.findById(body.category_id);
-        if (!category) {
-          return c.json({ error: 'Category not found' }, 404);
+      // Validate required fields
+      const requiredFields = ["category_id", "name", "price"];
+      for (const field of requiredFields) {
+        if (!(field in body)) {
+          return c.json({
+            status: "error",
+            message: `Missing required field: ${field}`
+          }, 400);
         }
       }
+
+      const productData: ProductCreateInput = {
+        category_id: body.category_id,
+        name: body.name,
+        description: body.description || "",
+        price: body.price,
+        attributes: body.attributes || {},
+        image_urls: body.image_urls || "",
+        stock_quantity: body.stock_quantity || 0
+      };
+
+      const newProduct = await ProductRepository.create(productData);
       
-      const newProduct = await productRepo.create(body);
-      return c.json(newProduct, 201);
+      return c.json({
+        status: "success",
+        message: "Product created successfully",
+        data: newProduct
+      }, 201);
     } catch (error) {
-      console.error('Error creating product:', error);
-      return c.json({ error: 'Failed to create product' }, 500);
+      console.error("Error in createProduct:", error);
+      return c.json({
+        status: "error",
+        message: "Failed to create product"
+      }, 500);
     }
   }
 
-  async updateProduct(c: Context) {
+  static async updateProduct(c: Context) {
     try {
-      const id = parseInt(c.req.param('id'));
+      const id = parseInt(c.req.param("id"));
+      if (isNaN(id)) {
+        return c.json({
+          status: "error",
+          message: "Invalid product ID"
+        }, 400);
+      }
+
       const body = await c.req.json();
-      
-      // Validate category exists if category_id is being updated
-      if (body.category_id) {
-        const category = await categoryRepo.findById(body.category_id);
-        if (!category) {
-          return c.json({ error: 'Category not found' }, 404);
-        }
+      const updateData: ProductUpdateInput = {};
+
+      // Only include fields that are present in the request
+      if ("category_id" in body) updateData.category_id = body.category_id;
+      if ("name" in body) updateData.name = body.name;
+      if ("description" in body) updateData.description = body.description;
+      if ("price" in body) updateData.price = body.price;
+      if ("attributes" in body) updateData.attributes = body.attributes;
+      if ("image_urls" in body) updateData.image_urls = body.image_urls;
+      if ("stock_quantity" in body) updateData.stock_quantity = body.stock_quantity;
+
+      if (Object.keys(updateData).length === 0) {
+        return c.json({
+          status: "error",
+          message: "No valid fields provided for update"
+        }, 400);
       }
-      
-      const updatedProduct = await productRepo.update(id, body);
-      
-      if (!updatedProduct) {
-        return c.json({ error: 'Product not found' }, 404);
+
+      const existingProduct = await ProductRepository.findById(id);
+      if (!existingProduct) {
+        return c.json({
+          status: "error",
+          message: "Product not found"
+        }, 404);
       }
+
+      const updatedProduct = await ProductRepository.update(id, updateData);
       
-      return c.json(updatedProduct, 200);
+      return c.json({
+        status: "success",
+        message: "Product updated successfully",
+        data: updatedProduct
+      });
     } catch (error) {
-      console.error('Error updating product:', error);
-      return c.json({ error: 'Failed to update product' }, 500);
+      console.error("Error in updateProduct:", error);
+      return c.json({
+        status: "error",
+        message: "Failed to update product"
+      }, 500);
     }
   }
 
-  async deleteProduct(c: Context) {
+  static async updateProductStock(c: Context) {
     try {
-      const id = parseInt(c.req.param('id'));
-      const success = await productRepo.delete(id);
-      
-      if (!success) {
-        return c.json({ error: 'Product not found' }, 404);
+      const id = parseInt(c.req.param("id"));
+      if (isNaN(id)) {
+        return c.json({
+          status: "error",
+          message: "Invalid product ID"
+        }, 400);
       }
+
+      const body = await c.req.json();
+      if (!("stock_quantity" in body) || typeof body.stock_quantity !== "number") {
+        return c.json({
+          status: "error",
+          message: "Missing or invalid stock_quantity field"
+        }, 400);
+      }
+
+      const existingProduct = await ProductRepository.findById(id);
+      if (!existingProduct) {
+        return c.json({
+          status: "error",
+          message: "Product not found"
+        }, 404);
+      }
+
+      const updatedProduct = await ProductRepository.updateStock(id, body.stock_quantity);
       
-      // Fixed return for 204 status
-      return new Response(null, { status: 204 });
+      return c.json({
+        status: "success",
+        message: "Product stock updated successfully",
+        data: updatedProduct
+      });
     } catch (error) {
-      console.error('Error deleting product:', error);
-      return c.json({ error: 'Failed to delete product' }, 500);
+      console.error("Error in updateProductStock:", error);
+      return c.json({
+        status: "error",
+        message: "Failed to update product stock"
+      }, 500);
+    }
+  }
+
+  static async deleteProduct(c: Context) {
+    try {
+      const id = parseInt(c.req.param("id"));
+      if (isNaN(id)) {
+        return c.json({
+          status: "error",
+          message: "Invalid product ID"
+        }, 400);
+      }
+
+      const existingProduct = await ProductRepository.findById(id);
+      if (!existingProduct) {
+        return c.json({
+          status: "error",
+          message: "Product not found"
+        }, 404);
+      }
+
+      await ProductRepository.delete(id);
+      
+      return c.json({
+        status: "success",
+        message: "Product deleted successfully"
+      });
+    } catch (error) {
+      console.error("Error in deleteProduct:", error);
+      return c.json({
+        status: "error",
+        message: "Failed to delete product"
+      }, 500);
     }
   }
 }

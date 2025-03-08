@@ -1,60 +1,74 @@
+import { db } from "../../lib/db/db";
+import { eq } from "drizzle-orm";
+import * as schema from "../../lib/db/schema";
 
-import { db } from '../../lib/db/db';
-import { appCategories, type AppCategory, type NewAppCategory } from '../../lib/db/schema';
-import { eq } from 'drizzle-orm';
+export interface CategoryCreateInput {
+  app_user_id: number;
+  name: string;
+  description: string;
+  imageUrl: string;
+}
+
+export interface CategoryUpdateInput {
+  name?: string;
+  description?: string;
+  imageUrl?: string;
+}
 
 export class CategoryRepository {
-  /**
-   * Retrieves all categories from the database.
-   * @returns {Promise<AppCategory[]>} - A promise that resolves to an array of all categories.
-   */
-  async findAll(): Promise<AppCategory[]> {
-    return await db.select().from(appCategories);
+  static async findAll() {
+    try {
+      return await db.query.AppCategory.findMany();
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      throw new Error("Failed to fetch categories");
+    }
   }
 
-  /**
-   * Finds a category by its ID.
-   * @param {number} id - The ID of the category to find.
-   * @returns {Promise<AppCategory | null>} - A promise that resolves to the category if found, otherwise null.
-   */
-  async findById(id: number): Promise<AppCategory | null> {
-    const result = await db.select().from(appCategories).where(eq(appCategories.id, id));
-    return result.length > 0 ? result[0] : null;
+  static async findById(id: number) {
+    try {
+      return await db.query.AppCategory.findFirst({
+        where: eq(schema.AppCategory.id, id)
+      });
+    } catch (error) {
+      console.error(`Error fetching category with ID ${id}:`, error);
+      throw new Error(`Failed to fetch category with ID ${id}`);
+    }
   }
 
-  /**
-   * Creates a new category in the database.
-   * @param {NewAppCategory} category - The category data to insert.
-   * @returns {Promise<AppCategory>} - A promise that resolves to the newly created category.
-   */
-  async create(category: NewAppCategory): Promise<AppCategory> {
-    const result = await db.insert(appCategories).values(category).returning();
-    return result[0]; // Returning the created category
+  static async create(data: CategoryCreateInput) {
+    try {
+      const result = await db.insert(schema.AppCategory).values(data).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error creating category:", error);
+      throw new Error("Failed to create category");
+    }
   }
 
-  /**
-   * Updates an existing category by its ID.
-   * @param {number} id - The ID of the category to update.
-   * @param {Partial<NewAppCategory>} category - The updated category data.
-   * @returns {Promise<AppCategory | null>} - A promise that resolves to the updated category, or null if not found.
-   */
-  async update(id: number, category: Partial<NewAppCategory>): Promise<AppCategory | null> {
-    const result = await db
-      .update(appCategories)
-      .set({ ...category, updatedAt: new Date() }) // Update category data and set the updated timestamp
-      .where(eq(appCategories.id, id))
-      .returning();
-    
-    return result.length > 0 ? result[0] : null; // Return updated category or null if not found
+  static async update(id: number, data: CategoryUpdateInput) {
+    try {
+      const result = await db
+        .update(schema.AppCategory)
+        .set({ ...data, updated_at: new Date() })
+        .where(eq(schema.AppCategory.id, id))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error(`Error updating category with ID ${id}:`, error);
+      throw new Error(`Failed to update category with ID ${id}`);
+    }
   }
 
-  /**
-   * Deletes a category by its ID.
-   * @param {number} id - The ID of the category to delete.
-   * @returns {Promise<boolean>} - A promise that resolves to true if the category was deleted, false otherwise.
-   */
-  async delete(id: number): Promise<boolean> {
-    const result = await db.delete(appCategories).where(eq(appCategories.id, id)).returning();
-    return result.length > 0; // Return true if at least one category was deleted
+  static async delete(id: number) {
+    try {
+      return await db
+        .delete(schema.AppCategory)
+        .where(eq(schema.AppCategory.id, id))
+        .returning();
+    } catch (error) {
+      console.error(`Error deleting category with ID ${id}:`, error);
+      throw new Error(`Failed to delete category with ID ${id}`);
+    }
   }
 }
