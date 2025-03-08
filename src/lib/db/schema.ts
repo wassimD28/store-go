@@ -2,7 +2,6 @@ import {
   boolean,
   uuid,
   jsonb,
-  
 } from "drizzle-orm/pg-core";
 import { integer, pgTable, serial, text, timestamp, varchar, decimal, json } from 'drizzle-orm/pg-core';
 

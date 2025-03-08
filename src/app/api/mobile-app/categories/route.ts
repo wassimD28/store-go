@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { handle } from "hono/vercel";
+
 import { CategoryController } from "@/server/controllers/category.controller";
 
 // Create the Hono app for category endpoints
