@@ -3,7 +3,7 @@ import {
   uuid,
   jsonb,
 } from "drizzle-orm/pg-core";
-import { integer, pgTable, serial, text, timestamp, varchar, decimal, json } from 'drizzle-orm/pg-core';
+import { integer, pgTable, text, timestamp, varchar, decimal, json } from 'drizzle-orm/pg-core';
 
 
 export const user = pgTable("user", {
@@ -28,7 +28,7 @@ export const session = pgTable("session", {
     .notNull()
     .references(() => user.id),
 });
-
+// Define the accounts table schema (simplified)
 export const account = pgTable("account", {
   id: text("id").primaryKey(),
   accountId: text("account_id").notNull(),
@@ -86,9 +86,13 @@ export const stores = pgTable("stores", {
 
 // AppUser table schema
 export const AppUser = pgTable("app_user", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
+  storeId: uuid("store_id")
+    .notNull()
+    .references(() => stores.id),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull(),
+  password: varchar("password", { length: 255 }),
   description: text("description"),
   status: boolean("status").default(true),
   created_at: timestamp("created_at").defaultNow(),
@@ -97,9 +101,9 @@ export const AppUser = pgTable("app_user", {
 
 // AppOrder table schema
 export const AppOrder = pgTable("app_order", {
-  id: serial("id").primaryKey(),
-  app_user_id: integer("app_user_id").notNull().references(() => AppUser.id),
-  address_id: integer("address_id").notNull().references(() => AppAddress.id),
+  id: uuid("id").primaryKey().defaultRandom(),
+  appUserId: uuid("app_user_id").notNull().references(() => AppUser.id),
+  address_id: uuid("address_id").notNull().references(() => AppAddress.id),
   data_amount: decimal("data_amount", { precision: 10, scale: 2 }).notNull(),
   order_date: timestamp("order_date").defaultNow(),
   status: varchar("status", { length: 50 }).notNull(),
@@ -108,8 +112,8 @@ export const AppOrder = pgTable("app_order", {
 
 // AppAddress table schema
 export const AppAddress = pgTable("app_address", {
-  id: serial("id").primaryKey(),
-  app_user_id: integer("app_user_id").notNull().references(() => AppUser.id),
+  id: uuid("id").primaryKey().defaultRandom(),
+  appUserId: uuid("app_user_id").notNull().references(() => AppUser.id),
   email: varchar("email", { length: 255 }).notNull(),
   city: varchar("city", { length: 100 }).notNull(),
   status: varchar("status", { length: 50 }).notNull(),
@@ -120,8 +124,8 @@ export const AppAddress = pgTable("app_address", {
 
 // AppPayment table schema
 export const AppPayment = pgTable("app_payment", {
-  id: serial("id").primaryKey(),
-  order_id: integer("order_id").notNull().references(() => AppOrder.id),
+  id: uuid("id").primaryKey().defaultRandom(),
+  order_id: uuid("order_id").notNull().references(() => AppOrder.id),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   payment_date: timestamp("payment_date").defaultNow(),
   payment_method: varchar("payment_method", { length: 50 }).notNull()
@@ -129,8 +133,8 @@ export const AppPayment = pgTable("app_payment", {
 
 // AppCollection table schema
 export const AppCollection = pgTable("app_collection", {
-  id: serial("id").primaryKey(),
-  order_id: integer("order_id").notNull().references(() => AppOrder.id),
+  id: uuid("id").primaryKey().defaultRandom(),
+  order_id: uuid("order_id").notNull().references(() => AppOrder.id),
   quantity: integer("quantity").notNull(),
   unit_price: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
   subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull()
@@ -138,8 +142,8 @@ export const AppCollection = pgTable("app_collection", {
 
 // AppFactory table schema
 export const AppFactory = pgTable("app_factory", {
-  id: serial("id").primaryKey(),
-  app_user_id: integer("app_user_id").notNull().references(() => AppUser.id),
+  id: uuid("id").primaryKey().defaultRandom(),
+  appUserId: uuid("app_user_id").notNull().references(() => AppUser.id),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   snapshot: text("snapshot")
@@ -147,26 +151,26 @@ export const AppFactory = pgTable("app_factory", {
 
 // AppWishlist table schema
 export const AppWishlist = pgTable("app_wishlist", {
-  id: serial("id").primaryKey(),
-  product_id: integer("product_id").notNull().references(() => AppProduct.id),
+  id: uuid("id").primaryKey().defaultRandom(),
+  product_id: uuid("product_id").notNull().references(() => AppProduct.id),
   added_date: timestamp("added_date").defaultNow()
 });
 
 // AppCategory table schema
 export const AppCategory = pgTable("app_category", {
-  id: serial("id").primaryKey(),
-  app_user_id: integer("app_user_id").notNull(),
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull().references(() => user.id),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
-  imageUrl: varchar("imageUrl", { length: 500 }),
+  imageUrl: text("imageUrl"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow()
 });
 
 // AppProduct table schema
 export const AppProduct = pgTable("app_product", {
-  id: serial("id").primaryKey(),
-  category_id: integer("category_id").notNull().references(() => AppCategory.id),
+  id: uuid("id").primaryKey().defaultRandom(),
+  category_id: uuid("category_id").notNull().references(() => AppCategory.id),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
