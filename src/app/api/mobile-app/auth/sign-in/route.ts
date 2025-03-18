@@ -2,8 +2,9 @@ import AppAuthController from "@/server/controllers/appAuth.controller";
 import { Hono } from "hono";
 import { handle } from "hono/vercel";
 
-const app = new Hono().basePath("/api/mobile-app/auth/sign-in")
-  .post("/", AppAuthController.signIn)
+const app = new Hono()
+  .basePath("/api/mobile-app/auth/sign-in")
+  .post("/", AppAuthController.signIn);
 
 export const GET = handle(app);
 export const POST = handle(app);
