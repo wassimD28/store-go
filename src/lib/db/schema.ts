@@ -3,7 +3,7 @@ import {
   uuid,
   jsonb,
 } from "drizzle-orm/pg-core";
-import { integer, pgTable, serial, text, timestamp, varchar, decimal, json } from 'drizzle-orm/pg-core';
+import { integer, pgTable, text, timestamp, varchar, decimal, json } from 'drizzle-orm/pg-core';
 
 
 export const user = pgTable("user", {
@@ -28,7 +28,7 @@ export const session = pgTable("session", {
     .notNull()
     .references(() => user.id),
 });
-
+// Define the accounts table schema (simplified)
 export const account = pgTable("account", {
   id: text("id").primaryKey(),
   accountId: text("account_id").notNull(),
@@ -92,7 +92,7 @@ export const AppUser = pgTable("app_user", {
     .references(() => stores.id),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull(),
-  password: varchar("password", { length: 255 }).notNull(),
+  password: varchar("password", { length: 255 }),
   description: text("description"),
   status: boolean("status").default(true),
   created_at: timestamp("created_at").defaultNow(),

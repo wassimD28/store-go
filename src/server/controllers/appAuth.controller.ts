@@ -127,6 +127,14 @@ class AppAuthController {
 
             const { email, password, storeId } = validationResult.data;
 
+            // check if user exists in app_user table
+            const user = await db.query.AppUser.findFirst({
+                where: (appUser, { eq }) => eq(appUser.email, email)
+            });
+
+            if (!user) {
+                return c.json({ success: false, error: 'Email not found' }, 404);
+            }
             // 2. Authenticate via Supabase - creates a session with JWT tokens
             const { data, error } = await AppAuthController.supabaseAdmin.auth.signInWithPassword({
                 email,
