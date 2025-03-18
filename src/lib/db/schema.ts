@@ -102,7 +102,7 @@ export const AppUser = pgTable("app_user", {
 // AppOrder table schema
 export const AppOrder = pgTable("app_order", {
   id: uuid("id").primaryKey().defaultRandom(),
-  app_user_id: uuid("app_user_id").notNull().references(() => AppUser.id),
+  appUserId: uuid("app_user_id").notNull().references(() => AppUser.id),
   address_id: uuid("address_id").notNull().references(() => AppAddress.id),
   data_amount: decimal("data_amount", { precision: 10, scale: 2 }).notNull(),
   order_date: timestamp("order_date").defaultNow(),
@@ -113,7 +113,7 @@ export const AppOrder = pgTable("app_order", {
 // AppAddress table schema
 export const AppAddress = pgTable("app_address", {
   id: uuid("id").primaryKey().defaultRandom(),
-  app_user_id: uuid("app_user_id").notNull().references(() => AppUser.id),
+  appUserId: uuid("app_user_id").notNull().references(() => AppUser.id),
   email: varchar("email", { length: 255 }).notNull(),
   city: varchar("city", { length: 100 }).notNull(),
   status: varchar("status", { length: 50 }).notNull(),
@@ -143,7 +143,7 @@ export const AppCollection = pgTable("app_collection", {
 // AppFactory table schema
 export const AppFactory = pgTable("app_factory", {
   id: uuid("id").primaryKey().defaultRandom(),
-  app_user_id: uuid("app_user_id").notNull().references(() => AppUser.id),
+  appUserId: uuid("app_user_id").notNull().references(() => AppUser.id),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   snapshot: text("snapshot")
@@ -159,10 +159,10 @@ export const AppWishlist = pgTable("app_wishlist", {
 // AppCategory table schema
 export const AppCategory = pgTable("app_category", {
   id: uuid("id").primaryKey().defaultRandom(),
-  app_user_id: uuid("app_user_id").notNull(),
+  userId: text("user_id").notNull().references(() => user.id),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
-  imageUrl: varchar("imageUrl", { length: 500 }),
+  imageUrl: text("imageUrl"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow()
 });

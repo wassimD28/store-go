@@ -2,7 +2,7 @@ import { Context } from "hono";
 import { createClient } from "@supabase/supabase-js";
 import { db } from "@/lib/db/db";
 import { AppUser } from "@/lib/db/schema";
-import { oauthProviderSchema, oauthCallbackSchema } from "@/server/validations/schemas/Oauth.schema";
+import { oauthProviderSchema } from "@/server/schemas/Oauth.schema";
 
 class AppOauthController {
   // Supabase admin client for secure backend operations
@@ -182,7 +182,7 @@ class AppOauthController {
 
       // 5. Check if user exists in our database
       const user = data.user;
-      let appUser = await db.query.AppUser.findFirst({
+      const appUser = await db.query.AppUser.findFirst({
         where: (appUser, { eq }) => eq(appUser.email, user?.email || '')
       });
 

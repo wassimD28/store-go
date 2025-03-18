@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { db } from "@/lib/db/db";
 import { hash } from "bcrypt";
 import { AppUser } from "@/lib/db/schema";
-import { appSignInSchema, appSignUpSchema } from "@/server/validations/schemas/auth.schema";
+import { appSignInSchema, appSignUpSchema } from "@/server/schemas/auth.schema";
 
 class AppAuthController {
     // Supabase admin client for secure backend operations

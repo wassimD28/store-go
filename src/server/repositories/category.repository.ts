@@ -1,12 +1,12 @@
 import { db } from "../../lib/db/db";
 import { eq } from "drizzle-orm";
-import * as schema from "../../lib/db/schema";
+import { AppCategory } from "@/lib/db/schema";
 
 export interface CategoryCreateInput {
-  app_user_id: number;
+  userId: string;
   name: string;
-  description: string;
-  imageUrl: string;
+  description?: string;
+  imageUrl?: string;
 }
 
 export interface CategoryUpdateInput {
@@ -25,10 +25,10 @@ export class CategoryRepository {
     }
   }
 
-  static async findById(id: number) {
+  static async findById(id: string) {
     try {
       return await db.query.AppCategory.findFirst({
-        where: eq(schema.AppCategory.id, id)
+        where: eq(AppCategory.id, id)
       });
     } catch (error) {
       console.error(`Error fetching category with ID ${id}:`, error);
@@ -38,7 +38,7 @@ export class CategoryRepository {
 
   static async create(data: CategoryCreateInput) {
     try {
-      const result = await db.insert(schema.AppCategory).values(data).returning();
+      const result = await db.insert(AppCategory).values(data).returning();
       return result[0];
     } catch (error) {
       console.error("Error creating category:", error);
@@ -46,12 +46,12 @@ export class CategoryRepository {
     }
   }
 
-  static async update(id: number, data: CategoryUpdateInput) {
+  static async update(id: string, data: CategoryUpdateInput) {
     try {
       const result = await db
-        .update(schema.AppCategory)
+        .update(AppCategory)
         .set({ ...data, updated_at: new Date() })
-        .where(eq(schema.AppCategory.id, id))
+        .where(eq(AppCategory.id, id))
         .returning();
       return result[0];
     } catch (error) {
@@ -60,12 +60,9 @@ export class CategoryRepository {
     }
   }
 
-  static async delete(id: number) {
+  static async delete(id: string) {
     try {
-      return await db
-        .delete(schema.AppCategory)
-        .where(eq(schema.AppCategory.id, id))
-        .returning();
+      await db.delete(AppCategory).where(eq(AppCategory.id, id));
     } catch (error) {
       console.error(`Error deleting category with ID ${id}:`, error);
       throw new Error(`Failed to delete category with ID ${id}`);

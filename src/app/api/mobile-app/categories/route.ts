@@ -1,19 +1,14 @@
 import { Hono } from "hono";
 import { handle } from "hono/vercel";
-
 import { CategoryController } from "@/server/controllers/category.controller";
 
-// Create the Hono app for category endpoints
-const app = new Hono().basePath("/api/mobile-app/categories");
 
-// Retrieve all categories
-app.get("/", CategoryController.getAllCategories);
 
-// Get category by ID
-app.get("/:id", CategoryController.getCategoryById);
-
-// Create a new category
-app.post("/", CategoryController.createCategory);
+const app = new Hono().basePath("/api/mobile-app/categories")
+  // Retrieve all categories
+  .get("/", CategoryController.getAllCategories)
+  // Create a new category
+  .post("/", CategoryController.createCategory);
 
 
 

@@ -1,5 +1,6 @@
 import { Context } from "hono";
-import { CategoryRepository, CategoryCreateInput, CategoryUpdateInput } from "@/server/repositories/category.repository";
+import { CategoryRepository } from "@/server/repositories/category.repository";
+import { createCategorySchema, updateCategorySchema } from "../schemas/catecory.schema";
 
 export class CategoryController {
   static async getAllCategories(c: Context) {
@@ -20,13 +21,7 @@ export class CategoryController {
 
   static async getCategoryById(c: Context) {
     try {
-      const id = parseInt(c.req.param("id"));
-      if (isNaN(id)) {
-        return c.json({
-          status: "error",
-          message: "Invalid category ID"
-        }, 400);
-      }
+      const id = c.req.param("id")
 
       const category = await CategoryRepository.findById(id);
       if (!category) {
@@ -51,27 +46,19 @@ export class CategoryController {
 
   static async createCategory(c: Context) {
     try {
-      const body = await c.req.json();
+      const body = c.req.json()
+       // Validate the body using Zod
+      const validatedData = createCategorySchema.safeParse(body);
       
-      // Validate required fields
-      const requiredFields = ["app_user_id", "name"];
-      for (const field of requiredFields) {
-        if (!(field in body)) {
-          return c.json({
-            status: "error",
-            message: `Missing required field: ${field}`
-          }, 400);
-        }
+      if (!validatedData.success) {
+        return c.json({
+          status: "error",
+          message: "Validation failed",
+          errors: validatedData.error.format()
+        }, 400);
       }
 
-      const categoryData: CategoryCreateInput = {
-        app_user_id: body.app_user_id,
-        name: body.name,
-        description: body.description || "",
-        imageUrl: body.imageUrl || ""
-      };
-
-      const newCategory = await CategoryRepository.create(categoryData);
+      const newCategory = await CategoryRepository.create(validatedData.data);
       
       return c.json({
         status: "success",
@@ -89,26 +76,14 @@ export class CategoryController {
 
   static async updateCategory(c: Context) {
     try {
-      const id = parseInt(c.req.param("id"));
-      if (isNaN(id)) {
+      const id = c.req.param("id")
+
+      const validatedData = updateCategorySchema.safeParse(c.req.json());
+      if (!validatedData.success) {
         return c.json({
           status: "error",
-          message: "Invalid category ID"
-        }, 400);
-      }
-
-      const body = await c.req.json();
-      const updateData: CategoryUpdateInput = {};
-
-      // Only include fields that are present in the request
-      if ("name" in body) updateData.name = body.name;
-      if ("description" in body) updateData.description = body.description;
-      if ("imageUrl" in body) updateData.imageUrl = body.imageUrl;
-
-      if (Object.keys(updateData).length === 0) {
-        return c.json({
-          status: "error",
-          message: "No valid fields provided for update"
+          message: "Validation failed",
+          errors: validatedData.error.format()
         }, 400);
       }
 
@@ -120,7 +95,7 @@ export class CategoryController {
         }, 404);
       }
 
-      const updatedCategory = await CategoryRepository.update(id, updateData);
+      const updatedCategory = await CategoryRepository.update(id, validatedData.data);
       
       return c.json({
         status: "success",
@@ -138,13 +113,7 @@ export class CategoryController {
 
   static async deleteCategory(c: Context) {
     try {
-      const id = parseInt(c.req.param("id"));
-      if (isNaN(id)) {
-        return c.json({
-          status: "error",
-          message: "Invalid category ID"
-        }, 400);
-      }
+      const id = c.req.param("id")
 
       const existingCategory = await CategoryRepository.findById(id);
       if (!existingCategory) {
