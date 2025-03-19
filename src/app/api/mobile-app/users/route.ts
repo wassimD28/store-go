@@ -6,7 +6,7 @@ import { handle } from "hono/vercel";
 const app = new Hono().basePath("/api/mobile-app/categories");
 
 
-app.get("/list", UserController.getAllUsers);
+app.get("/", UserController.getAllUsers);
 
 app.post("/create", UserController.createUser);
 

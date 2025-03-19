@@ -5,23 +5,14 @@ import { CategoryController } from "@/server/controllers/category.controller";
 // Create the Hono app for category endpoints
 const app = new Hono().basePath("/api/mobile-app/categories");
 
-// Root route - basic information
-app.get("/", (c) => {
-  return c.json({
-    message: "Categories API endpoint for mobile app",
-    status: "success",
-    timestamp: new Date().toISOString()
-  });
-});
-
 // Retrieve all categories
-app.get("/list", CategoryController.getAllCategories);
+app.get("/", CategoryController.getAllCategories);
 
 // Get category by ID
 app.get("/:id", CategoryController.getCategoryById);
 
 // Create a new category
-app.post("/create", CategoryController.createCategory);
+app.post("/", CategoryController.createCategory);
 
 // Update a category
 app.put("/:id", CategoryController.updateCategory);
