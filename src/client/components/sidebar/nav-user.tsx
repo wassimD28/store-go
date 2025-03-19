@@ -1,3 +1,4 @@
+"use client";
 import {
   BadgeCheck,
   Bell,
@@ -28,6 +29,9 @@ import {
 } from "@/client/components/ui/sidebar";
 import { authClient } from "@/lib/auth-client";
 import { redirect } from "next/navigation";
+import { getInitials } from "@/lib/utils";
+
+
 
 interface NavUserProps {
   user: {
@@ -38,6 +42,7 @@ interface NavUserProps {
   isMobile: boolean;
 }
 export function NavUser({ user, isMobile }: NavUserProps) {
+  
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -49,7 +54,7 @@ export function NavUser({ user, isMobile }: NavUserProps) {
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarFallback className="rounded-lg">{getInitials(user.name)}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{user.name}</span>

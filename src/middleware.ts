@@ -9,6 +9,7 @@ const authRoutes = ["/sign-in", "/sign-up", "/waiting-verification", "/"];
 const protectedRoutes = ["/dashboard", "/verified-email"];
 
 export async function middleware(request: NextRequest) {
+  console.info("Middleware has triggerd.")
   const pathName = request.nextUrl.pathname;
   const isInAuthRountes = authRoutes.includes(pathName);
   const isInProtectedRoutes = protectedRoutes.includes(pathName);
