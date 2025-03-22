@@ -7,8 +7,7 @@ const app = new Hono()
   .basePath("/api/mobile-app/products")
   // Check if user is authenticated
   .use("*", isAuthenticated)
-  // Retrieve all products
-  .get("/", ProductController.getAllProducts);
+  // Get product by ID
+  .get("/:id", ProductController.getProductById)
 
 export const GET = handle(app);
-

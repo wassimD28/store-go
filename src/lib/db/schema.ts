@@ -1,11 +1,13 @@
+import { boolean, uuid, jsonb } from "drizzle-orm/pg-core";
 import {
-  boolean,
-  uuid,
-  jsonb,
-  
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  varchar,
+  decimal,
+  json,
 } from "drizzle-orm/pg-core";
-import { integer, pgTable, serial, text, timestamp, varchar, decimal, json } from 'drizzle-orm/pg-core';
-
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -29,7 +31,7 @@ export const session = pgTable("session", {
     .notNull()
     .references(() => user.id),
 });
-
+// Define the accounts table schema (simplified)
 export const account = pgTable("account", {
   id: text("id").primaryKey(),
   accountId: text("account_id").notNull(),
@@ -70,7 +72,6 @@ export const generationJobs = pgTable("generation_jobs", {
   downloadUrl: varchar("download_url", { length: 500 }),
 });
 
-
 // Define a stores table (simplified)
 export const stores = pgTable("stores", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -84,90 +85,123 @@ export const stores = pgTable("stores", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-
 // AppUser table schema
 export const AppUser = pgTable("app_user", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
+  storeId: uuid("store_id")
+    .notNull()
+    .references(() => stores.id),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull(),
+  password: varchar("password", { length: 255 }),
   description: text("description"),
   status: boolean("status").default(true),
   created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow() 
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 // AppOrder table schema
 export const AppOrder = pgTable("app_order", {
-  id: serial("id").primaryKey(),
-  app_user_id: integer("app_user_id").notNull().references(() => AppUser.id),
-  address_id: integer("address_id").notNull().references(() => AppAddress.id),
+  id: uuid("id").primaryKey().defaultRandom(),
+  appUserId: uuid("app_user_id")
+    .notNull()
+    .references(() => AppUser.id),
+  address_id: uuid("address_id")
+    .notNull()
+    .references(() => AppAddress.id),
   data_amount: decimal("data_amount", { precision: 10, scale: 2 }).notNull(),
   order_date: timestamp("order_date").defaultNow(),
   status: varchar("status", { length: 50 }).notNull(),
-  payment_status: varchar("payment_status", { length: 50 }).notNull()
+  payment_status: varchar("payment_status", { length: 50 }).notNull(),
 });
 
 // AppAddress table schema
 export const AppAddress = pgTable("app_address", {
-  id: serial("id").primaryKey(),
-  app_user_id: integer("app_user_id").notNull().references(() => AppUser.id),
-  email: varchar("email", { length: 255 }).notNull(),
+  id: uuid("id").primaryKey().defaultRandom(),
+  appUserId: uuid("app_user_id")
+    .notNull()
+    .references(() => AppUser.id),
+  street: varchar("street", { length: 255 }).notNull(), // Added missing street field
   city: varchar("city", { length: 100 }).notNull(),
+  state: varchar("state", { length: 100 }).notNull(), // Added missing state field
   status: varchar("status", { length: 50 }).notNull(),
   postalCode: varchar("postalCode", { length: 20 }).notNull(),
   country: varchar("country", { length: 100 }).notNull(),
-  isDefault: boolean("isDefault").default(false)
+  isDefault: boolean("isDefault").default(false),
 });
 
 // AppPayment table schema
+
 export const AppPayment = pgTable("app_payment", {
-  id: serial("id").primaryKey(),
-  order_id: integer("order_id").notNull().references(() => AppOrder.id),
+  id: uuid("id").primaryKey().defaultRandom(),
+  order_id: uuid("order_id")
+    .notNull()
+    .references(() => AppOrder.id),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   payment_date: timestamp("payment_date").defaultNow(),
-  payment_method: varchar("payment_method", { length: 50 }).notNull()
+  payment_method: varchar("payment_method", { length: 50 }).notNull(),
+  status: varchar("status", { length: 50 }).notNull().default("pending"), // Added status field based on your schema
 });
 
 // AppCollection table schema
 export const AppCollection = pgTable("app_collection", {
-  id: serial("id").primaryKey(),
-  order_id: integer("order_id").notNull().references(() => AppOrder.id),
+  id: uuid("id").primaryKey().defaultRandom(),
+  order_id: uuid("order_id")
+    .notNull()
+    .references(() => AppOrder.id),
   quantity: integer("quantity").notNull(),
   unit_price: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
-  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull()
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
 });
 
 // AppFactory table schema
 export const AppFactory = pgTable("app_factory", {
-  id: serial("id").primaryKey(),
-  app_user_id: integer("app_user_id").notNull().references(() => AppUser.id),
+  id: uuid("id").primaryKey().defaultRandom(),
+  appUserId: uuid("app_user_id")
+    .notNull()
+    .references(() => AppUser.id),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
-  snapshot: text("snapshot")
+  snapshot: text("snapshot"),
 });
 
 // AppWishlist table schema
 export const AppWishlist = pgTable("app_wishlist", {
-  id: serial("id").primaryKey(),
-  product_id: integer("product_id").notNull().references(() => AppProduct.id),
-  added_date: timestamp("added_date").defaultNow()
+  id: uuid("id").primaryKey().defaultRandom(),
+  product_id: uuid("product_id")
+    .notNull()
+    .references(() => AppProduct.id),
+  added_date: timestamp("added_date").defaultNow(),
 });
 
 // AppCategory table schema
 export const AppCategory = pgTable("app_category", {
-  id: serial("id").primaryKey(),
-  app_user_id: integer("app_user_id").notNull(),
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id),
+  storeId: uuid("store_id")
+    .notNull()
+    .references(() => stores.id),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
-  imageUrl: varchar("imageUrl", { length: 500 }),
+  imageUrl: text("imageUrl"),
   created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow()
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 // AppProduct table schema
 export const AppProduct = pgTable("app_product", {
-  id: serial("id").primaryKey(),
-  category_id: integer("category_id").notNull().references(() => AppCategory.id),
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id),
+  storeId: uuid("store_id")
+    .notNull()
+    .references(() => stores.id),
+  categoryId: uuid("category_id")
+    .notNull()
+    .references(() => AppCategory.id),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
@@ -175,5 +209,5 @@ export const AppProduct = pgTable("app_product", {
   image_urls: text("image_urls"),
   stock_quantity: integer("stock_quantity").default(0),
   created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow()
+  updated_at: timestamp("updated_at").defaultNow(),
 });

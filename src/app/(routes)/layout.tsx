@@ -1,12 +1,24 @@
 import { AppSidebar } from "@/client/components/sidebar/app-sidebar";
 import { SidebarProvider } from "@/client/components/ui/sidebar";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { ReactNode } from "react";
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+  const user = session?.user
+    ? {
+        name: session.user.name ?? "",
+        email: session.user.email ?? "",
+        avatar: session.user.image ?? "",
+      }
+    : null;
   return (
     <div className="w-svw h-svh">
       <SidebarProvider>
-        <AppSidebar />
+        <AppSidebar user={user} />
         {children}
       </SidebarProvider>
     </div>

@@ -40,16 +40,6 @@ const data = {
       logo: GalleryVerticalEnd,
       plan: "Enterprise",
     },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
   ],
   navMain: [
     {
@@ -60,10 +50,6 @@ const data = {
       items: [
         {
           title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
           url: "#",
         },
         {
@@ -100,14 +86,7 @@ const data = {
           title: "Introduction",
           url: "#",
         },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
+
         {
           title: "Changelog",
           url: "#",
@@ -157,16 +136,13 @@ const data = {
   ],
 };
 
-export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
-  const { data: sessionData } = authClient.useSession();
-  const { darkMode , toggleDarkMode} = useDarkMode()
+export function AppSidebar({
+  user,
+  ...props
+}: { user: any } & ComponentProps<typeof Sidebar>) {
+  const { darkMode, toggleDarkMode } = useDarkMode();
   const { isMobile } = useSidebar();
 
-  const user = {
-    name: sessionData?.user?.name ?? "",
-    email: sessionData?.user?.email ?? "",
-    avatar: sessionData?.user?.image ?? "/unknown-user.svg",
-  };
 
   return (
     <Sidebar collapsible="icon" {...props}>

@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       name: storeName,
       logoUrl,
       lastGeneratedAt: null,
-    })
+    });
 
     await db.insert(generationJobs).values({
       id: jobId,
@@ -41,11 +41,8 @@ export async function POST(request: Request) {
       config: JSON.stringify({ storeName, logoUrl }),
     });
 
-
     // Your domain for the callback
-    const callbackUrl = `${
-      process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-    }/api/app-generation-callback`;
+    const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/app-generation-callback`;
 
     // Make sure to update the GitHub repository URL to your own repository
     const response = await fetch(

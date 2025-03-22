@@ -4,11 +4,10 @@ import { ProductController } from "@/server/controllers/product.controller";
 import { isAuthenticated } from "@/server/middleware/isAuthenticated.middleware";
 
 const app = new Hono()
-  .basePath("/api/mobile-app/products")
+  .basePath("/api/mobile-app/products/category")
   // Check if user is authenticated
   .use("*", isAuthenticated)
-  // Retrieve all products
-  .get("/", ProductController.getAllProducts);
+  // Get products by category ID
+  .get("/:categoryId", ProductController.getProductsByCategory);
 
 export const GET = handle(app);
-
