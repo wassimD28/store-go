@@ -1,0 +1,28 @@
+// LinkIcon.tsx
+function LinkIcon({ className }: { className: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 25"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M13.5 12.9514C13.5 16.1314 10.93 18.7014 7.75 18.7014C4.57 18.7014 2 16.1314 2 12.9514C2 9.77142 4.57 7.20142 7.75 7.20142"
+        className="stroke-current"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M10 12.9514C10 9.64142 12.69 6.95142 16 6.95142C19.31 6.95142 22 9.64142 22 12.9514C22 16.2614 19.31 18.9514 16 18.9514"
+        className="stroke-current"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export default LinkIcon;

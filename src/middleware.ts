@@ -9,9 +9,9 @@ const authRoutes = ["/sign-in", "/sign-up", "/waiting-verification", "/"];
 const protectedRoutes = ["/dashboard", "/verified-email"];
 
 export async function middleware(request: NextRequest) {
-  console.info("Middleware has triggerd.")
+  console.info("Middleware has triggered.");
   const pathName = request.nextUrl.pathname;
-  const isInAuthRountes = authRoutes.includes(pathName);
+  const isInAuthRoutes = authRoutes.includes(pathName);
   const isInProtectedRoutes = protectedRoutes.includes(pathName);
   const { data: session } = await betterFetch("/api/auth/get-session", {
     baseURL: request.nextUrl.origin,
@@ -19,10 +19,10 @@ export async function middleware(request: NextRequest) {
       cookie: request.headers.get("cookie") || "", // Forward the cookies from the request
     },
   });
-  
+
   if (!session) {
     // if no session and user in auth routes , let him pass
-    if (isInAuthRountes){
+    if (isInAuthRoutes) {
       return NextResponse.next();
     }
     // if no session and user in protected routes, redirect him to sign-in
@@ -31,13 +31,13 @@ export async function middleware(request: NextRequest) {
     }
   }
   // if user is logged in and in auth routes, redirect him to dashboard
-  if (isInAuthRountes) {
+  if (isInAuthRoutes) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
   return NextResponse.next();
 }
 
-// thie middleware will be applied to all routes except the ones that are excluded in the config
+// the middleware will be applied to all routes except the ones that are excluded in the config
 // excluding the api routes, static files, and images
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|.*\\.png$).*)"],

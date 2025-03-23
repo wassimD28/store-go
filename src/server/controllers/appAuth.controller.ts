@@ -215,6 +215,9 @@ class AppAuthController {
             });
 
             if (error) {
+                // log the refresh token
+                console.error("Logged refresh token:", refreshToken);
+                console.error("Token refresh error:", error);
                 return c.json({ success: false, error: error.message }, 401);
             }
 

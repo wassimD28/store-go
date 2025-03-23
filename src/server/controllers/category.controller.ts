@@ -6,11 +6,18 @@ import { idSchema } from "../schemas/common.schema";
 export class CategoryController {
   static async getAllCategories(c: Context) {
     try {
+      // Log the incoming request details
+      console.log("=== GET ALL CATEGORIES REQUEST ===");
+      console.log("Headers:", JSON.stringify(c.req.header(), null, 2));
+      console.log("Request URL:", c.req.url);
+      console.log("Query Parameters:", c.req.query());
+      console.log("User context:", c.get("user"));
+      
       const { storeId } = c.get("user");
       const categories = await CategoryRepository.findAll(storeId);
       return c.json({
         status: "success",
-        data: categories
+        data: categories,
       });
     } catch (error) {
       console.error("Error in getAllCategories:", error);
