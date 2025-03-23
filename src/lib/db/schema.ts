@@ -121,8 +121,9 @@ export const AppAddress = pgTable("app_address", {
   appUserId: uuid("app_user_id")
     .notNull()
     .references(() => AppUser.id),
-  email: varchar("email", { length: 255 }).notNull(),
+  street: varchar("street", { length: 255 }).notNull(), // Added missing street field
   city: varchar("city", { length: 100 }).notNull(),
+  state: varchar("state", { length: 100 }).notNull(), // Added missing state field
   status: varchar("status", { length: 50 }).notNull(),
   postalCode: varchar("postalCode", { length: 20 }).notNull(),
   country: varchar("country", { length: 100 }).notNull(),
@@ -130,6 +131,7 @@ export const AppAddress = pgTable("app_address", {
 });
 
 // AppPayment table schema
+
 export const AppPayment = pgTable("app_payment", {
   id: uuid("id").primaryKey().defaultRandom(),
   order_id: uuid("order_id")
@@ -138,6 +140,7 @@ export const AppPayment = pgTable("app_payment", {
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   payment_date: timestamp("payment_date").defaultNow(),
   payment_method: varchar("payment_method", { length: 50 }).notNull(),
+  status: varchar("status", { length: 50 }).notNull().default("pending"), // Added status field based on your schema
 });
 
 // AppCollection table schema

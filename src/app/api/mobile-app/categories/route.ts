@@ -10,4 +10,5 @@ const app = new Hono()
   // Retrieve all categories
   .get("/", CategoryController.getAllCategories);
 
+
 export const GET = handle(app);
