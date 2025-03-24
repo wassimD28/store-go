@@ -1,9 +1,19 @@
 // TagIcon.tsx
-function TagIcon({ className }: { className: string }) {
+function TagIcon({
+  className,
+  width,
+  height,
+}: {
+  className: string;
+  width: number;
+  height: number;
+}) {
   return (
     <svg
       className={className}
       viewBox="0 0 20 20"
+      width={width}
+      height={height}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >

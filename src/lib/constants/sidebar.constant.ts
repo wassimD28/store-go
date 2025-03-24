@@ -1,105 +1,60 @@
 import HomeIcon from "@/client/components/icons/navbar/HomeIcon";
-import { BookOpen, Bot, Frame, GalleryVerticalEnd, PieChart, Settings2 } from "lucide-react";
+import DriverIcon from "@/client/components/icons/navbar/DriverIcon";
+import LinkIcon from "@/client/components/icons/navbar/LinkIcon";
+import SettingIcon from "@/client/components/icons/navbar/SettingIcon";
+import ExternalDriveIcon from "@/client/components/icons/navbar/ExternalDriveIcon";
+import ShoppingCartIcon from "@/client/components/icons/navbar/ShoppingCartIcon";
+import TagIcon from "@/client/components/icons/navbar/TagIcon";
+import { JSX } from "react";
 
-export const data = {
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-  ],
-  navMain: [
-    {
-      title: "Playground",
-      url: "#",
-      icon: HomeIcon,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
-};
+interface SideBarData {
+  name: string;
+  icon: ({
+    className,
+    width,
+    height,
+  }: {
+    className: string;
+    width: number;
+    height: number;
+  }) => JSX.Element;
+  route: string;
+}
+export const sideBarData: SideBarData[] = [
+  {
+    name: "Home",
+    icon: HomeIcon,
+    route: "/dashboard",
+  },
+  {
+    name: "ExternalDrive",
+    icon: ExternalDriveIcon,
+    route: "/links",
+  },
+  {
+    name: "Drivers",
+    icon: DriverIcon,
+    route: "/drivers",
+  },
+  {
+    name: "TagIcon",
+    icon: TagIcon,
+    route: "/tag",
+  }
+  ,
+  {
+    name: "Shopping",
+    icon: ShoppingCartIcon,
+    route: "/settings",
+  },
+  {
+    name: "Link",
+    icon: LinkIcon,
+    route: "/links",
+  },
+  {
+    name: "Setting",
+    icon: SettingIcon,
+    route: "/settings",
+  }
+];

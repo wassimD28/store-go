@@ -7,7 +7,7 @@ import Link from "next/link";
 function Page() {
   const { darkMode, toggleDarkMode } = useDarkMode();
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-background text-foreground relative w-svw h-svh">
+    <div className="flex flex-col items-center justify-center bg-background text-foreground relative w-svw h-svh">
       <Button
         className="absolute border border-foreground/20 right-5 top-5 max-sm:relative max-sm:top-auto max-sm:right-auto max-sm:self-end max-sm:mb-5"
         variant={"ghost"}

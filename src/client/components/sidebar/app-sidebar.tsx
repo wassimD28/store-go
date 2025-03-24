@@ -1,61 +1,87 @@
 "use client";
-
-import {
-  Moon,
-  Sun,
-} from "lucide-react";
-
-import { NavMain } from "@/client/components/sidebar/nav-main";
-import { NavUser } from "@/client/components/sidebar/nav-user";
-import { TeamSwitcher } from "@/client/components/sidebar/team-switcher";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarRail,
-  useSidebar,
-} from "@/client/components/ui/sidebar";
-import { ComponentProps } from "react";
-import { useDarkMode } from "@/client/store/useDarkMode.store";
-import { Button } from "../ui/button";
+import { useState } from "react";
+import { sideBarData } from "@/lib/constants/sidebar.constant";
+import Link from "next/link";
+import { FadeText } from "../ui/fade-text";
+import { cn } from "@/lib/utils";
+import Image from "next/image";
 import { NavUserData } from "@/lib/types/interfaces/common.interface";
-import { data } from "@/lib/constants/sidebar.constant";
-import HomeIcon from "../icons/navbar/HomeIcon";
+import { NavUser } from "./nav-user";
+import { usePathname } from "next/navigation";
 
+const EXPENDED_WIDTH = 180;
+const COLLAPSED_WIDTH = 60;
+const ICON_WIDTH = 24;
+interface props {
+  user: NavUserData;
+}
+function MainSideBar({ user }: props) {
+  const [isExpend, setIsExpend] = useState(false);
+  const pathname = usePathname(); // Next.js hook to get current route
 
-export function AppSidebar({
-  user,
-  ...props
-}: { user: NavUserData  } & ComponentProps<typeof Sidebar>) {
-  const { darkMode, toggleDarkMode } = useDarkMode();
-  const { isMobile } = useSidebar();
+  // Function to determine if a route is active
+  const isActiveRoute = (route: string) => {
+    // Exact match
+    if (pathname === route) return true;
 
+    // Handle nested routes (e.g., /dashboard/profile should highlight /dashboard)
+    if (route !== "/" && pathname.startsWith(route)) return true;
+
+    return false;
+  };
 
   return (
-    <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
-      </SidebarHeader>
-      <SidebarContent>
-        <NavMain items={data.navMain} />
+    <div
+      className="fixed z-50 flex h-full flex-col items-center justify-between overflow-hidden border-r-2 border-sidebar-border bg-sidebar py-6 transition-all duration-200 ease-in-out"
+      style={{
+        width: isExpend ? EXPENDED_WIDTH : COLLAPSED_WIDTH,
+      }}
+      onMouseOver={() => setIsExpend(true)}
+      onMouseLeave={() => setIsExpend(false)}
+    >
+      <div className="flex flex-col gap-2">
+        {/* logo  */}
+       
+          <Image className="mb-4" src={"/icons/logo.svg"} width={40} height={40} alt="logo" />
+        
 
-        <div className="px-2 group-data-[collapsible=icon]:hidden">
-          <Button
-            className=" border border-foreground/20"
-            variant={"ghost"}
-            onClick={() => toggleDarkMode()}
+        {/* sidebar content */}
+        {sideBarData.map((item, index) => (
+          <Link
+            href={item.route}
+            key={index}
+            style={{ width: isExpend ? EXPENDED_WIDTH - 8 : ICON_WIDTH + 16 }}
+            className={cn(
+              `relative flex h-10 flex-row items-center justify-center gap-2 overflow-hidden rounded-2xl transition-all duration-200 ease-in-out hover:bg-foreground/10`,
+              isExpend && ``,
+              !isExpend && `p-0`,isActiveRoute(item.route) && "bg-primary-gradient",
+            )}
           >
-            {darkMode ? <Sun /> : <Moon />}
-          </Button>
-          <HomeIcon className="size-20 text-primary" />
-          
-        </div>
-      </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={user} isMobile={isMobile} />
-      </SidebarFooter>
-      <SidebarRail />
-    </Sidebar>
+            <item.icon
+              className={cn(
+                "absolute translate-x-0 transition-all duration-200 ease-in-out",
+                isExpend && "-translate-x-16",
+                
+              )}
+              width={ICON_WIDTH}
+              height={ICON_WIDTH}
+            />
+            <div className="flex flex-1 items-center justify-start relative">
+              <FadeText
+                className={`absolute -translate-y-3 left-0 pl-12`}
+                direction="left"
+                text={item.name}
+                isVisible={isExpend}
+              />
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* nav user */}
+      <NavUser user={user} isExpend={isExpend} />
+    </div>
   );
 }
+
+export default MainSideBar;

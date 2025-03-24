@@ -27,3 +27,16 @@ export function getInitials(fullName: string |undefined): string {
 
   return firstInitial + lastInitial;
 }
+
+// Utility function to truncate email
+export const truncateEmail = (email: string, maxLength: number = 10) => {
+  if (email.length <= maxLength) return email;
+  const localPart = email.split('@')[0];
+  const domain = email.split('@')[1];
+  
+  if (localPart.length > maxLength - 3) {
+    return `${localPart.slice(0, maxLength - 3)}...@${domain}`;
+  }
+  
+  return `${localPart}...@${domain}`;
+};
