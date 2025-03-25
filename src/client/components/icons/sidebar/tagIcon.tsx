@@ -1,21 +1,13 @@
+import { SVGIcon } from "@/lib/types/interfaces/common.interface";
+
 // TagIcon.tsx
-function TagIcon({
-  className,
-  width,
-  height,
-  color,
-}: {
-  className: string;
-  width: number;
-  height: number;
-  color: string;
-}) {
+function TagIcon({ className, width, height, color }: SVGIcon) {
   return (
     <svg
       className={className}
       viewBox="0 0 20 20"
-      width={width-2}
-      height={height-2}
+      width={width - 2}
+      height={height - 2}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >

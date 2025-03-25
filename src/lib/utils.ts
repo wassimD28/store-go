@@ -40,3 +40,14 @@ export const truncateEmail = (email: string, maxLength: number = 10) => {
   
   return `${localPart}...@${domain}`;
 };
+
+// Function to determine if a route is active
+export const isActiveRoute = (route: string, pathname:string) => {
+    // Exact match
+    if (pathname === route) return true;
+
+    // Handle nested routes (e.g., /dashboard/profile should highlight /dashboard)
+    if (route !== "/" && pathname.startsWith(route)) return true;
+
+    return false;
+  };

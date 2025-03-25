@@ -1,15 +1,7 @@
+import { SVGIcon } from "@/lib/types/interfaces/common.interface";
+
 // ShoppingCartIcon.tsx
-function ShoppingCartIcon({
-  className,
-  width,
-  height,
-  color,
-}: {
-  className: string;
-  width: number;
-  height: number;
-  color: string;
-}) {
+function ShoppingCartIcon({ className, width, height, color }: SVGIcon) {
   return (
     <svg
       className={className}

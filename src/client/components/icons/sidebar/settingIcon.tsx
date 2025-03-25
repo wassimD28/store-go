@@ -1,15 +1,7 @@
+import { SVGIcon } from "@/lib/types/interfaces/common.interface";
+
 // SettingIcon.tsx
-function SettingIcon({
-  className,
-  width,
-  height,
-  color,
-}: {
-  className: string;
-  width: number;
-  height: number;
-  color: string;
-}) {
+function SettingIcon({ className, width, height, color }: SVGIcon) {
   return (
     <svg
       className={className}

@@ -10,7 +10,7 @@ function Layout({ children }: { children: ReactNode }) {
       <header className="col-span-full h-12 border-b-2 border-sidebar-border bg-sidebar"></header>
 
       {/* Sidebar in the first column */}
-      <SubNavBar title="settings" data={templateSideBarData} />
+      <SubNavBar title="templates" data={templateSideBarData} />
 
       {/* Main content in the second column */}
       <main className="h-full w-full overflow-auto">{children}</main>

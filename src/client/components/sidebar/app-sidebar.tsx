@@ -1,9 +1,9 @@
 "use client";
 import { useState } from "react";
-import { sideBarData } from "@/lib/constants/sidebar.constant";
+import { sideBarData } from "@/lib/constants/sidebar";
 import Link from "next/link";
 import { FadeText } from "../ui/fade-text";
-import { cn } from "@/lib/utils";
+import { cn, isActiveRoute } from "@/lib/utils";
 import Image from "next/image";
 import { NavUserData } from "@/lib/types/interfaces/common.interface";
 import { NavUser } from "./nav-user";
@@ -20,17 +20,7 @@ function MainSideBar({ user }: props) {
   const { darkMode } = useDarkMode();
   const [isExpend, setIsExpend] = useState(false);
   const pathname = usePathname(); // Next.js hook to get current route
-
-  // Function to determine if a route is active
-  const isActiveRoute = (route: string) => {
-    // Exact match
-    if (pathname === route) return true;
-
-    // Handle nested routes (e.g., /dashboard/profile should highlight /dashboard)
-    if (route !== "/" && pathname.startsWith(route)) return true;
-
-    return false;
-  };
+  
 
   return (
     <div
@@ -65,7 +55,7 @@ function MainSideBar({ user }: props) {
               `relative flex h-10 flex-row items-center justify-center gap-2 overflow-hidden rounded-2xl transition-all duration-200 ease-in-out hover:bg-foreground/10`,
               isExpend && ``,
               !isExpend && `p-0`,
-              isActiveRoute(item.route) && "bg-primary-gradient text-white",
+              isActiveRoute(item.route,pathname) && "bg-primary-gradient text-white",
             )}
           >
             <item.icon
@@ -76,7 +66,7 @@ function MainSideBar({ user }: props) {
               width={ICON_WIDTH}
               height={ICON_WIDTH}
               color={
-                isActiveRoute(item.route)
+                isActiveRoute(item.route,pathname)
                   ? "white"
                   : darkMode
                     ? "white"

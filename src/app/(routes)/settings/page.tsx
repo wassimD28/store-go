@@ -3,7 +3,7 @@ import { Label } from "@/client/components/ui/label";
 import { Switch } from "@/client/components/ui/switch";
 import { useDarkMode } from "@/client/store/useDarkMode.store";
 
-function SettingsPage() {
+function Page() {
     const {darkMode, toggleDarkMode} = useDarkMode()
     return (
       <div className="flex w-full flex-col p-4">
@@ -15,4 +15,4 @@ function SettingsPage() {
     );
 }
 
-export default SettingsPage;
+export default Page;

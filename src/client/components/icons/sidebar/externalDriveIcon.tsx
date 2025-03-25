@@ -1,25 +1,18 @@
-function DriverIcon({
-  className,
-  width,
-  height,
-  color,
-}: {
-  className: string;
-  width: number;
-  height: number;
-  color: string;
-}) {
+import { SVGIcon } from "@/lib/types/interfaces/common.interface";
+
+// ExternalDriveIcon.tsx
+function ExternalDriveIcon({ className, width, height, color }: SVGIcon) {
   return (
     <svg
       className={className}
+      viewBox="0 0 24 24"
       width={width}
       height={height}
-      viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="M19.3198 10H4.68977C3.20977 10 2.00977 8.79002 2.00977 7.32002V4.69002C2.00977 3.21002 3.21977 2.01001 4.68977 2.01001H19.3198C20.7998 2.01001 21.9998 3.22002 21.9998 4.69002V7.32002C21.9998 8.79002 20.7898 10 19.3198 10Z"
+        d="M16 22H9C6 22 4 20 4 17V7C4 4 6 2 9 2H16C19 2 21 4 21 7V17C21 20 19 22 16 22Z"
         color={color}
         className="stroke-current"
         strokeWidth="1.5"
@@ -27,7 +20,7 @@ function DriverIcon({
         strokeLinejoin="round"
       />
       <path
-        d="M19.3198 22H4.68977C3.20977 22 2.00977 20.79 2.00977 19.32V16.69C2.00977 15.21 3.21977 14.01 4.68977 14.01H19.3198C20.7998 14.01 21.9998 15.22 21.9998 16.69V19.32C21.9998 20.79 20.7898 22 19.3198 22Z"
+        d="M4 15H21"
         color={color}
         className="stroke-current"
         strokeWidth="1.5"
@@ -35,7 +28,7 @@ function DriverIcon({
         strokeLinejoin="round"
       />
       <path
-        d="M6 5V7"
+        d="M7 12H8"
         color={color}
         className="stroke-current"
         strokeWidth="1.5"
@@ -43,7 +36,7 @@ function DriverIcon({
         strokeLinejoin="round"
       />
       <path
-        d="M10 5V7"
+        d="M7 9.5H8"
         color={color}
         className="stroke-current"
         strokeWidth="1.5"
@@ -51,7 +44,7 @@ function DriverIcon({
         strokeLinejoin="round"
       />
       <path
-        d="M6 17V19"
+        d="M7 7H8"
         color={color}
         className="stroke-current"
         strokeWidth="1.5"
@@ -59,23 +52,7 @@ function DriverIcon({
         strokeLinejoin="round"
       />
       <path
-        d="M10 17V19"
-        color={color}
-        className="stroke-current"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M14 6H18"
-        color={color}
-        className="stroke-current"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M14 18H18"
+        d="M16.4945 18.25H16.5035"
         color={color}
         className="stroke-current"
         strokeWidth="1.5"
@@ -86,4 +63,4 @@ function DriverIcon({
   );
 }
 
-export default DriverIcon;
+export default ExternalDriveIcon;
