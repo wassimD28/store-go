@@ -8,14 +8,16 @@ import Image from "next/image";
 import { NavUserData } from "@/lib/types/interfaces/common.interface";
 import { NavUser } from "./nav-user";
 import { usePathname } from "next/navigation";
+import { useDarkMode } from "@/client/store/useDarkMode.store";
 
-const EXPENDED_WIDTH = 180;
+const EXPENDED_WIDTH = 200;
 const COLLAPSED_WIDTH = 60;
 const ICON_WIDTH = 24;
 interface props {
   user: NavUserData;
 }
 function MainSideBar({ user }: props) {
+  const { darkMode } = useDarkMode();
   const [isExpend, setIsExpend] = useState(false);
   const pathname = usePathname(); // Next.js hook to get current route
 
@@ -41,9 +43,17 @@ function MainSideBar({ user }: props) {
     >
       <div className="flex flex-col gap-2">
         {/* logo  */}
-       
-          <Image className="mb-4" src={"/icons/logo.svg"} width={40} height={40} alt="logo" />
-        
+
+        <Image
+          className={cn(
+            "mb-4 transition-all duration-200 ease-in-out",
+            isExpend && "ml-3",
+          )}
+          src={"/icons/logo.svg"}
+          width={40}
+          height={40}
+          alt="logo"
+        />
 
         {/* sidebar content */}
         {sideBarData.map((item, index) => (
@@ -54,21 +64,28 @@ function MainSideBar({ user }: props) {
             className={cn(
               `relative flex h-10 flex-row items-center justify-center gap-2 overflow-hidden rounded-2xl transition-all duration-200 ease-in-out hover:bg-foreground/10`,
               isExpend && ``,
-              !isExpend && `p-0`,isActiveRoute(item.route) && "bg-primary-gradient",
+              !isExpend && `p-0`,
+              isActiveRoute(item.route) && "bg-primary-gradient text-white",
             )}
           >
             <item.icon
               className={cn(
                 "absolute translate-x-0 transition-all duration-200 ease-in-out",
                 isExpend && "-translate-x-16",
-                
               )}
               width={ICON_WIDTH}
               height={ICON_WIDTH}
+              color={
+                isActiveRoute(item.route)
+                  ? "white"
+                  : darkMode
+                    ? "white"
+                    : "black"
+              }
             />
-            <div className="flex flex-1 items-center justify-start relative">
+            <div className="relative flex flex-1 items-center justify-start">
               <FadeText
-                className={`absolute -translate-y-3 left-0 pl-12`}
+                className={`absolute left-0 -translate-y-2.5 pl-14 font-poppins text-sm font-normal`}
                 direction="left"
                 text={item.name}
                 isVisible={isExpend}

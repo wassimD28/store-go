@@ -77,6 +77,10 @@ export default {
         "primary-gradient":
           "linear-gradient(to bottom, hsl(var(--primary-gradient-1)), hsl(var(--primary-gradient-2)))",
       },
+      fontFamily: {
+        poppins: ["var(--font-poppins)", "sans-serif"],
+        geist: ["var(--font-geist-sans)", "sans-serif"],
+      },
     },
   },
   // eslint-disable-next-line @typescript-eslint/no-require-imports

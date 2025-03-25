@@ -33,7 +33,7 @@ export function NavUser({ user, isExpend }: NavUserProps) {
         <div
           className={cn(
             "grid mt-2 grid-cols-[32px_120px] w-[32px] gap-2 items-center overflow-hidden transition-all duration-200 ease-in-out hover:bg-foreground/10 px-2 py-2 rounded-lg",
-            isExpend && "w-[170px]",
+            isExpend && "w-[190px]",
             !isExpend && "px-0"
           )}
         >

@@ -13,39 +13,43 @@ interface SideBarData {
     className,
     width,
     height,
+    color,
+    darkColor,
   }: {
     className: string;
     width: number;
     height: number;
+    color: string;
+    darkColor?: string;
   }) => JSX.Element;
   route: string;
 }
 export const sideBarData: SideBarData[] = [
   {
-    name: "Home",
+    name: "Dashboard",
     icon: HomeIcon,
     route: "/dashboard",
   },
   {
-    name: "ExternalDrive",
+    name: "Products",
     icon: ExternalDriveIcon,
     route: "/links",
   },
   {
-    name: "Drivers",
+    name: "Templates",
     icon: DriverIcon,
     route: "/drivers",
   },
   {
-    name: "TagIcon",
+    name: "Promotions",
     icon: TagIcon,
     route: "/tag",
   }
   ,
   {
-    name: "Shopping",
+    name: "Orders",
     icon: ShoppingCartIcon,
-    route: "/settings",
+    route: "/orders",
   },
   {
     name: "Link",
