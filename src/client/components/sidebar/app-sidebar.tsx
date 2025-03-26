@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { sideBarData } from "@/lib/constants/sidebar";
+import { sideBarData } from "@/lib/constants/mainSidebar";
 import Link from "next/link";
 import { FadeText } from "../ui/fade-text";
 import { cn, isActiveRoute } from "@/lib/utils";
@@ -8,7 +8,8 @@ import Image from "next/image";
 import { NavUserData } from "@/lib/types/interfaces/common.interface";
 import { NavUser } from "./nav-user";
 import { usePathname } from "next/navigation";
-import { useDarkMode } from "@/client/store/useDarkMode.store";
+import { useDarkMode } from "@/client/store/darkMode.store";
+import { useSidebar } from "@/client/store/sidebar.store";
 
 const EXPENDED_WIDTH = 200;
 const COLLAPSED_WIDTH = 60;
@@ -18,18 +19,26 @@ interface props {
 }
 function MainSideBar({ user }: props) {
   const { darkMode } = useDarkMode();
+  const { setSidebarOpen } = useSidebar()
   const [isExpend, setIsExpend] = useState(false);
   const pathname = usePathname(); // Next.js hook to get current route
-  
 
+  const handleOnMouseOver = () => {
+    setIsExpend(true);
+    setSidebarOpen(true)
+  }
+  const handleOnMouseLeave = () => {
+    setIsExpend(false);
+    setSidebarOpen(false)
+  }
   return (
     <div
-      className="fixed z-50 flex h-full flex-col items-center justify-between overflow-hidden border-r-2 border-sidebar-border bg-sidebar py-6 transition-all duration-200 ease-in-out"
+      className="flex fixed z-50 h-full flex-col items-center justify-between overflow-hidden border-r border-sidebar-border bg-sidebar py-6 transition-all duration-200 ease-in-out"
       style={{
         width: isExpend ? EXPENDED_WIDTH : COLLAPSED_WIDTH,
       }}
-      onMouseOver={() => setIsExpend(true)}
-      onMouseLeave={() => setIsExpend(false)}
+      onMouseOver={handleOnMouseOver}
+      onMouseLeave={handleOnMouseLeave}
     >
       <div className="flex flex-col gap-2">
         {/* logo  */}
@@ -55,7 +64,8 @@ function MainSideBar({ user }: props) {
               `relative flex h-10 flex-row items-center justify-center gap-2 overflow-hidden rounded-2xl transition-all duration-200 ease-in-out hover:bg-foreground/10`,
               isExpend && ``,
               !isExpend && `p-0`,
-              isActiveRoute(item.route,pathname) && "bg-primary-gradient text-white",
+              isActiveRoute(item.route, pathname) &&
+                "bg-primary-gradient text-white",
             )}
           >
             <item.icon
@@ -66,7 +76,7 @@ function MainSideBar({ user }: props) {
               width={ICON_WIDTH}
               height={ICON_WIDTH}
               color={
-                isActiveRoute(item.route,pathname)
+                isActiveRoute(item.route, pathname)
                   ? "white"
                   : darkMode
                     ? "white"

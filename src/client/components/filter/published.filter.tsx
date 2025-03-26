@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 
 import {
   Select,
@@ -15,7 +15,7 @@ import { ChevronDown } from "lucide-react";
 export function PublishedFilter() {
   // Create a ref to access the SelectTrigger
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const [open, setOpen] = useState(false);
+  
 
   return (
     <div className="relative w-36">

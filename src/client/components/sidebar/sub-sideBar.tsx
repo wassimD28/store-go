@@ -1,5 +1,6 @@
 "use client";
-import { useDarkMode } from "@/client/store/useDarkMode.store";
+import { useDarkMode } from "@/client/store/darkMode.store";
+import { useSidebar } from "@/client/store/sidebar.store";
 import { SideBarData } from "@/lib/types/interfaces/common.interface";
 import { cn, isActiveRoute } from "@/lib/utils";
 import Link from "next/link";
@@ -10,19 +11,25 @@ interface Props{
   data : SideBarData[]
 }
 function SubNavBar({title, data}: Props) {
+  const { isSidebarOpen } = useSidebar()
   const { darkMode } = useDarkMode();
   const pathName = usePathname();
 
   return (
-    <div className="ml-[60px] flex h-full w-56 flex-col border-r-2 border-sidebar-border bg-sidebar p-4">
+    <div
+      className={cn(
+        "ml-[60px] flex h-full w-56 flex-col border-r border-sidebar-border bg-sidebar p-4 transition-all duration-200 ease-in-out",
+        isSidebarOpen && "ml-[200px]",
+      )}
+    >
       <h2 className="mb-6 font-geist text-xs uppercase">{title}</h2>
-      <div className="flex w-full flex-col gap-2">
+      <div className="flex w-full flex-col gap-2 overflow-hidden">
         {data.map((item, index) => (
           <Link
             className={cn(
               "flex h-10 w-full flex-row items-center gap-2 overflow-hidden rounded-2xl px-3 transition-all duration-200 ease-in-out hover:bg-foreground/10",
               isActiveRoute(item.route, pathName) &&
-                "bg-primary text-white hover:bg-primary dark:font-medium dark:text-sidebar",
+                "bg-primary text-white hover:bg-primary dark:font-semibold dark:text-sidebar",
             )}
             href={item.route}
             key={index}
