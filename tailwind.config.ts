@@ -81,6 +81,14 @@ export default {
         poppins: ["var(--font-poppins)", "sans-serif"],
         geist: ["var(--font-geist-sans)", "sans-serif"],
       },
+      boxShadow: {
+        "custom-xs": "0 0 5px rgba(0, 0, 0, 0.1)",
+        "custom-sm": "0 0 10px rgba(0, 0, 0, 0.15)",
+        "custom-md": "0 0 15px rgba(0, 0, 0, 0.2)",
+        "custom-lg": "0 0 20px rgba(0, 0, 0, 0.25)",
+        "custom-xl": "0 0 30px rgba(0, 0, 0, 0.3)",
+        "custom-2xl": "0 0 40px rgba(0, 0, 0, 0.25)",
+      },
     },
   },
   // eslint-disable-next-line @typescript-eslint/no-require-imports

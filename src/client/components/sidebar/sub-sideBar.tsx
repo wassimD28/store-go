@@ -22,21 +22,23 @@ function SubNavBar({title, data}: Props) {
             className={cn(
               "flex h-10 w-full flex-row items-center gap-2 overflow-hidden rounded-2xl px-3 transition-all duration-200 ease-in-out hover:bg-foreground/10",
               isActiveRoute(item.route, pathName) &&
-                "bg-primary text-white hover:bg-primary",
+                "bg-primary text-white hover:bg-primary dark:font-medium dark:text-sidebar",
             )}
             href={item.route}
             key={index}
           >
             <item.icon
-              className=""
+              className="dark:text-sidebar"
               width={24}
               height={24}
               color={
                 isActiveRoute(item.route, pathName)
-                  ? "white"
+                  ? darkMode
+                    ? "black" // Black when dark mode is on and route is active
+                    : "white" // White when dark mode is off and route is active
                   : darkMode
-                    ? "white"
-                    : "black"
+                    ? "white" // Black in dark mode when route is inactive
+                    : "black" // Black in light mode when route is inactive
               }
             />
             <h4 className="text-sm">{item.name}</h4>

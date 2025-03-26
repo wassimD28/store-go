@@ -10,7 +10,7 @@ import { SideBarData } from "../types/interfaces/common.interface";
 
 export const sideBarData: SideBarData[] = [
   {
-    name: "Dashboard",
+    name: "Home",
     icon: HomeIcon,
     route: "/dashboard",
   },
