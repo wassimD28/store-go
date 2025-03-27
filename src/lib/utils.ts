@@ -1,15 +1,14 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
-
-/** 
-* Retrieve the first character of each name and convert to uppercase.
-*/
-export function getInitials(fullName: string |undefined): string {
+/**
+ * Retrieve the first character of each name and convert to uppercase.
+ */
+export function getInitials(fullName: string | undefined): string {
   if (!fullName) {
     return "U";
   }
@@ -31,23 +30,32 @@ export function getInitials(fullName: string |undefined): string {
 // Utility function to truncate email
 export const truncateEmail = (email: string, maxLength: number = 10) => {
   if (email.length <= maxLength) return email;
-  const localPart = email.split('@')[0];
-  const domain = email.split('@')[1];
-  
+  const localPart = email.split("@")[0];
+  const domain = email.split("@")[1];
+
   if (localPart.length > maxLength - 3) {
     return `${localPart.slice(0, maxLength - 3)}...@${domain}`;
   }
-  
+
   return `${localPart}...@${domain}`;
 };
 
 // Function to determine if a route is active
-export const isActiveRoute = (route: string, pathname:string) => {
-    // Exact match
-    if (pathname === route) return true;
+export const isActiveRoute = (route: string, pathname: string) => {
+  // Exact match
+  if (pathname === route) return true;
 
-    // Handle nested routes (e.g., /dashboard/profile should highlight /dashboard)
-    if (route !== "/" && pathname.startsWith(route)) return true;
+  // Handle nested routes (e.g., /dashboard/profile should highlight /dashboard)
+  if (route !== "/" && pathname.startsWith(route)) return true;
 
-    return false;
-  };
+  return false;
+};
+
+// function for formatting date
+export function formatDate(date: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}

@@ -17,12 +17,12 @@ export const sideBarData: SideBarData[] = [
   {
     name: "Products",
     icon: ExternalDriveIcon,
-    route: "/products/product-list",
+    route: "/products/categories",
   },
   {
     name: "Templates",
     icon: DriverIcon,
-    route: "/templates/pages",
+    route: "/templates",
   },
   {
     name: "Promotions",
