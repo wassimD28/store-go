@@ -1,5 +1,5 @@
 "use client";
-import { SignUpForm } from "@/client/components/auth/signup-form";
+import { SignUpForm } from "@/client/components/forms/auth/signup-form";
 import { Button } from "@/client/components/ui/button";
 import { Card } from "@/client/components/ui/card";
 import { authClient } from "@/lib/auth-client";
@@ -8,7 +8,6 @@ import Link from "next/link";
 import { useEffect } from "react";
 
 export default function SignUpPage() {
-
   const { data: session } = authClient.useSession();
   useEffect(() => {
     console.log("session :", session);
@@ -19,12 +18,12 @@ export default function SignUpPage() {
       callbackURL: "/dashboard",
     });
   return (
-    <div className=" w-full h-svh flex justify-center items-center p-8 relative max-sm:flex-col">
+    <div className="relative flex h-svh w-full items-center justify-center p-8 max-sm:flex-col">
       <Card className="min-w-96 p-5">
-        <div className="space-y-6 ">
+        <div className="space-y-6">
           <div className="text-center">
             <h1 className="text-3xl font-bold">Create Account</h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="mt-2 text-muted-foreground">
               Already have an account?{" "}
               <Link href="/sign-in" className="text-primary">
                 Sign in
@@ -32,7 +31,7 @@ export default function SignUpPage() {
             </p>
           </div>
           <SignUpForm />
-          <div className="flex items-center w-full">
+          <div className="flex w-full items-center">
             <hr className="w-full" />
             <p className="mx-2 text-sm opacity-50">Or</p>
             <hr className="w-full" />

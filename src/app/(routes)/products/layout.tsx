@@ -1,5 +1,5 @@
 "use client";
-import PagesHeader from "@/client/components/headers/templates/pages.header";
+import CategoryHeader from "@/client/components/headers/templates/category.header";
 import SubNavBar from "@/client/components/sidebar/sub-sideBar";
 import { productSideBarData } from "@/lib/constants/sub-sideBar/products";
 import { ReactNode } from "react";
@@ -9,7 +9,7 @@ function Layout({ children }: { children: ReactNode }) {
     <div className="grid h-screen w-screen grid-cols-[auto_1fr] grid-rows-[auto_1fr]">
       {/* Header spanning full width */}
 
-      <PagesHeader />
+      <CategoryHeader />
 
       {/* Sidebar in the first column */}
       <SubNavBar title="products" data={productSideBarData} />

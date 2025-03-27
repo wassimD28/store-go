@@ -65,14 +65,15 @@ function IKimageUploader({ onUploadSuccess }: Props) {
         onClick={(e) => {
           handleUpload(e);
         }}
-        className="w-full border-2 border-dashed border-border h-44 bg-primary-foreground rounded-lg flex justify-center items-center flex-col gap-2 overflow-hidden"
+        className="flex h-44 w-full flex-col items-center justify-center gap-2 overflow-hidden rounded-lg border-2 border-dashed border-border bg-primary-foreground"
       >
         {file ? (
           <IKImage
+            className="h-[90%] rounded-lg shadow-custom-lg dark:shadow-primary/30"
             alt={file.filePath}
             path={file.filePath}
-            width={100}
-            height={100}
+            width={150}
+            height={150}
           />
         ) : (
           <>
@@ -80,8 +81,8 @@ function IKimageUploader({ onUploadSuccess }: Props) {
               size={40}
               className="text-muted-foreground opacity-50"
             />
-            <p className="text-muted-foreground text-sm opacity-50">
-              Upload a file
+            <p className="text-sm text-muted-foreground opacity-50">
+              Drag and drop image here, or click add image
             </p>
           </>
         )}
