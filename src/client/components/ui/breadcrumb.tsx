@@ -3,6 +3,7 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 import { ChevronRightIcon, DotsHorizontalIcon } from "@radix-ui/react-icons";
+import { Slash } from "lucide-react";
 
 const Breadcrumb = React.forwardRef<
   HTMLElement,
@@ -67,7 +68,7 @@ BreadcrumbPage.displayName = "BreadcrumbPage";
 
 const BreadcrumbSeparator = ({ children, className, ...props }: React.ComponentProps<"li">) => (
   <li role="presentation" aria-hidden="true" className={className} {...props}>
-    {children ?? <ChevronRightIcon size={16} strokeWidth={2} />}
+    {children ?? "/"}
   </li>
 );
 BreadcrumbSeparator.displayName = "BreadcrumbSeparator";
@@ -79,7 +80,7 @@ const BreadcrumbEllipsis = ({ className, ...props }: React.ComponentProps<"span"
     className={cn("flex size-5 items-center justify-center", className)}
     {...props}
   >
-    <DotsHorizontalIcon size={16} strokeWidth={2} />
+    <DotsHorizontalIcon strokeWidth={2} />
   </span>
 );
 BreadcrumbEllipsis.displayName = "BreadcrumbElipssis";

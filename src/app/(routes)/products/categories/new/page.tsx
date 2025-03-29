@@ -1,4 +1,4 @@
-import CreateCategoryForm from "@/client/components/forms/product/newCategory.form";
+import CreateCategoryForm from "@/client/components/forms/product/createCategoryForm";
 
 function page() {
     return <div className="

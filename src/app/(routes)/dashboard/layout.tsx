@@ -14,7 +14,7 @@ function Layout({ children }: { children: ReactNode }) {
       <SubNavBar title="home" data={dashboardSideBarData} />
 
       {/* Main content in the second column */}
-      <main className="h-full w-full overflow-auto">{children}</main>
+      <main className="h-full w-full overflow-y-scroll">{children}</main>
     </div>
   );
 }

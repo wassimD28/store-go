@@ -26,7 +26,6 @@ import IKimageUploader from "@/client/components/uploader/IKimageUploader";
 import toast from "react-hot-toast";
 import { Card, CardContent, CardHeader } from "../../ui/card";
 import { createCategorySchema } from "@/server/schemas/category.schema";
-import { CategoryActions } from "@/server/actions/category.actions";
 import { useRouter } from "next/navigation";
 //import { authClient } from "@/lib/auth-client";
 
