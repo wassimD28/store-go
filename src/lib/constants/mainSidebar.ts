@@ -1,3 +1,4 @@
+"use client"
 import HomeIcon from "@/client/components/icons/sidebar/homeIcon";
 import DriverIcon from "@/client/components/icons/sidebar/driverIcon";
 import LinkIcon from "@/client/components/icons/sidebar/linkIcon";
@@ -6,9 +7,10 @@ import ExternalDriveIcon from "@/client/components/icons/sidebar/externalDriveIc
 import ShoppingCartIcon from "@/client/components/icons/sidebar/shoppingCartIcon";
 import TagIcon from "@/client/components/icons/sidebar/tagIcon";
 import { SideBarData } from "../types/interfaces/common.interface";
+import StarIcon from "@/client/components/icons/sidebar/starIcon";
 
 
-export const sideBarData: SideBarData[] = [
+export const storeSideBarData: SideBarData[] = [
   {
     name: "Home",
     icon: HomeIcon,
@@ -45,3 +47,26 @@ export const sideBarData: SideBarData[] = [
     route: "/settings",
   },
 ];
+
+export const dashboardSideBarData: SideBarData[] = [
+  {
+    name: "Projects",
+    icon: ExternalDriveIcon,
+    route: "/dashboard",
+  },
+  {
+    name: "Accounts",
+    icon: DriverIcon,
+    route: "/dashboard/crost-selling",
+  },
+  {
+    name: "Collections",
+    icon: StarIcon,
+    route: "/dashboard/new-collections",
+  },
+  {
+    name: "Settings",
+    icon: SettingIcon,
+    route: "/dashboard/settings",
+  },
+]

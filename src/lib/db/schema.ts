@@ -1,3 +1,4 @@
+import { relations } from "drizzle-orm";
 import { boolean, uuid, jsonb } from "drizzle-orm/pg-core";
 import {
   integer,
@@ -71,6 +72,19 @@ export const generationJobs = pgTable("generation_jobs", {
   config: jsonb("config"),
   downloadUrl: varchar("download_url", { length: 500 }),
 });
+// Define store category table
+export const storeCategory = pgTable("store_category", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("userId")
+    .notNull()
+    .references(() => user.id),
+  name: varchar("name", { length: 50 }),
+  description: text("description"),
+  imageUrl: varchar("imageUrl", { length: 500 }),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 
 // Define a stores table (simplified)
 export const stores = pgTable("stores", {
@@ -78,12 +92,16 @@ export const stores = pgTable("stores", {
   userId: text("userId")
     .notNull()
     .references(() => user.id),
+  categoryId: uuid("category_id")
+    .notNull()
+    .references(() => storeCategory.id),
   name: varchar("name", { length: 100 }).notNull(),
   logoUrl: varchar("logo_url", { length: 500 }),
   appUrl: varchar("app_url", { length: 500 }),
   lastGeneratedAt: timestamp("last_generated_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
 
 // AppUser table schema
 export const AppUser = pgTable("app_user", {
@@ -100,20 +118,7 @@ export const AppUser = pgTable("app_user", {
   updated_at: timestamp("updated_at").defaultNow(),
 });
 
-// AppOrder table schema
-export const AppOrder = pgTable("app_order", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  appUserId: uuid("app_user_id")
-    .notNull()
-    .references(() => AppUser.id),
-  address_id: uuid("address_id")
-    .notNull()
-    .references(() => AppAddress.id),
-  data_amount: decimal("data_amount", { precision: 10, scale: 2 }).notNull(),
-  order_date: timestamp("order_date").defaultNow(),
-  status: varchar("status", { length: 50 }).notNull(),
-  payment_status: varchar("payment_status", { length: 50 }).notNull(),
-});
+
 
 // AppAddress table schema
 export const AppAddress = pgTable("app_address", {
@@ -129,7 +134,20 @@ export const AppAddress = pgTable("app_address", {
   country: varchar("country", { length: 100 }).notNull(),
   isDefault: boolean("isDefault").default(false),
 });
-
+// AppOrder table schema
+export const AppOrder = pgTable("app_order", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  appUserId: uuid("app_user_id")
+    .notNull()
+    .references(() => AppUser.id),
+  address_id: uuid("address_id")
+    .notNull()
+    .references(() => AppAddress.id),
+  data_amount: decimal("data_amount", { precision: 10, scale: 2 }).notNull(),
+  order_date: timestamp("order_date").defaultNow(),
+  status: varchar("status", { length: 50 }).notNull(),
+  payment_status: varchar("payment_status", { length: 50 }).notNull(),
+});
 // AppPayment table schema
 
 export const AppPayment = pgTable("app_payment", {
@@ -229,3 +247,16 @@ export const AppProduct = pgTable("app_product", {
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
+
+// Define relations for the stores table
+export const storesRelations = relations(stores, ({ one }) => ({
+  category: one(storeCategory, {
+    fields: [stores.categoryId],
+    references: [storeCategory.id],
+  }),
+}));
+
+// Define relations for the storeCategory table
+export const storeCategoryRelations = relations(storeCategory, ({ many }) => ({
+  stores: many(stores),
+}));

@@ -1,11 +1,10 @@
 "use client";
 import { useState } from "react";
-import { sideBarData } from "@/lib/constants/mainSidebar";
 import Link from "next/link";
 import { FadeText } from "../ui/fade-text";
 import { cn, isActiveRoute } from "@/lib/utils";
 import Image from "next/image";
-import { NavUserData } from "@/lib/types/interfaces/common.interface";
+import { NavUserData, SideBarData } from "@/lib/types/interfaces/common.interface";
 import { NavUser } from "./nav-user";
 import { usePathname } from "next/navigation";
 import { useDarkMode } from "@/client/store/darkMode.store";
@@ -15,13 +14,14 @@ const EXPENDED_WIDTH = 200;
 const COLLAPSED_WIDTH = 60;
 const ICON_WIDTH = 24;
 interface props {
+  sideBarData: SideBarData[];
   user: NavUserData;
 }
-function MainSideBar({ user }: props) {
+function MainSideBar({ user, sideBarData  }: props) {
   const { darkMode } = useDarkMode();
   const { setSidebarOpen } = useSidebar()
   const [isExpend, setIsExpend] = useState(false);
-  const pathname = usePathname(); // Next.js hook to get current route
+  const pathname = usePathname(); 
 
   const handleOnMouseOver = () => {
     setIsExpend(true);

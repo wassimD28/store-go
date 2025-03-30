@@ -37,7 +37,7 @@ export function NavUser({ user, isExpend }: NavUserProps) {
             !isExpend && "px-0"
           )}
         >
-          <Avatar className="h-8 w-8 rounded-lg">
+          <Avatar className="h-8 w-8 rounded-full">
             <AvatarImage src={user.avatar} alt={user.name} />
             <AvatarFallback className="rounded-lg">
               {getInitials(user.name)}

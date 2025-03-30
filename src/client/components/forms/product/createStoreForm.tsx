@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -21,6 +21,9 @@ import { useRouter } from "next/navigation";
 import IKimageUploader from "@/client/components/uploader/IKimageUploader";
 import { createStore } from "@/app/actions/store.actions";
 import { authClient } from "@/lib/auth-client";
+import { getStoreCategories } from "@/app/actions/storeCategory.actions";
+import {  StoreCategoryPayload } from "@/lib/types/interfaces/schema.interface";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
 
 // Define Zod schema for store creation
 const createStoreSchema = z.object({
@@ -34,6 +37,9 @@ const createStoreSchema = z.object({
     .url({ message: "Please enter a valid URL" })
     .optional()
     .or(z.literal("")),
+  categoryId: z.string({
+    required_error: "Please select a store category",
+  }),
 });
 
 export default function CreateStoreForm() {
@@ -41,6 +47,34 @@ export default function CreateStoreForm() {
   const { data: authData } = authClient.useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  // Add state for categories
+  const [categories, setCategories] = useState<StoreCategoryPayload []>(
+    [],
+  );
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      if (authData?.user?.id) {
+        setIsLoadingCategories(true);
+        try {
+          const result = await getStoreCategories();
+          if (result.success && result.categories) {
+            setCategories(result.categories);
+          } else {
+            toast.error("Failed to load categories");
+          }
+        } catch (error) {
+          console.error("Error fetching categories:", error);
+          toast.error("Failed to load categories");
+        } finally {
+          setIsLoadingCategories(false);
+        }
+      }
+    };
+
+    fetchCategories();
+  }, [authData?.user?.id]);
 
   const form = useForm<z.infer<typeof createStoreSchema>>({
     resolver: zodResolver(createStoreSchema),
@@ -49,6 +83,7 @@ export default function CreateStoreForm() {
       description: "",
       logoUrl: "",
       appUrl: "",
+      categoryId: "",
     },
   });
 
@@ -83,7 +118,14 @@ export default function CreateStoreForm() {
         values.logoUrl = logoUrl;
       }
 
-      const response = await createStore({ userId, ...values });
+      // Make sure categoryId is passed correctly
+      const response = await createStore({
+        userId,
+        name: values.name,
+        logoUrl: values.logoUrl,
+        appUrl: values.appUrl,
+        categoryId: values.categoryId, 
+      });
 
       if (response.success) {
         toast.dismiss(loadingToast);
@@ -154,6 +196,49 @@ export default function CreateStoreForm() {
                       {...field}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="categoryId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Store Category</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={isLoadingCategories}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {categories.length > 0 ? (
+                        categories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="loading" disabled>
+                          {isLoadingCategories
+                            ? "Loading categories..."
+                            : "No categories found"}
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {categories.length === 0 && !isLoadingCategories && (
+                    <FormDescription className="text-yellow-600">
+                      You need to create a category first before creating a
+                      store.
+                    </FormDescription>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
