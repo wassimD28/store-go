@@ -25,13 +25,6 @@ export function CustomBreadcrumb({ items = [] }: CustomBreadcrumbProps) {
   return (
     <Breadcrumb>
       <BreadcrumbList>
-        {/* Always include Home as first item */}
-        <BreadcrumbItem key="home">
-          <BreadcrumbLink href="/">Home</BreadcrumbLink>
-        </BreadcrumbItem>
-
-        <BreadcrumbSeparator key="separator-home" />
-
         {items.map((item, index) => {
           const isLastItem = index === items.length - 1;
 
@@ -41,7 +34,7 @@ export function CustomBreadcrumb({ items = [] }: CustomBreadcrumbProps) {
                 {isLastItem ? (
                   <BreadcrumbPage>{item.name}</BreadcrumbPage>
                 ) : (
-                  <BreadcrumbLink href={item.route}>{item.name}</BreadcrumbLink>
+                  <BreadcrumbLink className="first-letter:uppercase" href={item.route}>{item.name}</BreadcrumbLink>
                 )}
               </BreadcrumbItem>
 

@@ -59,3 +59,18 @@ export function formatDate(date: Date): string {
     year: "numeric",
   }).format(date);
 }
+
+
+/**
+ * Extracts the first name from a full name string.
+ *
+ * @param fullName - The full name string from which to extract the first name.
+ *                   If the string is empty or undefined, an empty string is returned.
+ * @returns The first name extracted from the full name. If the full name is empty or undefined, returns an empty string.
+ */
+export function getFirstName(fullName: string): string {
+  if (!fullName) return "";
+  const trimmedName = fullName.trim();
+  const names = trimmedName.split(" ");
+  return names[0];
+}

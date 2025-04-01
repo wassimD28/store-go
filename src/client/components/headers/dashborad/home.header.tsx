@@ -1,12 +1,24 @@
 "use client";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "../../ui/button";
-import { PagesBreadCrumb } from "../../breadcrumb/pages.breadcrumb";
 import { useSidebar } from "@/client/store/sidebar.store";
-import { cn } from "@/lib/utils";
+import { cn, getFirstName } from "@/lib/utils";
+import { CustomBreadcrumb } from "../../breadcrumb/custom.breadcrumb";
+import { useUserStore } from "@/client/store/user.store";
+
 
 function HomeHeader() {
   const { isSidebarOpen } = useSidebar();
+  const { user } = useUserStore()
+  const mainBreadcrumb = {
+    name: `${getFirstName(user?.name ?? "home")}'s stores`,
+    route: "home",
+  };
+  const homeBreadcrumb = [
+    mainBreadcrumb,
+    { name: "Dashboard", route: "dashboard" },
+    { name: "Home", route: "home" },
+  ];
   return (
     <div className="col-span-full flex w-full justify-between border-b bg-sidebar px-4 py-3 shadow-xl shadow-black/5">
       <div className="flex items-center gap-3">
@@ -19,7 +31,7 @@ function HomeHeader() {
         <Button className="size-9 rounded-full bg-primary/10 hover:bg-primary/20">
           <ChevronLeft className="text-foreground" />
         </Button>
-        <PagesBreadCrumb />
+        <CustomBreadcrumb items={homeBreadcrumb} />
       </div>
       <div className="flex gap-4">
        

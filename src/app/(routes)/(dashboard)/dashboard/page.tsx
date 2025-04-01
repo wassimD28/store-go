@@ -16,7 +16,7 @@ export default async function DashboardPage() {
   }
 
   // Fetch user's stores using the server action
-  const { success, data:stores, error } = await getUserStores(session.user.id);
+  const { success, data: stores, error } = await getUserStores(session.user.id);
 
   if (!success || !stores) {
     // Handle error state
@@ -27,7 +27,7 @@ export default async function DashboardPage() {
     );
   }
   return (
-    <div className="flex-center flex h-full w-full flex-col p-4">
+    <div className="flex h-full w-full flex-col p-4">
       {/* Display stores */}
       <div className="w-full max-w-4xl">
         <h1 className="mb-4 text-2xl font-bold">Your Stores</h1>
@@ -35,11 +35,7 @@ export default async function DashboardPage() {
         {stores.length === 0 ? (
           <p className="text-gray-500">You don&apos;t have any stores yet.</p>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {stores.map((store) => (
-              <StoreCard key={store.id} store={store}/>
-            ))}
-          </div>
+          stores.map((store) => <StoreCard key={store.id} store={store} />)
         )}
       </div>
     </div>

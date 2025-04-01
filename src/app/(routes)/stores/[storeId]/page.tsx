@@ -1,10 +1,13 @@
-interface props {
+interface StorePageProps {
   params: {
     storeId: string;
   };
 }
-function Page({params}: props) {
-    return <div className="flex-center w-full h-full uppercase text-2lg">store id : {params.storeId}</div>;
-}
 
-export default Page;
+export default function StorePage({ params }: StorePageProps) {
+  return (
+    <div className="flex h-full w-full items-center justify-center text-2xl uppercase">
+      Store ID: {params.storeId}
+    </div>
+  );
+}

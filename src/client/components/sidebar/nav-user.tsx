@@ -20,21 +20,28 @@ import { redirect } from "next/navigation";
 import { cn, getInitials, truncateEmail } from "@/lib/utils";
 import { NavUserData } from "@/lib/types/interfaces/common.interface";
 import { FadeText } from "../ui/fade-text";
+import { useUserStore } from "@/client/store/user.store";
+import { useEffect } from "react";
 
 interface NavUserProps {
   user: NavUserData;
   isExpend: boolean;
 }
 export function NavUser({ user, isExpend }: NavUserProps) {
+  const { setUser } = useUserStore();
+  useEffect(() => {
+    setUser(user);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <div
           className={cn(
-            "grid mt-2 grid-cols-[32px_120px] w-[32px] gap-2 items-center overflow-hidden transition-all duration-200 ease-in-out hover:bg-foreground/10 px-2 py-2 rounded-lg",
+            "mt-2 grid w-[32px] grid-cols-[32px_120px] items-center gap-2 overflow-hidden rounded-lg px-2 py-2 transition-all duration-200 ease-in-out hover:bg-foreground/10",
             isExpend && "w-[190px]",
-            !isExpend && "px-0"
+            !isExpend && "px-0",
           )}
         >
           <Avatar className="h-8 w-8 rounded-full">

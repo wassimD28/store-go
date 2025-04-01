@@ -67,6 +67,6 @@ export const dashboardSideBarData: SideBarData[] = [
   {
     name: "Settings",
     icon: SettingIcon,
-    route: "/dashboard/settings",
+    route: "/settings",
   },
 ]

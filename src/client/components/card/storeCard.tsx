@@ -16,13 +16,14 @@ function StoreCard({ store }: props) {
   return (
     <Link
       href={`/stores/${store.id}`}
-      className="flex flex-col rounded-lg bg-background p-4 shadow-xl dark:bg-foreground/5"
+      className="flex flex-col rounded-lg bg-background p-4 shadow-custom-xl dark:bg-foreground/5 w-80"
     >
       <h1 className="text-2xl first-letter:uppercase">{store.name}</h1>
-      <span className="rounded-md border border-border px-2 py-1 text-xs">
+      <span className="rounded-md border border-border px-2 py-1 text-xs w-fit">
         {store.category.name}
       </span>
       <Image
+      className="text-xs"
         src={
           store.logoUrl == "" || store.logoUrl == null
             ? "/unknown.png"
