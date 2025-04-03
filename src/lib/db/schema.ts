@@ -221,8 +221,8 @@ export const AppSubCategory = pgTable("app_subcategory", {
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   imageUrl: text("imageUrl"),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // AppProduct table schema
