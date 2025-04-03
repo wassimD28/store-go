@@ -1,4 +1,3 @@
-"use client"
 import HomeIcon from "@/client/components/icons/sidebar/homeIcon";
 import DriverIcon from "@/client/components/icons/sidebar/driverIcon";
 import LinkIcon from "@/client/components/icons/sidebar/linkIcon";
@@ -9,64 +8,73 @@ import TagIcon from "@/client/components/icons/sidebar/tagIcon";
 import { SideBarData } from "../types/interfaces/common.interface";
 import StarIcon from "@/client/components/icons/sidebar/starIcon";
 
-
-export const storeSideBarData: SideBarData[] = [
+export const getStoreSideBarData = (storeId: string): SideBarData[] => [
   {
     name: "Home",
     icon: HomeIcon,
-    route: "/dashboard",
+    route: `/stores/${storeId}`,
   },
   {
     name: "Products",
     icon: ExternalDriveIcon,
-    route: "/products/categories",
+    route: `/stores/${storeId}/products/list`,
   },
   {
     name: "Templates",
     icon: DriverIcon,
-    route: "/templates",
+    route: `/stores/${storeId}/templates`,
   },
   {
     name: "Promotions",
     icon: TagIcon,
-    route: "/tag",
+    route: `/stores/${storeId}/promotions`,
   },
   {
     name: "Orders",
     icon: ShoppingCartIcon,
-    route: "/orders",
+    route: `/stores/${storeId}/orders`,
   },
   {
-    name: "Link",
+    name: "Generation",
     icon: LinkIcon,
-    route: "/links",
+    route: `/stores/${storeId}/app-generation`,
   },
   {
-    name: "Setting",
+    name: "Analytics",
+    icon: StarIcon,
+    route: `/stores/${storeId}/analytics`,
+  },
+  {
+    name: "Settings",
     icon: SettingIcon,
-    route: "/settings",
+    route: `/stores/${storeId}/settings`,
   },
 ];
 
 export const dashboardSideBarData: SideBarData[] = [
   {
-    name: "Projects",
+    name: "Stores",
     icon: ExternalDriveIcon,
     route: "/dashboard",
   },
   {
-    name: "Accounts",
+    name: "Team",
     icon: DriverIcon,
-    route: "/dashboard/crost-selling",
+    route: "/team/members",
   },
   {
-    name: "Collections",
+    name: "Templates",
     icon: StarIcon,
-    route: "/dashboard/new-collections",
+    route: "/dashboard/templates",
+  },
+  {
+    name: "Billing",
+    icon: SettingIcon,
+    route: "/settings",
   },
   {
     name: "Settings",
     icon: SettingIcon,
     route: "/settings",
   },
-]
+];

@@ -1,22 +1,16 @@
 "use client";
-import { ChevronLeft, Plus } from "lucide-react";
+import { ChevronLeft, Eye, Plus } from "lucide-react";
 import { Button } from "../../ui/button";
+import { PagesBreadCrumb } from "../../breadcrumb/pages.breadcrumb";
+import { PublishedFilter } from "../../filter/published.filter";
 import { useSidebar } from "@/client/store/sidebar.store";
-import { cn, getFirstName } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { CustomBreadcrumb } from "../../breadcrumb/custom.breadcrumb";
-import { useUserStore } from "@/client/store/user.store";
+import { useStoreStore } from "@/client/store/store.store";
 
-function StoreHeader() {
+function ProductHeader() {
+  const {store} = useStoreStore()
   const { isSidebarOpen } = useSidebar();
-  const { user } = useUserStore()
-    const mainBreadcrumb = {
-      name: `${getFirstName(user?.name ?? "user")}'s stores`,
-      route: "/dashboard",
-    };
-  const breadCrumbItems = [
-      mainBreadcrumb
-  ]
   return (
     <div className="col-span-full flex w-full justify-between border-b bg-sidebar px-4 py-3 shadow-xl shadow-black/5">
       <div className="flex items-center gap-3">
@@ -29,18 +23,18 @@ function StoreHeader() {
         <Button className="size-9 rounded-full bg-primary/10 hover:bg-primary/20">
           <ChevronLeft className="text-foreground" />
         </Button>
-        <CustomBreadcrumb items={breadCrumbItems} />
+        <PagesBreadCrumb />
       </div>
       <div className="flex gap-4">
-
-        <Link href={"/products/categories/new"}>
-          <Button size={"lg"}>
-            Create <Plus />
-          </Button>
+        <PublishedFilter />
+        <Link href={`/stores/${store?.id}/products/list/new`}>
+            <Button size={"lg"}>
+              Create <Plus />
+            </Button>
         </Link>
       </div>
     </div>
   );
 }
 
-export default StoreHeader;
+export default ProductHeader;

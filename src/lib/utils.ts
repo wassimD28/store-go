@@ -60,7 +60,6 @@ export function formatDate(date: Date): string {
   }).format(date);
 }
 
-
 /**
  * Extracts the first name from a full name string.
  *
@@ -71,6 +70,6 @@ export function formatDate(date: Date): string {
 export function getFirstName(fullName: string): string {
   if (!fullName) return "";
   const trimmedName = fullName.trim();
-  const names = trimmedName.split(" ");
-  return names[0];
+  const firstName = trimmedName.split(" ")[0];
+  return firstName.charAt(0).toUpperCase() + firstName.slice(1);
 }

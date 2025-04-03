@@ -17,3 +17,7 @@ export interface SideBarData {
   icon: (Icon: SVGIcon) => JSX.Element;
   route: string;
 }
+
+export type ActionResponse<T> =
+  | { success: true; data: T }
+  | { success: false, error: string };

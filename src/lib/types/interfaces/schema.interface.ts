@@ -8,13 +8,24 @@ export type AppCategory = {
   created_at: Date;
   updated_at: Date;
 };
+export type AppSubCategory = {
+  id: string;
+  userId: string;
+  storeId: string;
+  parentCategoryId: string;
+  name: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  created_at: Date;
+  updated_at: Date;
+};
 
 export type StoreCategoryPayload = {
   id: string;
   name: string | null;
   description: string | null;
   imageUrl: string | null;
-}
+};
 
 // Define the StoreCategory data structure
 export interface StoreCategoryData {

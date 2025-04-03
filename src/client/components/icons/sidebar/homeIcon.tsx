@@ -1,7 +1,7 @@
+"use client";
 import { SVGIcon } from "@/lib/types/interfaces/common.interface";
 
 function HomeIcon({ className, width, height, color }: SVGIcon) {
-
   return (
     <svg
       className={className}

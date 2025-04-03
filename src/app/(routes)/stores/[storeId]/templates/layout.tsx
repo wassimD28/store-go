@@ -1,7 +1,7 @@
 "use client";
 import PagesHeader from "@/client/components/headers/templates/pages.header";
 import SubNavBar from "@/client/components/sidebar/sub-sideBar";
-import { templateSideBarData } from "@/lib/constants/sub-sideBar/template";
+import { templateSideBarData } from "@/lib/constants/sub-sideBar/generations";
 import { ReactNode } from "react";
 
 function Layout({ children }: { children: ReactNode }) {

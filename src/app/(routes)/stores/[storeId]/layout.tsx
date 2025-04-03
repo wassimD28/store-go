@@ -1,22 +1,37 @@
-"use client"
-import StoreHeader from "@/client/components/headers/store/store.header";
-import SubNavBar from "@/client/components/sidebar/sub-sideBar";
-import { templateSideBarData } from "@/lib/constants/sub-sideBar/template";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import MainSideBar from "@/client/components/sidebar/app-sidebar";
 import { ReactNode } from "react";
+import { getStoreSideBarData } from "@/lib/constants/mainSidebar";
 
-function Layout({ children }: { children: ReactNode }) {
+export default async function RootLayout({
+  children,
+  params,
+}: {
+  children: ReactNode;
+  params: Promise<{ storeId: string }> | { storeId: string };
+}) {
+  // First, properly await the params object
+  const resolvedParams = await Promise.resolve(params);
+  const storeId = resolvedParams.storeId;
+
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  const user = {
+    name: session?.user.name ?? "",
+    email: session?.user.email ?? "",
+    avatar: session?.user.image ?? "",
+  };
+
+  // Now use the correctly resolved storeId
+  const sideBarData = getStoreSideBarData(storeId);
+
   return (
-    <div className="grid h-screen w-screen grid-cols-[auto_1fr] grid-rows-[auto_1fr]">
-      {/* Header spanning full width */}
-      <StoreHeader/>
-
-      {/* Sidebar in the first column */}
-      <SubNavBar title="settings" data={templateSideBarData} />
-
-      {/* Main content in the second column */}
-      <main className="h-full w-full overflow-auto">{children}</main>
+    <div className="relative h-svh w-svw">
+      <MainSideBar user={user} sideBarData={sideBarData} />
+      {children}
     </div>
   );
 }
-
-export default Layout;

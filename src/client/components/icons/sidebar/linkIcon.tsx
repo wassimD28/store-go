@@ -1,3 +1,4 @@
+"use client";
 import { SVGIcon } from "@/lib/types/interfaces/common.interface";
 
 // LinkIcon.tsx

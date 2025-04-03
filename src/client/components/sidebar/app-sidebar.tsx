@@ -42,7 +42,7 @@ function MainSideBar({ user, sideBarData  }: props) {
     >
       <div className="flex flex-col gap-2">
         {/* logo  */}
-
+        <Link href={'/dashboard'}>
         <Image
           className={cn(
             "mb-4 transition-all duration-200 ease-in-out",
@@ -53,6 +53,7 @@ function MainSideBar({ user, sideBarData  }: props) {
           height={40}
           alt="logo"
         />
+        </Link>
 
         {/* sidebar content */}
         {sideBarData.map((item, index) => (

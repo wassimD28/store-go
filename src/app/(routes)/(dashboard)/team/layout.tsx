@@ -1,6 +1,7 @@
+"use client";
 import FixedHeader from "@/client/components/headers/fixedheader";
 import SubNavBar from "@/client/components/sidebar/sub-sideBar";
-import { dashboard } from "@/lib/constants/subSidebar";
+import { team } from "@/lib/constants/subSidebar";
 import { ReactNode } from "react";
 
 function Layout({ children }: { children: ReactNode }) {
@@ -10,7 +11,7 @@ function Layout({ children }: { children: ReactNode }) {
       <FixedHeader />
 
       {/* Sidebar in the first column */}
-      <SubNavBar title="Stores" data={dashboard} />
+      <SubNavBar title="Team" data={team} />
 
       {/* Main content in the second column */}
       <main className="h-full w-full overflow-auto">{children}</main>

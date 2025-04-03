@@ -11,7 +11,6 @@ export const createCategorySchema = z.object({
     .optional(),
   parentCategory: z.string().optional(),
   imageUrl: z.string().optional(),
-  isMainCategory: z.boolean().default(false),
 });
 
 export const updateCategorySchema = createCategorySchema.pick({

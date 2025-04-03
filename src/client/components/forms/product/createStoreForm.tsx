@@ -131,7 +131,7 @@ export default function CreateStoreForm() {
         toast.dismiss(loadingToast);
         toast.success("Store created successfully!");
         form.reset();
-        router.push("/stores");
+        router.push("/dashboard");
       } else {
         // Handle the specific error returned from the server action
         toast.error(
