@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -26,179 +26,178 @@ import IKimageUploader from "@/client/components/uploader/IKimageUploader";
 import toast from "react-hot-toast";
 import { Card, CardContent, CardHeader } from "../../ui/card";
 import { useRouter } from "next/navigation";
-import { Checkbox } from "@/client/components/ui/checkbox";
+import { authClient } from "@/lib/auth-client";
+import { getAppCategories } from "@/app/actions/category.actions";
+import { createProduct } from "@/app/actions/product.actions";
+import {
+  AppCategory,
+  AppSubCategory,
+} from "@/lib/types/interfaces/schema.interface";
+import { getAppSubCategories } from "@/app/actions/subCategory.actions";
 
-// Define the Zod schema for the form
-// You would typically import this from your server/schemas directory
-const formSchema = z.object({
-  name: z.string().min(3, "Product name must be at least 3 characters"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  price: z.string().refine(
-    (val) => {
-      const num = parseFloat(val);
-      return !isNaN(num) && num > 0;
-    },
-    { message: "Price must be a positive number" },
-  ),
-  categoryId: z.string().uuid("Please select a valid category"),
-  subcategoryId: z
-    .string()
-    .uuid("Please select a valid subcategory")
-    .optional(),
-  stock_quantity: z.string().refine(
-    (val) => {
-      const num = parseInt(val);
-      return !isNaN(num) && num >= 0;
-    },
-    { message: "Stock quantity must be a non-negative number" },
-  ),
-  imageUrls: z
-    .array(z.string())
-    .min(1, "At least one product image is required"),
-  attributes: z.record(z.string()).optional(),
-  featured: z.boolean().default(false),
+// Define the product form schema
+const productFormSchema = z.object({
+  name: z.string().min(1, { message: "Product name is required" }),
+  description: z.string().optional(),
+  price: z.coerce
+    .number()
+    .positive({ message: "Price must be a positive number" }),
+  categoryId: z.string().min(1, { message: "Category is required" }),
+  subcategoryId: z.string().optional(),
+  stock_quantity: z.coerce
+    .number()
+    .int()
+    .nonnegative({ message: "Stock quantity must be a non-negative integer" }),
+  image_urls: z.string().optional(),
+  attributes: z.record(z.string(), z.string()).optional(),
 });
 
-export default function CreateProductForm() {
+// Define the component props interface
+interface CreateProductFormProps {
+  storeId: string;
+}
+
+export default function CreateProductForm({ storeId }: CreateProductFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [subCategories, setSubCategories] = useState<
-    { id: string; name: string }[]
-  >([]);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [categories, setCategories] = useState<AppCategory[]>([]);
+  const [subcategories, setSubcategories] = useState<AppSubCategory[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const { data: authData } = authClient.useSession();
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
+    null,
+  );
   const [attributes, setAttributes] = useState<
     { key: string; value: string }[]
   >([{ key: "", value: "" }]);
 
-  // For demo purposes - replace with actual data fetching
-  const categories = [
-    { id: "123e4567-e89b-12d3-a456-426614174000", name: "Electronics" },
-    { id: "223e4567-e89b-12d3-a456-426614174000", name: "Clothing" },
-  ];
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  // Initialize form with default values
+  const form = useForm<z.infer<typeof productFormSchema>>({
+    resolver: zodResolver(productFormSchema),
     defaultValues: {
       name: "",
       description: "",
-      price: "",
+      price: 0,
       categoryId: "",
       subcategoryId: "",
-      stock_quantity: "0",
-      imageUrls: [],
+      stock_quantity: 0,
+      image_urls: "",
       attributes: {},
-      featured: false,
     },
   });
 
-  // Handler for category selection - would fetch subcategories
-  const handleCategoryChange = (categoryId: string) => {
-    setSelectedCategory(categoryId);
-    // In a real application, you would fetch subcategories based on the selected category
-    // Example:
-    // const fetchSubCategories = async () => {
-    //   const res = await fetch(`/api/categories/${categoryId}/subcategories`);
-    //   const data = await res.json();
-    //   setSubCategories(data);
-    // };
-    // fetchSubCategories();
+  // Fetch categories when component mounts
+  useEffect(() => {
+    const fetchCategories = async () => {
+      if (storeId) {
+        setIsLoadingCategories(true);
+        try {
+          const result = await getAppCategories(storeId);
+          if (result.success && result.categories) {
+            setCategories(result.categories);
+          } else {
+            toast.error("Failed to load categories");
+          }
+        } catch (error) {
+          console.error("Error fetching categories:", error);
+          toast.error("Failed to load categories");
+        } finally {
+          setIsLoadingCategories(false);
+        }
+      }
+    };
 
-    // For demo purposes
-    setSubCategories([
-      { id: "323e4567-e89b-12d3-a456-426614174000", name: "Smartphones" },
-      { id: "423e4567-e89b-12d3-a456-426614174000", name: "Laptops" },
-    ]);
-  };
+    fetchCategories();
+  }, [storeId]);
+
+  useEffect(() => {
+    const fetchSubcategories = async () => {
+      if (selectedCategoryId) {
+        try {
+          const result = await getAppSubCategories(storeId);
+          if (result.success && result.subcategories) {
+            // Filter subcategories to only show those with the selected parent
+            const filteredSubcategories = result.subcategories.filter(
+              (sub) => sub.parentCategoryId === selectedCategoryId,
+            );
+            setSubcategories(filteredSubcategories);
+          }
+        } catch (error) {
+          console.error("Error fetching subcategories:", error);
+        }
+      } else {
+        setSubcategories([]);
+      }
+    };
+
+    fetchSubcategories();
+  }, [selectedCategoryId, storeId]);
 
   // Handler for successful image upload
   const handleImageUploadSuccess = (url: string) => {
-    const newUrls = [...imageUrls, url];
-    setImageUrls(newUrls);
-    form.setValue("imageUrls", newUrls);
+    form.setValue("image_urls", url);
+    setImageUrl(url);
     toast.success("Image uploaded successfully!");
   };
 
-  // Handle attribute changes
-  const handleAttributeChange = (
-    index: number,
-    field: "key" | "value",
-    value: string,
-  ) => {
-    const newAttributes = [...attributes];
-    newAttributes[index][field] = value;
-    setAttributes(newAttributes);
-
-    // Update the form value
-    const attributeObject = attributes.reduce(
-      (obj, attr) => {
-        if (attr.key && attr.value) {
-          obj[attr.key] = attr.value;
-        }
-        return obj;
-      },
-      {} as Record<string, string>,
-    );
-
-    form.setValue("attributes", attributeObject);
-  };
-
-  // Add new attribute field
-  const addAttributeField = () => {
-    setAttributes([...attributes, { key: "", value: "" }]);
-  };
-
-  // Remove attribute field
-  const removeAttributeField = (index: number) => {
-    const newAttributes = attributes.filter((_, i) => i !== index);
-    setAttributes(newAttributes);
-
-    // Update the form value after removing
-    const attributeObject = newAttributes.reduce(
-      (obj, attr) => {
-        if (attr.key && attr.value) {
-          obj[attr.key] = attr.value;
-        }
-        return obj;
-      },
-      {} as Record<string, string>,
-    );
-
-    form.setValue("attributes", attributeObject);
-  };
-
   // Handle form submission
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof productFormSchema>) => {
     if (isSubmitting) return;
 
     try {
       setIsSubmitting(true);
       const loadingToast = toast.loading("Creating product...");
 
-      // Format the data for submission
-      const productData = {
-        ...values,
-        price: parseFloat(values.price),
-        stock_quantity: parseInt(values.stock_quantity),
-      };
+      // Verify user and store are available
+      const userId = authData?.user?.id;
+      if (!userId) {
+        toast.dismiss(loadingToast);
+        toast.error("No user ID available. Please log in again.");
+        return;
+      }
 
-      // In a real application, you would submit the data to your API
-      // Example:
-      // const response = await fetch('/api/products', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(productData),
-      // });
-      // if (!response.ok) throw new Error('Failed to create product');
+      if (!storeId) {
+        toast.dismiss(loadingToast);
+        toast.error("No store selected. Please select a store first.");
+        return;
+      }
+      // collect all product attributes
+      const attributesObject: Record<string, string> = {};
+      attributes.forEach((attr) => {
+        if (attr.key.trim() && attr.value.trim()) {
+          attributesObject[attr.key.trim()] = attr.value.trim();
+        }
+      });
 
-      console.log("Product data to submit:", productData);
+      // Create product
+      const response = await createProduct({
+        userId,
+        storeId,
+        name: values.name,
+        description: values.description || null,
+        price: values.price,
+        categoryId: values.categoryId,
+        subcategoryId: values.subcategoryId || null,
+        stock_quantity: values.stock_quantity,
+        image_urls: values.image_urls || null,
+        attributes: attributesObject,
+      });
 
       toast.dismiss(loadingToast);
-      toast.success("Product created successfully!");
-      form.reset();
 
-      // Redirect to product list
-      router.push("/products/list");
+      if (response.success) {
+        toast.success("Product created successfully!");
+        form.reset();
+
+        // Redirect to products list
+        if (storeId) {
+          router.push(`/stores/${storeId}/products/list`);
+          router.refresh();
+        }
+      } else {
+        toast.error(response.error || "Failed to create product.");
+      }
     } catch (error) {
       console.error("Product creation error", error);
       toast.error(
@@ -211,6 +210,9 @@ export default function CreateProductForm() {
     }
   };
 
+  // Determine if form can be submitted
+  const canSubmit = !!storeId && !!authData?.user?.id;
+
   return (
     <Form {...form}>
       <form
@@ -219,18 +221,18 @@ export default function CreateProductForm() {
       >
         <Card className="shadow-custom-2xl">
           <CardHeader className="text-xl font-semibold">
-            Basic Information
+            Product Information
           </CardHeader>
-          <CardContent className="flex flex-col gap-5">
+          <CardContent className="flex flex-col gap-3">
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Product Name</FormLabel>
+                  <FormLabel>Product name</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Enter product name"
+                      placeholder="Type product name here"
                       type="text"
                       {...field}
                     />
@@ -248,8 +250,29 @@ export default function CreateProductForm() {
                   <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Enter product description"
-                      className="min-h-32 resize-none"
+                      placeholder="Type a description"
+                      className="resize-none"
+                      {...field}
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="price"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Price</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="0.00"
+                      type="number"
+                      step="0.01"
+                      min="0"
                       {...field}
                     />
                   </FormControl>
@@ -258,76 +281,26 @@ export default function CreateProductForm() {
               )}
             />
 
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Price</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="0.00"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="stock_quantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Stock Quantity</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="0"
-                        type="number"
-                        min="0"
-                        step="1"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
             <FormField
               control={form.control}
-              name="featured"
+              name="stock_quantity"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                <FormItem>
+                  <FormLabel>Stock Quantity</FormLabel>
                   <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
+                    <Input
+                      placeholder="0"
+                      type="number"
+                      min="0"
+                      step="1"
+                      {...field}
                     />
                   </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>Featured Product</FormLabel>
-                    <FormDescription>
-                      This product will appear on the homepage
-                    </FormDescription>
-                  </div>
+                  <FormMessage />
                 </FormItem>
               )}
             />
-          </CardContent>
-        </Card>
 
-        <Card className="shadow-custom-2xl">
-          <CardHeader className="text-xl font-semibold">
-            Categorization
-          </CardHeader>
-          <CardContent className="flex flex-col gap-5">
             <FormField
               control={form.control}
               name="categoryId"
@@ -337,9 +310,10 @@ export default function CreateProductForm() {
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value);
-                      handleCategoryChange(value);
+                      setSelectedCategoryId(value);
                     }}
-                    value={field.value}
+                    defaultValue={field.value}
+                    disabled={isLoadingCategories || categories.length === 0}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -347,11 +321,19 @@ export default function CreateProductForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
+                      {categories.length > 0 ? (
+                        categories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="loading" disabled>
+                          {isLoadingCategories
+                            ? "Loading categories..."
+                            : "No categories found"}
                         </SelectItem>
-                      ))}
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -359,158 +341,154 @@ export default function CreateProductForm() {
               )}
             />
 
-            {selectedCategory && (
-              <FormField
-                control={form.control}
-                name="subcategoryId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Subcategory</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a subcategory" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {subCategories.map((subCategory) => (
+            <FormField
+              control={form.control}
+              name="subcategoryId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Subcategory (Optional)</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || ""}
+                    disabled={!selectedCategoryId || subcategories.length === 0}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a subcategory" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {subcategories.length > 0 ? (
+                        subcategories.map((subcategory) => (
                           <SelectItem
-                            key={subCategory.id}
-                            value={subCategory.id}
+                            key={subcategory.id}
+                            value={subcategory.id}
                           >
-                            {subCategory.name}
+                            {subcategory.name}
                           </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+                        ))
+                      ) : (
+                        <SelectItem value="loading" disabled>
+                          {!selectedCategoryId
+                            ? "Select a category first"
+                            : "No subcategories found"}
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Select a subcategory for more specific categorization
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
-
+        
         <Card className="shadow-custom-2xl">
           <CardHeader className="text-xl font-semibold">
             Product Attributes
+            <FormDescription>
+              Add custom attributes such as size, color, material, etc.
+            </FormDescription>
           </CardHeader>
-          <CardContent className="space-y-5">
+          <CardContent className="space-y-4">
             {attributes.map((attr, index) => (
-              <div key={index} className="flex items-end gap-4">
+              <div key={index} className="flex items-end gap-2">
                 <FormItem className="flex-1">
-                  <FormLabel>Attribute Name</FormLabel>
+                  <FormLabel>{index === 0 ? "Attribute Name" : ""}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g., Color, Size, Material"
+                      placeholder="e.g., Color"
                       value={attr.key}
-                      onChange={(e) =>
-                        handleAttributeChange(index, "key", e.target.value)
-                      }
+                      onChange={(e) => {
+                        const newAttrs = [...attributes];
+                        newAttrs[index].key = e.target.value;
+                        setAttributes(newAttrs);
+                      }}
                     />
                   </FormControl>
                 </FormItem>
                 <FormItem className="flex-1">
-                  <FormLabel>Value</FormLabel>
+                  <FormLabel>{index === 0 ? "Value" : ""}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g., Red, Large, Cotton"
+                      placeholder="e.g., Red"
                       value={attr.value}
-                      onChange={(e) =>
-                        handleAttributeChange(index, "value", e.target.value)
-                      }
+                      onChange={(e) => {
+                        const newAttrs = [...attributes];
+                        newAttrs[index].value = e.target.value;
+                        setAttributes(newAttrs);
+                      }}
                     />
                   </FormControl>
                 </FormItem>
                 <Button
                   type="button"
-                  variant="destructive"
+                  variant="outline"
                   size="icon"
-                  onClick={() => removeAttributeField(index)}
-                  className="h-10 w-10"
+                  onClick={() => {
+                    const newAttrs = [...attributes];
+                    newAttrs.splice(index, 1);
+                    setAttributes(newAttrs);
+                  }}
+                  disabled={attributes.length === 1 && index === 0}
                 >
-                  X
+                  <i className="h-4 w-4">✕</i>
                 </Button>
               </div>
             ))}
-            <Button type="button" variant="outline" onClick={addAttributeField}>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setAttributes([...attributes, { key: "", value: "" }]);
+              }}
+            >
               Add Attribute
             </Button>
           </CardContent>
         </Card>
-
         <Card className="shadow-custom-2xl">
-          <CardHeader className="text-xl font-semibold">
-            Product Images
-          </CardHeader>
+          <CardHeader className="text-xl font-semibold">Media</CardHeader>
           <CardContent>
             <FormField
               control={form.control}
-              name="imageUrls"
+              name="image_urls"
               render={() => (
                 <FormItem>
-                  <FormLabel>Upload Images</FormLabel>
+                  <FormLabel>Product Image</FormLabel>
                   <FormControl>
                     <IKimageUploader
                       onUploadSuccess={handleImageUploadSuccess}
                     />
                   </FormControl>
                   <FormDescription>
-                    Upload at least one image for your product
+                    {imageUrl
+                      ? "Image uploaded successfully"
+                      : "Upload an image for the product"}
                   </FormDescription>
                   <FormMessage />
-
-                  {imageUrls.length > 0 && (
-                    <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
-                      {imageUrls.map((url, index) => (
-                        <div
-                          key={index}
-                          className="relative aspect-square overflow-hidden rounded-md border"
-                        >
-                          <img
-                            src={url}
-                            alt={`Product image ${index + 1}`}
-                            className="h-full w-full object-cover"
-                          />
-                          <div className="absolute right-1 top-1">
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="icon"
-                              className="h-6 w-6 rounded-full"
-                              onClick={() => {
-                                const newUrls = imageUrls.filter(
-                                  (_, i) => i !== index,
-                                );
-                                setImageUrls(newUrls);
-                                form.setValue("imageUrls", newUrls);
-                              }}
-                            >
-                              X
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </FormItem>
               )}
             />
           </CardContent>
         </Card>
-
-        <div className="flex justify-end gap-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.push("/products/list")}
-          >
+        <div className="flex justify-between">
+          <Button variant="outline" type="button" onClick={() => router.back()}>
             Cancel
           </Button>
-          <Button type="submit" size="lg" disabled={isSubmitting}>
+          <Button size="lg" type="submit" disabled={isSubmitting || !canSubmit}>
             {isSubmitting ? "Creating..." : "Create Product"}
           </Button>
         </div>
+        {!canSubmit && (
+          <p className="text-center text-red-500">
+            You must be logged in and have a store selected to create a product.
+          </p>
+        )}
       </form>
     </Form>
   );

@@ -243,9 +243,9 @@ export const AppProduct = pgTable("app_product", {
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   attributes: json("attributes").default({}),
   image_urls: text("image_urls"),
-  stock_quantity: integer("stock_quantity").default(0),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
+  stock_quantity: integer("stock_quantity").default(0).notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Define relations for the stores table

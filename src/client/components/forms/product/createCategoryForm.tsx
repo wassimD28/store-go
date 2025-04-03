@@ -34,6 +34,8 @@ import {
   getAppCategories,
 } from "@/app/actions/category.actions";
 import { createSubCategory } from "@/app/actions/subCategory.actions";
+import { AlertDialog, AlertDialogDescription } from "../../ui/alert-dialog";
+
 
 interface CreateCategoryFormProps {
   storeId: string;
@@ -41,12 +43,15 @@ interface CreateCategoryFormProps {
 // Define the Zod schema for the form
 const formSchema = createCategorySchema;
 
-export default function CreateCategoryForm({storeId}: CreateCategoryFormProps) {
+export default function CreateCategoryForm({
+  storeId,
+}: CreateCategoryFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [parentCategories, setParentCategories] = useState<AppCategory[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [isFirstCategory, setIsFirstCategory] = useState(false);
   const { data: authData } = authClient.useSession();
 
   useEffect(() => {
@@ -57,6 +62,10 @@ export default function CreateCategoryForm({storeId}: CreateCategoryFormProps) {
           const result = await getAppCategories(storeId);
           if (result.success && result.categories) {
             setParentCategories(result.categories);
+            // Check if this is the first category being created based on the length
+            if (result.categories.length === 0) {
+              setIsFirstCategory(true);
+            }
           } else {
             toast.error("Failed to load categories");
           }
@@ -169,12 +178,26 @@ export default function CreateCategoryForm({storeId}: CreateCategoryFormProps) {
   // Determine if form can be submitted
   const canSubmit = !!storeId && !!authData?.user?.id;
 
+  // Determine if parent category field should be shown
+  const shouldShowParentCategory =
+    !isFirstCategory || parentCategories.length > 0;
+
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
         className="mx-auto max-w-4xl space-y-8 py-10"
       >
+        {isFirstCategory && !isLoadingCategories && (
+          <AlertDialog >
+            <AlertDialogDescription>
+              You&apos;re creating your first category! Since no categories
+              exist yet, this will be a top-level category. After creating this
+              category, you can create subcategories if needed.
+            </AlertDialogDescription>
+          </AlertDialog>
+        )}
+
         <Card className="shadow-custom-2xl">
           <CardHeader className="text-xl font-semibold">
             General Information
@@ -216,50 +239,52 @@ export default function CreateCategoryForm({storeId}: CreateCategoryFormProps) {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="parentCategory"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Parent category (optional)</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    disabled={
-                      isLoadingCategories || parentCategories.length === 0
-                    }
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a parent category (optional)" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {parentCategories.length > 0 ? (
-                        parentCategories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
+            {shouldShowParentCategory && (
+              <FormField
+                control={form.control}
+                name="parentCategory"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Parent category (optional)</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      disabled={
+                        isLoadingCategories || parentCategories.length === 0
+                      }
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a parent category (optional)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {parentCategories.length > 0 ? (
+                          parentCategories.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="loading" disabled>
+                            {isLoadingCategories
+                              ? "Loading categories..."
+                              : "No categories found"}
                           </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="loading" disabled>
-                          {isLoadingCategories
-                            ? "Loading categories..."
-                            : "No categories found"}
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  {!field.value && (
-                    <FormDescription>
-                      If no parent is selected, a top-level category will be
-                      created
-                    </FormDescription>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {!field.value && (
+                      <FormDescription>
+                        If no parent is selected, a top-level category will be
+                        created
+                      </FormDescription>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
           </CardContent>
         </Card>
 

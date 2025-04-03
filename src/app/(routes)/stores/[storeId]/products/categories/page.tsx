@@ -3,6 +3,7 @@ import { getAppCategories } from "@/app/actions/category.actions";
 import { getAppSubCategories } from "@/app/actions/subCategory.actions";
 import { CategoryTableClient } from "@/client/components/data-table/tables/category.table";
 import { SubCategoryTableClient } from "@/client/components/data-table/tables/subcategory.table";
+import { Button } from "@/client/components/ui/button";
 import {
   Card,
   CardContent,
@@ -44,16 +45,10 @@ async function Page({ params }: Props) {
         <h2 className="text-2xl font-bold">Product Categories</h2>
         <div className="flex space-x-2">
           <Link href={`/stores/${storeId}/products/categories/new`}>
-            <button className="flex items-center rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90">
+            <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Category
-            </button>
-          </Link>
-          <Link href={`/stores/${storeId}/products/subcategories/new`}>
-            <button className="flex items-center rounded-md bg-secondary px-4 py-2 text-secondary-foreground hover:bg-secondary/90">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Subcategory
-            </button>
+            </Button>
           </Link>
         </div>
       </div>
