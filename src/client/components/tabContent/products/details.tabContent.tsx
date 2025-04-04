@@ -1,8 +1,7 @@
-import Image from "next/image";
 import { Badge } from "@/client/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import ColorVariantSelector from "../../selector/colorVariantSelector";
-import ZoomableImage from "../../image/zoomableImage";
+import ImageGallery from "../../image/imageGallery";
 
 interface DetailsTabContentProps {
   product: {
@@ -11,7 +10,7 @@ interface DetailsTabContentProps {
     description: string | null;
     price: string;
     stock_quantity: number;
-    image_urls: string | null;
+    image_urls: string[];
     created_at: Date;
     updated_at: Date;
     attributes?: Record<string, string>;
@@ -25,30 +24,8 @@ function DetailsTabContent({
   categoryName,
   subcategoryName,
 }: DetailsTabContentProps) {
-  // Parse image URLs from string with safe error handling
-  let imageUrls: string[] = [];
-  if (product.image_urls) {
-    try {
-      imageUrls = JSON.parse(product.image_urls);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      if (
-        typeof product.image_urls === "string" &&
-        (product.image_urls.startsWith("http") ||
-          product.image_urls.startsWith("/"))
-      ) {
-        imageUrls = [product.image_urls];
-      }
-    }
-  }
-
-  // Ensure imageUrls is an array
-  if (!Array.isArray(imageUrls)) {
-    imageUrls = [];
-  }
-
-  const mainImage =
-    imageUrls.length > 0 ? imageUrls[0] : "/api/placeholder/400/400";
+  // Handle image URLs with improved parsing logic
+  const imageUrls: string[] = product.image_urls || [];
 
   // Format price
   const formattedPrice = parseFloat(product.price).toLocaleString("en-US", {
@@ -69,38 +46,23 @@ function DetailsTabContent({
   };
 
   const colorVariants = getColorVariants();
-  // log colors
-  console.log("Colors:", colorVariants);
+
+  // Optional: Handle image selection event
+  const handleImageSelect = (imageUrl: string, index: number) => {
+    console.log(`Selected image ${index + 1}: ${imageUrl}`);
+    // You can add any additional logic here when an image is selected
+  };
 
   return (
     <div className="flex flex-col gap-6 px-3 md:flex-row">
       <div className="relative w-full flex-none md:w-1/2">
-        <div className="relative flex h-64 w-full justify-center overflow-hidden rounded-md border">
-          <ZoomableImage
-            className="object-cover"
-            src={mainImage}
-            alt={product.name}
-            width={256}
-            height={256}
-          />
-        </div>
-        {imageUrls.length > 1 && (
-          <div className="mt-2 flex gap-2 overflow-x-auto">
-            {imageUrls.slice(0, 4).map((url: string, index: number) => (
-              <div
-                key={index}
-                className="relative h-16 w-16 overflow-hidden rounded-md border border-gray-200"
-              >
-                <Image
-                  src={url}
-                  alt={`${product.name} - ${index + 1}`}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Use our new ImageGallery component */}
+        <ImageGallery
+          images={imageUrls}
+          alt={product.name}
+          onImageSelect={handleImageSelect}
+          maxThumbnails={4}
+        />
       </div>
 
       <div className="flex flex-col gap-2">

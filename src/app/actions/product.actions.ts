@@ -26,7 +26,7 @@ export const createProduct = async ({
   categoryId: string;
   subcategoryId: string | null;
   stock_quantity: number;
-  image_urls: string | null;
+  image_urls: string[] | null;
   attributes: Record<string, string>;
 }): Promise<ActionResponse<any>> => {
   try {

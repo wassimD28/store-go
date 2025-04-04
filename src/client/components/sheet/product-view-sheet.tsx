@@ -34,7 +34,7 @@ interface ProductViewProps {
     stock_quantity: number;
     categoryId: string;
     subcategoryId: string | null;
-    image_urls: string | null;
+    image_urls: string[];
     created_at: Date;
     updated_at: Date;
     attributes?: Record<string, string>;

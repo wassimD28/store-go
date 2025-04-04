@@ -1,4 +1,3 @@
-// src\app\(routes)\stores\[storeId]\products\list\page.tsx
 
 import { getAppCategories } from "@/app/actions/category.actions";
 import { getProductsByStore } from "@/app/actions/product.actions";
@@ -41,6 +40,13 @@ async function Page({ params }: Props) {
       subcategoryIdToName[subcategory.id] = subcategory.name;
     });
   }
+
+  const typedProducts = productsResult.products
+    ? productsResult.products.map((product) => ({
+        ...product,
+        image_urls: Array.isArray(product.image_urls) ? product.image_urls : [],
+      }))
+    : [];
 
   return (
     <div className="h-full w-full p-4">
@@ -85,12 +91,11 @@ async function Page({ params }: Props) {
         </Card>
       ) : (
         <ProductTableClient
-          products={productsResult.products || []}
+          products={typedProducts}
           categoryNames={categoryIdToName}
           subcategoryNames={subcategoryIdToName}
         />
       )}
-      
     </div>
   );
 }

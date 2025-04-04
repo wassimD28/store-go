@@ -242,7 +242,7 @@ export const AppProduct = pgTable("app_product", {
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   attributes: json("attributes").default({}),
-  image_urls: text("image_urls"),
+  image_urls: json("image_urls").default([]),
   stock_quantity: integer("stock_quantity").default(0).notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),

@@ -1,5 +1,3 @@
-// src\client\components\forms\product\createProductForm.tsx
-
 "use client";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -24,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/client/components/ui/select";
-import IKimageUploader from "@/client/components/uploader/IKimageUploader";
+import MultiImageUploader from "@/client/components/uploader/MultiImageUploader";
 import toast from "react-hot-toast";
 import { Card, CardContent, CardHeader } from "../../ui/card";
 import { useRouter } from "next/navigation";
@@ -53,9 +51,9 @@ const productFormSchema = z.object({
     .number()
     .int()
     .nonnegative({ message: "Stock quantity must be a non-negative integer" }),
-  image_urls: z.string().optional(),
+  image_urls: z.array(z.string()).default([]), // Changed to array of strings
   attributes: z.record(z.string(), z.string()).optional(),
-  colors: z.array(z.any()).optional(), // Added colors field
+  colors: z.array(z.any()).optional(),
 });
 
 // Define the component props interface
@@ -66,7 +64,7 @@ interface CreateProductFormProps {
 export default function CreateProductForm({ storeId }: CreateProductFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [multipleImageUrls, setMultipleImageUrls] = useState<string[]>([]);
   const [categories, setCategories] = useState<AppCategory[]>([]);
   const [subcategories, setSubcategories] = useState<AppSubCategory[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
@@ -89,7 +87,7 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
       categoryId: "",
       subcategoryId: "",
       stock_quantity: 0,
-      image_urls: "",
+      image_urls: [],
       attributes: {},
       colors: [],
     },
@@ -142,11 +140,10 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
     fetchSubcategories();
   }, [selectedCategoryId, storeId]);
 
-  // Handler for successful image upload
-  const handleImageUploadSuccess = (url: string) => {
-    form.setValue("image_urls", url);
-    setImageUrl(url);
-    toast.success("Image uploaded successfully!");
+  // Handler for multiple images
+  const handleMultipleImagesChange = (urls: string[]) => {
+    setMultipleImageUrls(urls);
+    form.setValue("image_urls", urls);
   };
 
   // Handle color selection change
@@ -177,6 +174,13 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
         return;
       }
 
+      // Ensure we have at least one image
+      if (values.image_urls.length === 0) {
+        toast.dismiss(loadingToast);
+        toast.error("Please upload at least one product image.");
+        return;
+      }
+
       // collect all product attributes
       const attributesObject: Record<string, string> = {};
       attributes.forEach((attr) => {
@@ -190,7 +194,7 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
         attributesObject.colors = JSON.stringify(selectedColors);
       }
 
-      // Create product
+      // Create product - make sure the backend action handles array of image URLs
       const response = await createProduct({
         userId,
         storeId,
@@ -200,7 +204,7 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
         categoryId: values.categoryId,
         subcategoryId: values.subcategoryId || null,
         stock_quantity: values.stock_quantity,
-        image_urls: values.image_urls || null,
+        image_urls: values.image_urls, // Now passing an array of URLs
         attributes: attributesObject,
       });
 
@@ -489,6 +493,7 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
             </Button>
           </CardContent>
         </Card>
+
         <Card className="shadow-custom-2xl">
           <CardHeader className="text-xl font-semibold">Media</CardHeader>
           <CardContent>
@@ -497,16 +502,17 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
               name="image_urls"
               render={() => (
                 <FormItem>
-                  <FormLabel>Product Image</FormLabel>
+                  <FormLabel>Product Images</FormLabel>
                   <FormControl>
-                    <IKimageUploader
-                      onUploadSuccess={handleImageUploadSuccess}
+                    <MultiImageUploader
+                      onImagesChange={handleMultipleImagesChange}
+                      maxImages={5}
+                      initialImages={multipleImageUrls}
                     />
                   </FormControl>
-                  <FormDescription>
-                    {imageUrl
-                      ? "Image uploaded successfully"
-                      : "Upload an image for the product"}
+                  <FormDescription className="mt-2">
+                    Upload up to 5 images. First image will be used as the
+                    featured image.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -514,6 +520,7 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
             />
           </CardContent>
         </Card>
+
         <div className="flex justify-between">
           <Button variant="outline" type="button" onClick={() => router.back()}>
             Cancel
