@@ -1,3 +1,5 @@
+// src\client\components\forms\product\createProductForm.tsx
+
 "use client";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -34,6 +36,9 @@ import {
   AppSubCategory,
 } from "@/lib/types/interfaces/schema.interface";
 import { getAppSubCategories } from "@/app/actions/subCategory.actions";
+import MultiColorSelector, {
+  ColorOption,
+} from "../../selector/multiColorSelector";
 
 // Define the product form schema
 const productFormSchema = z.object({
@@ -50,6 +55,7 @@ const productFormSchema = z.object({
     .nonnegative({ message: "Stock quantity must be a non-negative integer" }),
   image_urls: z.string().optional(),
   attributes: z.record(z.string(), z.string()).optional(),
+  colors: z.array(z.any()).optional(), // Added colors field
 });
 
 // Define the component props interface
@@ -71,6 +77,7 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
   const [attributes, setAttributes] = useState<
     { key: string; value: string }[]
   >([{ key: "", value: "" }]);
+  const [selectedColors, setSelectedColors] = useState<ColorOption[]>([]);
 
   // Initialize form with default values
   const form = useForm<z.infer<typeof productFormSchema>>({
@@ -84,6 +91,7 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
       stock_quantity: 0,
       image_urls: "",
       attributes: {},
+      colors: [],
     },
   });
 
@@ -141,6 +149,12 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
     toast.success("Image uploaded successfully!");
   };
 
+  // Handle color selection change
+  const handleColorsChange = (colors: ColorOption[]) => {
+    setSelectedColors(colors);
+    form.setValue("colors", colors);
+  };
+
   // Handle form submission
   const onSubmit = async (values: z.infer<typeof productFormSchema>) => {
     if (isSubmitting) return;
@@ -162,6 +176,7 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
         toast.error("No store selected. Please select a store first.");
         return;
       }
+
       // collect all product attributes
       const attributesObject: Record<string, string> = {};
       attributes.forEach((attr) => {
@@ -169,6 +184,11 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
           attributesObject[attr.key.trim()] = attr.value.trim();
         }
       });
+
+      // Prepare the colors data - Convert the selected colors array to a JSON string
+      if (selectedColors.length > 0) {
+        attributesObject.colors = JSON.stringify(selectedColors);
+      }
 
       // Create product
       const response = await createProduct({
@@ -383,14 +403,32 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
                 </FormItem>
               )}
             />
+
+            {/* Add Multi-Color Selector */}
+            <FormField
+              control={form.control}
+              name="colors"
+              render={() => (
+                <FormItem>
+                  <MultiColorSelector
+                    value={selectedColors}
+                    onChange={handleColorsChange}
+                  />
+                  <FormDescription>
+                    Select available colors for this product
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
-        
+
         <Card className="shadow-custom-2xl">
           <CardHeader className="text-xl font-semibold">
             Product Attributes
             <FormDescription>
-              Add custom attributes such as size, color, material, etc.
+              Add custom attributes such as size, material, etc.
             </FormDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -400,7 +438,7 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
                   <FormLabel>{index === 0 ? "Attribute Name" : ""}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g., Color"
+                      placeholder="e.g., Size"
                       value={attr.key}
                       onChange={(e) => {
                         const newAttrs = [...attributes];
@@ -414,7 +452,7 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
                   <FormLabel>{index === 0 ? "Value" : ""}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g., Red"
+                      placeholder="e.g., Large"
                       value={attr.value}
                       onChange={(e) => {
                         const newAttrs = [...attributes];

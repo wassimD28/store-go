@@ -225,7 +225,7 @@ export const AppSubCategory = pgTable("app_subcategory", {
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// AppProduct table schema
+// AppProduct table drizzle schema
 export const AppProduct = pgTable("app_product", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id")

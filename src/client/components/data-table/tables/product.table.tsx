@@ -9,6 +9,8 @@ import { Eye, Pencil } from "lucide-react";
 import { SortableHeader } from "@/client/components/data-table/sortableHeader";
 import { useRouter } from "next/navigation";
 import { DeleteProductDialog } from "@/client/components/dialogs/deleteProductDialog";
+import { useState } from "react";
+import { ProductViewSheet } from "../../sheet/product-view-sheet";
 
 // Interface for products to be displayed in the table
 interface Product {
@@ -37,10 +39,17 @@ export function ProductTableClient({
   subcategoryNames,
 }: ProductTableClientProps) {
   const router = useRouter();
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isViewOpen, setIsViewOpen] = useState(false);
 
   const refreshData = () => {
     router.refresh();
   };
+
+   const handleViewProduct = (product: Product) => {
+     setSelectedProduct(product);
+     setIsViewOpen(true);
+   };
 
   // Define columns for the product table
   const columns: ColumnDef<Product>[] = [
@@ -143,11 +152,7 @@ export function ProductTableClient({
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => {
-                router.push(
-                  `/stores/${product.storeId}/products/${product.id}`,
-                );
-              }}
+              onClick={() => handleViewProduct(product)}
               title="View Product"
             >
               <Eye className="h-4 w-4" />
@@ -180,11 +185,27 @@ export function ProductTableClient({
   ];
 
   return (
-    <DataTable
-      data={products}
-      columns={columns}
-      filterColumn="name"
-      filterPlaceholder="Search products..."
-    />
+    <>
+      <DataTable
+        data={products}
+        columns={columns}
+        filterColumn="name"
+        filterPlaceholder="Search products..."
+      />
+
+      {selectedProduct && (
+        <ProductViewSheet
+          product={selectedProduct}
+          categoryName={categoryNames[selectedProduct.categoryId]}
+          subcategoryName={
+            selectedProduct.subcategoryId
+              ? subcategoryNames[selectedProduct.subcategoryId]
+              : null
+          }
+          isOpen={isViewOpen}
+          onOpenChange={setIsViewOpen}
+        />
+      )}
+    </>
   );
 }
