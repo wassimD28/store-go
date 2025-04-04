@@ -63,6 +63,29 @@ function ImageGallery({
     }
   };
 
+  // Function to get thumbnail size classes based on thumbnailSize prop
+  const getThumbnailSizeClasses = () => {
+    // Use fixed Tailwind classes instead of dynamic ones
+    switch (thumbnailSize) {
+      case 8:
+        return "h-8 w-8";
+      case 10:
+        return "h-10 w-10";
+      case 12:
+        return "h-12 w-12";
+      case 14:
+        return "h-14 w-14";
+      case 16:
+        return "h-16 w-16";
+      case 20:
+        return "h-20 w-20";
+      case 24:
+        return "h-24 w-24";
+      default:
+        return "h-16 w-16"; // Default to h-16 w-16
+    }
+  };
+
   return (
     <div className={className}>
       {/* Main image display */}
@@ -94,7 +117,7 @@ function ImageGallery({
             .map((url: string, index: number) => (
               <div
                 key={index}
-                className={`relative h-${thumbnailSize} w-${thumbnailSize} cursor-pointer overflow-hidden rounded-md ${thumbnailClassName} ${selectedImageIndex === index ? selectedThumbnailClassName : "border border-gray-200"}`}
+                className={`relative cursor-pointer overflow-hidden rounded-md ${getThumbnailSizeClasses()} ${thumbnailClassName} ${selectedImageIndex === index ? selectedThumbnailClassName : "border border-gray-200"}`}
                 onClick={() => handleImageSelect(index)}
                 aria-label={`Select image ${index + 1}`}
                 role="button"

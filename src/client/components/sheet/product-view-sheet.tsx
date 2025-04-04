@@ -31,6 +31,7 @@ interface ProductViewProps {
     name: string;
     description: string | null;
     price: string;
+    status: string
     stock_quantity: number;
     categoryId: string;
     subcategoryId: string | null;

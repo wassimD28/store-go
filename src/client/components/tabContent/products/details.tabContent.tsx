@@ -8,6 +8,7 @@ interface DetailsTabContentProps {
     id: string;
     name: string;
     description: string | null;
+    status: string
     price: string;
     stock_quantity: number;
     image_urls: string[];
@@ -67,7 +68,7 @@ function DetailsTabContent({
 
       <div className="flex flex-col gap-2">
         <Badge className="mt-2 w-fit bg-green-500">
-          {product.stock_quantity > 0 ? "Published" : "Draft"}
+          {product.status ?? 'Unknown'}
         </Badge>
         <h1 className="text-2xl">{product.name}</h1>
         <h2 className="text-xl font-semibold">{formattedPrice}</h2>

@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { boolean, uuid, jsonb } from "drizzle-orm/pg-core";
+import { boolean, uuid, jsonb, pgEnum } from "drizzle-orm/pg-core";
 import {
   integer,
   pgTable,
@@ -9,6 +9,14 @@ import {
   decimal,
   json,
 } from "drizzle-orm/pg-core";
+
+// Define an enum for product statuses:
+export const productStatusEnum = pgEnum("product_status", [
+  "draft",
+  "published",
+  "out_of_stock",
+  "archived",
+]);
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -244,6 +252,7 @@ export const AppProduct = pgTable("app_product", {
   attributes: json("attributes").default({}),
   image_urls: json("image_urls").default([]),
   stock_quantity: integer("stock_quantity").default(0).notNull(),
+  status: productStatusEnum("status").default("draft").notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });

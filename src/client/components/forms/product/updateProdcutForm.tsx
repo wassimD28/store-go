@@ -28,7 +28,7 @@ import { Card, CardContent, CardHeader } from "../../ui/card";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { getAppCategories } from "@/app/actions/category.actions";
-import { createProduct } from "@/app/actions/product.actions";
+import { getProductById, updateProduct } from "@/app/actions/product.actions";
 import {
   AppCategory,
   AppSubCategory,
@@ -38,7 +38,7 @@ import MultiColorSelector, {
   ColorOption,
 } from "../../selector/multiColorSelector";
 
-// Define the product form schema
+// Define the product form schema - same as CreateProductForm
 const productFormSchema = z.object({
   name: z.string().min(1, { message: "Product name is required" }),
   description: z.string().optional(),
@@ -51,7 +51,7 @@ const productFormSchema = z.object({
     .number()
     .int()
     .nonnegative({ message: "Stock quantity must be a non-negative integer" }),
-  image_urls: z.array(z.string()).default([]), // Changed to array of strings
+  image_urls: z.array(z.string()).default([]),
   attributes: z.record(z.string(), z.string()).optional(),
   colors: z.array(z.any()).optional(),
   status: z
@@ -60,13 +60,15 @@ const productFormSchema = z.object({
 });
 
 // Define the component props interface
-interface CreateProductFormProps {
+interface UpdateProductFormProps {
   storeId: string;
+  productId: string;
 }
 
-export default function CreateProductForm({ storeId }: CreateProductFormProps) {
+export default function UpdateProductForm({ storeId, productId }: UpdateProductFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [multipleImageUrls, setMultipleImageUrls] = useState<string[]>([]);
   const [categories, setCategories] = useState<AppCategory[]>([]);
   const [subcategories, setSubcategories] = useState<AppSubCategory[]>([]);
@@ -97,6 +99,81 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
     },
   });
 
+  // Fetch product data when component mounts
+  useEffect(() => {
+    const fetchProductData = async () => {
+      if (productId) {
+        setIsLoading(true);
+        try {
+          const result = await getProductById(productId);
+          
+          if (result.success && result.product) {
+            const product = result.product;
+            
+            // Set form values with product data
+            form.reset({
+              name: product.name,
+              description: product.description || "",
+              price: parseFloat(product.price),
+              categoryId: product.categoryId,
+              subcategoryId: product.subcategoryId || "",
+              stock_quantity: product.stock_quantity,
+              image_urls: Array.isArray(product.image_urls) ? product.image_urls : [],
+              status: product.status as "draft" | "published" | "out_of_stock" | "archived",
+            });
+
+            // Set selected category ID for subcategory filtering
+            setSelectedCategoryId(product.categoryId);
+            
+            // Set image URLs
+            setMultipleImageUrls(Array.isArray(product.image_urls) ? product.image_urls : []);
+            
+            // Process attributes
+            if (product.attributes) {
+              let productAttributes = product.attributes as Record<string, string>;
+              const attrArray: { key: string; value: string }[] = [];
+              
+              // Extract colors if they exist
+              if (productAttributes.colors) {
+                try {
+                  const colorsData = JSON.parse(productAttributes.colors);
+                  setSelectedColors(colorsData);
+                  form.setValue("colors", colorsData);
+                  
+                  // Remove colors from attributes to be displayed in form
+                  const { ...restAttributes } = productAttributes;
+                  productAttributes = restAttributes;
+                } catch (e) {
+                  console.error("Error parsing colors data:", e);
+                }
+              }
+              
+              // Convert remaining attributes to array format for form
+              Object.entries(productAttributes).forEach(([key, value]) => {
+                attrArray.push({ key, value });
+              });
+              
+              if (attrArray.length > 0) {
+                setAttributes(attrArray);
+              }
+            }
+          } else {
+            toast.error("Failed to load product data");
+            router.push(`/stores/${storeId}/products/list`);
+          }
+        } catch (error) {
+          console.error("Error fetching product:", error);
+          toast.error("Failed to load product data");
+          router.push(`/stores/${storeId}/products/list`);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchProductData();
+  }, [productId, storeId, form, router]);
+
   // Fetch categories when component mounts
   useEffect(() => {
     const fetchCategories = async () => {
@@ -121,6 +198,7 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
     fetchCategories();
   }, [storeId]);
 
+  // Fetch subcategories when selected category changes
   useEffect(() => {
     const fetchSubcategories = async () => {
       if (selectedCategoryId) {
@@ -156,13 +234,13 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
     form.setValue("colors", colors);
   };
 
-  // Handle form submission
+  // Handle form submission for updating product
   const onSubmit = async (values: z.infer<typeof productFormSchema>) => {
     if (isSubmitting) return;
 
     try {
       setIsSubmitting(true);
-      const loadingToast = toast.loading("Creating product...");
+      const loadingToast = toast.loading("Updating product...");
 
       // Verify user and store are available
       const userId = authData?.user?.id;
@@ -185,7 +263,7 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
         return;
       }
 
-      // collect all product attributes
+      // Collect all product attributes
       const attributesObject: Record<string, string> = {};
       attributes.forEach((attr) => {
         if (attr.key.trim() && attr.value.trim()) {
@@ -198,8 +276,9 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
         attributesObject.colors = JSON.stringify(selectedColors);
       }
 
-      // Create product - make sure the backend action handles array of image URLs
-      const response = await createProduct({
+      // Update product with new data
+      const response = await updateProduct({
+        id: productId,
         userId,
         storeId,
         name: values.name,
@@ -208,31 +287,28 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
         categoryId: values.categoryId,
         subcategoryId: values.subcategoryId || null,
         stock_quantity: values.stock_quantity,
-        image_urls: values.image_urls, // Now passing an array of URLs
+        image_urls: values.image_urls,
         attributes: attributesObject,
-        status: values.status, // Add the status field here
+        status: values.status,
       });
 
       toast.dismiss(loadingToast);
 
       if (response.success) {
-        toast.success("Product created successfully!");
-        form.reset();
-
+        toast.success("Product updated successfully!");
+        
         // Redirect to products list
-        if (storeId) {
-          router.push(`/stores/${storeId}/products/list`);
-          router.refresh();
-        }
+        router.push(`/stores/${storeId}/products/list`);
+        router.refresh();
       } else {
-        toast.error(response.error || "Failed to create product.");
+        toast.error(response.error || "Failed to update product.");
       }
     } catch (error) {
-      console.error("Product creation error", error);
+      console.error("Product update error", error);
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to create product. Please try again.",
+          : "Failed to update product. Please try again.",
       );
     } finally {
       setIsSubmitting(false);
@@ -240,7 +316,16 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
   };
 
   // Determine if form can be submitted
-  const canSubmit = !!storeId && !!authData?.user?.id;
+  const canSubmit = !!storeId && !!authData?.user?.id && !isLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex h-96 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        <span className="ml-2">Loading product data...</span>
+      </div>
+    );
+  }
 
   return (
     <Form {...form}>
@@ -250,7 +335,7 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
       >
         <Card className="shadow-custom-2xl">
           <CardHeader className="text-xl font-semibold">
-            Product Information
+            Edit Product Information
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <FormField
@@ -340,6 +425,7 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -372,7 +458,7 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
                       field.onChange(value);
                       setSelectedCategoryId(value);
                     }}
-                    defaultValue={field.value}
+                    value={field.value}
                     disabled={isLoadingCategories || categories.length === 0}
                   >
                     <FormControl>
@@ -562,12 +648,12 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
             Cancel
           </Button>
           <Button size="lg" type="submit" disabled={isSubmitting || !canSubmit}>
-            {isSubmitting ? "Creating..." : "Create Product"}
+            {isSubmitting ? "Updating..." : "Update Product"}
           </Button>
         </div>
-        {!canSubmit && (
+        {!canSubmit && !isLoading && (
           <p className="text-center text-red-500">
-            You must be logged in and have a store selected to create a product.
+            You must be logged in and have a store selected to update a product.
           </p>
         )}
       </form>

@@ -17,6 +17,7 @@ export const createProduct = async ({
   stock_quantity,
   image_urls,
   attributes,
+  status,
 }: {
   userId: string;
   storeId: string;
@@ -28,6 +29,7 @@ export const createProduct = async ({
   stock_quantity: number;
   image_urls: string[] | null;
   attributes: Record<string, string>;
+  status?: "draft" | "published" | "out_of_stock" | "archived";
 }): Promise<ActionResponse<any>> => {
   try {
     // Insert new product
@@ -45,6 +47,7 @@ export const createProduct = async ({
         image_urls,
         // Convert JavaScript object to JSON for the attributes field
         attributes: attributes as any, // Type assertion to bypass the type checking temporarily
+        status: status || "draft", // Use the provided status or default to "draft"
         created_at: new Date(),
         updated_at: new Date(),
       })
@@ -124,6 +127,69 @@ export const deleteProduct = async (
       success: false,
       error:
         error instanceof Error ? error.message : "Failed to delete product",
+    };
+  }
+};
+
+export const updateProduct = async ({
+  id,
+  name,
+  description,
+  price,
+  categoryId,
+  subcategoryId,
+  stock_quantity,
+  image_urls,
+  attributes,
+  status,
+}: {
+  id: string;
+  userId: string;
+  storeId: string;
+  name: string;
+  description: string | null;
+  price: number;
+  categoryId: string;
+  subcategoryId: string | null;
+  stock_quantity: number;
+  image_urls: string[] | null;
+  attributes: Record<string, string>;
+  status?: "draft" | "published" | "out_of_stock" | "archived";
+}): Promise<ActionResponse<any>> => {
+  try {
+    // Update existing product
+    const [updatedProduct] = await db
+      .update(AppProduct)
+      .set({
+        name,
+        description,
+        price: price.toString(),
+        categoryId,
+        subcategoryId,
+        stock_quantity,
+        image_urls,
+        // Convert JavaScript object to JSON for the attributes field
+        attributes: attributes as any, // Type assertion to bypass the type checking temporarily
+        status: status || "draft", // Use the provided status or default to "draft"
+        updated_at: new Date(),
+      })
+      .where(eq(AppProduct.id, id))
+      .returning();
+
+    if (!updatedProduct) {
+      return {
+        success: false,
+        error: "Product not found or you don't have permission to update it",
+      };
+    }
+
+    return { success: true, data: updatedProduct };
+  } catch (error) {
+    console.error("Error updating product:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to update product",
     };
   }
 };
