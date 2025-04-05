@@ -17,6 +17,14 @@ export const productStatusEnum = pgEnum("product_status", [
   "out_of_stock",
   "archived",
 ]);
+export const AgeRangeEnum = pgEnum("age_range_enum", [
+  "13-18",
+  "19-25",
+  "26-35",
+  "36-45",
+  "46-60",
+  "60+",
+]);
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -111,7 +119,6 @@ export const stores = pgTable("stores", {
 });
 
 
-// AppUser table schema
 export const AppUser = pgTable("app_user", {
   id: uuid("id").primaryKey().defaultRandom(),
   storeId: uuid("store_id")
@@ -120,7 +127,8 @@ export const AppUser = pgTable("app_user", {
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull(),
   password: varchar("password", { length: 255 }),
-  description: text("description"),
+  gender: varchar("gender", { length: 10 }),
+  age_range: AgeRangeEnum("age_range"),
   status: boolean("status").default(true),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
