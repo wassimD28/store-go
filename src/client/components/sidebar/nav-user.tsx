@@ -1,5 +1,13 @@
 "use client";
-import { BadgeCheck, Bell, CreditCard, LogOut, Sparkles } from "lucide-react";
+import {
+  BadgeCheck,
+  Bell,
+  CreditCard,
+  LogOut,
+  Sparkles,
+  Moon,
+  Sun,
+} from "lucide-react";
 
 import {
   Avatar,
@@ -15,12 +23,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/client/components/ui/dropdown-menu";
+import { Switch } from "@/client/components/ui/switch";
 import { authClient } from "@/lib/auth-client";
 import { redirect } from "next/navigation";
 import { cn, getInitials, truncateEmail } from "@/lib/utils";
 import { NavUserData } from "@/lib/types/interfaces/common.interface";
 import { FadeText } from "../ui/fade-text";
 import { useUserStore } from "@/client/store/user.store";
+import { useDarkMode } from "@/client/store/darkMode.store";
 import { useEffect } from "react";
 
 interface NavUserProps {
@@ -29,9 +39,11 @@ interface NavUserProps {
 }
 export function NavUser({ user, isExpend }: NavUserProps) {
   const { setUser } = useUserStore();
+  const { darkMode, toggleDarkMode } = useDarkMode();
+
   useEffect(() => {
     setUser(user);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   return (
@@ -85,24 +97,43 @@ export function NavUser({ user, isExpend }: NavUserProps) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+
+        {/* Dark Mode Toggle */}
+        <div className="flex items-center justify-between px-2 py-1.5">
+          <div className="flex items-center gap-2">
+            {darkMode ? (
+              <Moon className="h-4 w-4" />
+            ) : (
+              <Sun className="h-4 w-4" />
+            )}
+            <span className="text-sm">Dark Mode</span>
+          </div>
+          <Switch
+            checked={darkMode}
+            onCheckedChange={toggleDarkMode}
+            aria-label="Toggle dark mode"
+          />
+        </div>
+
+        <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
-            <Sparkles />
+            <Sparkles className="mr-2 h-4 w-4" />
             Upgrade to Pro
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
-            <BadgeCheck />
+            <BadgeCheck className="mr-2 h-4 w-4" />
             Account
           </DropdownMenuItem>
           <DropdownMenuItem>
-            <CreditCard />
+            <CreditCard className="mr-2 h-4 w-4" />
             Billing
           </DropdownMenuItem>
           <DropdownMenuItem>
-            <Bell />
+            <Bell className="mr-2 h-4 w-4" />
             Notifications
           </DropdownMenuItem>
         </DropdownMenuGroup>
@@ -118,7 +149,7 @@ export function NavUser({ user, isExpend }: NavUserProps) {
             });
           }}
         >
-          <LogOut />
+          <LogOut className="mr-2 h-4 w-4" />
           Log out
         </DropdownMenuItem>
       </DropdownMenuContent>

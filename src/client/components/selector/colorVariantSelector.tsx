@@ -17,11 +17,7 @@ interface ColorVariantProps {
 const ColorVariantSelector = ({
   defaultValue,
   onChange,
-  colors = [
-    { value: "black", label: "Black", colorClass: "bg-black" },
-    { value: "gray", label: "Gray", colorClass: "bg-gray-400" },
-    { value: "red", label: "Red", colorClass: "bg-red-600" },
-  ],
+  colors
 }: ColorVariantProps) => {
   return (
     <div className="space-y-2">
@@ -40,7 +36,7 @@ const ColorVariantSelector = ({
             />
             <Label
               htmlFor={`color-${color.value}`}
-              className="flex cursor-pointer select-none items-center justify-center rounded-lg border border-gray-200 px-4 py-2 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-gray-50"
+              className="flex cursor-pointer select-none items-center justify-center rounded-lg border border-foreground/20 px-4 py-2 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-foreground/10"
             >
               <div
                 className={cn(

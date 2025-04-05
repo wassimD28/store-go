@@ -14,6 +14,7 @@ import {
   AlertDialogTrigger,
 } from "@/client/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
+import TrashIcon from "../icons/trashIcon";
 import { deleteProduct } from "@/app/actions/product.actions";
 import toast from "react-hot-toast";
 
@@ -44,13 +45,11 @@ export function DeleteProductDialog({
           onDeleteSuccess();
         }
       } else {
-        toast.error(response.error || "Failed to delete product",
-         );
+        toast.error(response.error || "Failed to delete product");
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      toast.error("An unexpected error occurred",
-       );
+      toast.error("An unexpected error occurred");
     } finally {
       setIsDeleting(false);
       setIsOpen(false);
@@ -64,20 +63,31 @@ export function DeleteProductDialog({
           <Trash2 className="h-4 w-4 text-red-500" />
         </Button>
       </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This will permanently delete the product &quot;{productName}&quot;.
-            This action cannot be undone.
+      <AlertDialogContent className="max-w-[400px] px-4 pt-10">
+        <div className="flex items-center justify-center pb-4">
+          <div className="rounded-full bg-red-50 p-6">
+            <TrashIcon width={24} height={28} color="#CB0101" />
+          </div>
+        </div>
+        <AlertDialogHeader className="text-center">
+          <AlertDialogTitle className="text-xl text-center font-semibold">
+            Delete Product
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-center text-foreground/50">
+            Do you want to delete &quot;{productName}&quot;? This action can&apos;t be undone
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+        <AlertDialogFooter className="flex justify-between gap-20 pt-4">
+          <AlertDialogCancel
+            disabled={isDeleting}
+            className="flex-1 border border-foreground/50 bg-background text-foreground/70 hover:bg-foreground/5"
+          >
+            Cancel
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             disabled={isDeleting}
-            className="bg-red-500 hover:bg-red-600"
+            className="flex-1 bg-red-600 text-white hover:bg-red-700"
           >
             {isDeleting ? "Deleting..." : "Delete"}
           </AlertDialogAction>

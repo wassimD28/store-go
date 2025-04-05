@@ -6,7 +6,7 @@ export interface NavUserData {
 }
 
 export interface SVGIcon {
-  className: string;
+  className?: string;
   width: number;
   height: number;
   color: string;
