@@ -8,6 +8,9 @@ const app = new Hono()
   // Check if user is authenticated
   .use("*", isAuthenticated)
   // Update user profile
-  .put("/:userId", UserController.updateUser);
+  .put("/:userId", UserController.updateUser)
+  .get("/:userId", UserController.getUserById);
+
 
 export const PUT = handle(app);
+export const GET = handle(app);

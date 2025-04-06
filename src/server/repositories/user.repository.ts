@@ -33,6 +33,19 @@ export class UserRepository {
     try {
       const foundUser = await db.query.AppUser.findFirst({
         where: eq(AppUser.id, id),
+        columns: {
+          id: true,
+          storeId: true,
+          name: true,
+          email: true,
+          gender: true,
+          age_range: true,
+          status: true,
+          created_at: true,
+          updated_at: true,
+          avatar: true,
+          // Note: omit password by not including it here
+        },
       });
       return foundUser;
     } catch (error) {
