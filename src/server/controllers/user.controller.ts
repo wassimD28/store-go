@@ -143,7 +143,7 @@ export class UserController {
       );
     }
   }
-  // Add this method to your UserController class in src\server\controllers\user.controller.ts
+
 
 static async getUserById(c: Context) {
   try {
@@ -212,4 +212,6 @@ static async getUserById(c: Context) {
     );
   }
 }
+
+
 }
