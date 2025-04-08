@@ -119,6 +119,11 @@ export const stores = pgTable("stores", {
 });
 
 
+export const AppUserAuthType = pgEnum("app_user_auth_type", [
+  "email_password",
+  "oauth",
+]);
+
 export const AppUser = pgTable("app_user", {
   id: uuid("id").primaryKey().defaultRandom(),
   storeId: uuid("store_id")
@@ -130,6 +135,9 @@ export const AppUser = pgTable("app_user", {
   avatar: varchar("avatar", { length: 500 }),
   gender: varchar("gender", { length: 10 }),
   age_range: AgeRangeEnum("age_range"),
+  auth_type: AppUserAuthType("auth_type").notNull().default("email_password"),
+  auth_provider: varchar("auth_provider", { length: 50 }), // "google", "facebook", etc.
+  provider_user_id: varchar("provider_user_id", { length: 255 }), // ID from the provider
   status: boolean("status").default(true),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
@@ -278,4 +286,13 @@ export const storesRelations = relations(stores, ({ one }) => ({
 // Define relations for the storeCategory table
 export const storeCategoryRelations = relations(storeCategory, ({ many }) => ({
   stores: many(stores),
+}));
+
+// Define relations for AppProduct
+export const AppProductRelations = relations(AppProduct, ({ one }) => ({
+  category: one(AppCategory, {
+    fields: [AppProduct.categoryId],
+    references: [AppCategory.id],
+  }),
+  // Add other relations as needed
 }));
