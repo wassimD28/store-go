@@ -37,6 +37,7 @@ import { getAppSubCategories } from "@/app/actions/subCategory.actions";
 import MultiColorSelector, {
   ColorOption,
 } from "../../selector/multiColorSelector";
+import SizeSelector from "../../selector/sizeSelector";
 
 // Define the product form schema
 const productFormSchema = z.object({
@@ -51,14 +52,23 @@ const productFormSchema = z.object({
     .number()
     .int()
     .nonnegative({ message: "Stock quantity must be a non-negative integer" }),
-  image_urls: z.array(z.string()).default([]), // Changed to array of strings
+  image_urls: z.array(z.string()).default([]),
   attributes: z.record(z.string(), z.string()).optional(),
-  colors: z.array(z.any()).optional(),
+  colors: z.array(z.any()).default([]),
+  size: z.array(z.string()).default([]),
   status: z
     .enum(["draft", "published", "out_of_stock", "archived"])
     .default("draft"),
+  targetGender: z.enum(["male", "female", "unisex"]).default("unisex"),
 });
 
+// Define size options
+const sizeOptions = {
+  clothing: ["XS", "S", "M", "L", "XL", "XXL", "XXXL"],
+  shoes: ["35","36", "37", "38", "39", "40", "41", "42", "43", "44", "45"],
+  accessories: ["One Size"],
+  custom: [], // Empty array for pure custom sizes
+};
 // Define the component props interface
 interface CreateProductFormProps {
   storeId: string;
@@ -79,6 +89,9 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
     { key: string; value: string }[]
   >([{ key: "", value: "" }]);
   const [selectedColors, setSelectedColors] = useState<ColorOption[]>([]);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [sizeType, setSizeType] =
+    useState<keyof typeof sizeOptions>("clothing");
 
   // Initialize form with default values
   const form = useForm<z.infer<typeof productFormSchema>>({
@@ -93,7 +106,9 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
       image_urls: [],
       attributes: {},
       colors: [],
+      size: [],
       status: "draft",
+      targetGender: "unisex",
     },
   });
 
@@ -143,6 +158,23 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
 
     fetchSubcategories();
   }, [selectedCategoryId, storeId]);
+useEffect(() => {
+  // When size type changes, we preserve custom sizes
+  // but reset the standard size selections
+
+  // First, identify which sizes are custom (not part of any standard size group)
+  const allStandardSizes = Object.values(sizeOptions).flat();
+  const customSizesOnly = selectedSizes.filter(
+    (size) => !allStandardSizes.includes(size),
+  );
+
+  // When changing size type, keep custom sizes but reset standard size selections
+  setSelectedSizes([...customSizesOnly]);
+
+  // Update the form value
+  form.setValue("size", [...customSizesOnly]);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, [sizeType]);
 
   // Handler for multiple images
   const handleMultipleImagesChange = (urls: string[]) => {
@@ -154,6 +186,12 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
   const handleColorsChange = (colors: ColorOption[]) => {
     setSelectedColors(colors);
     form.setValue("colors", colors);
+  };
+
+  // Handle size selection change
+  const handleSizesChange = (sizes: string[]) => {
+    setSelectedSizes(sizes);
+    form.setValue("size", sizes);
   };
 
   // Handle form submission
@@ -193,12 +231,7 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
         }
       });
 
-      // Prepare the colors data - Convert the selected colors array to a JSON string
-      if (selectedColors.length > 0) {
-        attributesObject.colors = JSON.stringify(selectedColors);
-      }
-
-      // Create product - make sure the backend action handles array of image URLs
+      // Create product with the updated schema
       const response = await createProduct({
         userId,
         storeId,
@@ -208,9 +241,12 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
         categoryId: values.categoryId,
         subcategoryId: values.subcategoryId || null,
         stock_quantity: values.stock_quantity,
-        image_urls: values.image_urls, // Now passing an array of URLs
+        image_urls: values.image_urls,
         attributes: attributesObject,
-        status: values.status, // Add the status field here
+        colors: selectedColors, // Now passing colors directly to the backend
+        size: selectedSizes, // Now passing sizes directly to the backend
+        status: values.status,
+        targetGender: values.targetGender,
       });
 
       toast.dismiss(loadingToast);
@@ -330,7 +366,7 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
               )}
             />
 
-            {/* Add Status Selector */}
+            {/* Status Selector */}
             <FormField
               control={form.control}
               name="status"
@@ -355,6 +391,36 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
                   </Select>
                   <FormDescription>
                     Set the current status of your product
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Target Gender Selector - New field */}
+            <FormField
+              control={form.control}
+              name="targetGender"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Target Gender</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select target gender" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="unisex">Unisex</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Select the target gender for this product
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -443,19 +509,87 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
                 </FormItem>
               )}
             />
+          </CardContent>
+        </Card>
 
-            {/* Add Multi-Color Selector */}
+        <Card className="shadow-custom-2xl">
+          <CardHeader className="text-xl font-semibold">
+            Product Variants
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Multi-Color Selector - Now using a dedicated field */}
             <FormField
               control={form.control}
               name="colors"
               render={() => (
                 <FormItem>
-                  <MultiColorSelector
-                    value={selectedColors}
-                    onChange={handleColorsChange}
-                  />
+                  <FormControl>
+                    <MultiColorSelector
+                      value={selectedColors}
+                      onChange={handleColorsChange}
+                    />
+                  </FormControl>
                   <FormDescription>
-                    Select available colors for this product
+                    Select the available colors for this product
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Size type selector */}
+            <div className="space-y-2">
+              <FormLabel>Size Type</FormLabel>
+              <div className="flex space-x-4">
+                <Button
+                  type="button"
+                  variant={sizeType === "clothing" ? "default" : "outline"}
+                  onClick={() => setSizeType("clothing")}
+                >
+                  Clothing
+                </Button>
+                <Button
+                  type="button"
+                  variant={sizeType === "shoes" ? "default" : "outline"}
+                  onClick={() => setSizeType("shoes")}
+                >
+                  Shoes
+                </Button>
+                <Button
+                  type="button"
+                  variant={sizeType === "accessories" ? "default" : "outline"}
+                  onClick={() => setSizeType("accessories")}
+                >
+                  Accessories
+                </Button>
+                <Button
+                  type="button"
+                  variant={sizeType === "custom" ? "default" : "outline"}
+                  onClick={() => setSizeType("custom")}
+                >
+                  Custom
+                </Button>
+              </div>
+            </div>
+
+            {/* Size Selector - Now using enhanced component */}
+            <FormField
+              control={form.control}
+              name="size"
+              render={() => (
+                <FormItem>
+                  <FormLabel>Available Sizes</FormLabel>
+                  <FormControl>
+                    <SizeSelector
+                      sizes={sizeOptions[sizeType] || []}
+                      selectedSizes={selectedSizes}
+                      onChange={handleSizesChange}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {sizeType === "custom"
+                      ? "Add your own custom sizes for this product"
+                      : "Select the available sizes for this product or add custom ones"}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -468,7 +602,7 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
           <CardHeader className="text-xl font-semibold">
             Product Attributes
             <FormDescription className="font-normal">
-              Add custom attributes such as size, material, etc.
+              Add additional attributes such as material, weight, etc.
             </FormDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -478,7 +612,7 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
                   <FormLabel>{index === 0 ? "Attribute Name" : ""}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g., Size"
+                      placeholder="e.g., Material"
                       value={attr.key}
                       onChange={(e) => {
                         const newAttrs = [...attributes];
@@ -492,7 +626,7 @@ export default function CreateProductForm({ storeId }: CreateProductFormProps) {
                   <FormLabel>{index === 0 ? "Value" : ""}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g., Large"
+                      placeholder="e.g., Cotton"
                       value={attr.value}
                       onChange={(e) => {
                         const newAttrs = [...attributes];

@@ -1,7 +1,7 @@
 "use client";
 import PagesHeader from "@/client/components/headers/templates/pages.header";
 import SubNavBar from "@/client/components/sidebar/sub-sideBar";
-import { templateSideBarData } from "@/lib/constants/sub-sideBar/generations";
+import { templates } from "@/lib/constants/subSidebar";
 import { ReactNode } from "react";
 
 function Layout({ children }: { children: ReactNode }) {
@@ -12,7 +12,7 @@ function Layout({ children }: { children: ReactNode }) {
       <PagesHeader />
 
       {/* Sidebar in the first column */}
-      <SubNavBar title="templates" data={templateSideBarData} />
+      <SubNavBar title="templates" data={templates} />
 
       {/* Main content in the second column */}
       <main className="h-full w-full overflow-auto">{children}</main>

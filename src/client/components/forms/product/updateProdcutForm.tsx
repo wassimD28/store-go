@@ -37,8 +37,17 @@ import { getAppSubCategories } from "@/app/actions/subCategory.actions";
 import MultiColorSelector, {
   ColorOption,
 } from "../../selector/multiColorSelector";
+import SizeSelector from "../../selector/sizeSelector";
 
-// Define the product form schema - same as CreateProductForm
+// Define size options - matching the CreateProductForm
+const sizeOptions = {
+  clothing: ["XS", "S", "M", "L", "XL", "XXL", "XXXL"],
+  shoes: ["35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45"],
+  accessories: ["One Size"],
+  custom: [], // Empty array for pure custom sizes
+};
+
+// Updated product form schema to match the new schema structure
 const productFormSchema = z.object({
   name: z.string().min(1, { message: "Product name is required" }),
   description: z.string().optional(),
@@ -53,10 +62,12 @@ const productFormSchema = z.object({
     .nonnegative({ message: "Stock quantity must be a non-negative integer" }),
   image_urls: z.array(z.string()).default([]),
   attributes: z.record(z.string(), z.string()).optional(),
-  colors: z.array(z.any()).optional(),
+  colors: z.array(z.any()).default([]),
+  size: z.array(z.string()).default([]),
   status: z
     .enum(["draft", "published", "out_of_stock", "archived"])
     .default("draft"),
+  targetGender: z.enum(["male", "female", "unisex"]).default("unisex"),
 });
 
 // Define the component props interface
@@ -65,7 +76,10 @@ interface UpdateProductFormProps {
   productId: string;
 }
 
-export default function UpdateProductForm({ storeId, productId }: UpdateProductFormProps) {
+export default function UpdateProductForm({
+  storeId,
+  productId,
+}: UpdateProductFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -81,6 +95,9 @@ export default function UpdateProductForm({ storeId, productId }: UpdateProductF
     { key: string; value: string }[]
   >([{ key: "", value: "" }]);
   const [selectedColors, setSelectedColors] = useState<ColorOption[]>([]);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [sizeType, setSizeType] =
+    useState<keyof typeof sizeOptions>("clothing");
 
   // Initialize form with default values
   const form = useForm<z.infer<typeof productFormSchema>>({
@@ -95,7 +112,9 @@ export default function UpdateProductForm({ storeId, productId }: UpdateProductF
       image_urls: [],
       attributes: {},
       colors: [],
+      size: [],
       status: "draft",
+      targetGender: "unisex",
     },
   });
 
@@ -106,10 +125,23 @@ export default function UpdateProductForm({ storeId, productId }: UpdateProductF
         setIsLoading(true);
         try {
           const result = await getProductById(productId);
-          
+
           if (result.success && result.product) {
             const product = result.product;
-            
+
+            // Determine the most appropriate size type
+            let detectedSizeType: keyof typeof sizeOptions = "clothing";
+            if (Array.isArray(product.size) && product.size.length > 0) {
+              // Check if sizes match any of our predefined categories
+              const sizesAsString = product.size.join(",");
+              if (sizeOptions.shoes.some((s) => sizesAsString.includes(s))) {
+                detectedSizeType = "shoes";
+              } else if (sizesAsString.includes("One Size")) {
+                detectedSizeType = "accessories";
+              }
+              // If no match, it might be custom or clothing (default)
+            }
+
             // Set form values with product data
             form.reset({
               name: product.name,
@@ -118,43 +150,59 @@ export default function UpdateProductForm({ storeId, productId }: UpdateProductF
               categoryId: product.categoryId,
               subcategoryId: product.subcategoryId || "",
               stock_quantity: product.stock_quantity,
-              image_urls: Array.isArray(product.image_urls) ? product.image_urls : [],
-              status: product.status as "draft" | "published" | "out_of_stock" | "archived",
+              image_urls: Array.isArray(product.image_urls)
+                ? product.image_urls
+                : [],
+              status: product.status as
+                | "draft"
+                | "published"
+                | "out_of_stock"
+                | "archived",
+              targetGender:
+                (product.targetGender as "male" | "female" | "unisex") ||
+                "unisex",
+              colors: Array.isArray(product.colors) ? product.colors : [],
+              size: Array.isArray(product.size) ? product.size : [],
             });
 
             // Set selected category ID for subcategory filtering
             setSelectedCategoryId(product.categoryId);
-            
+
             // Set image URLs
-            setMultipleImageUrls(Array.isArray(product.image_urls) ? product.image_urls : []);
-            
+            setMultipleImageUrls(
+              Array.isArray(product.image_urls) ? product.image_urls : [],
+            );
+
+            // Set colors
+            if (product.colors) {
+              setSelectedColors(
+                Array.isArray(product.colors) ? product.colors : [],
+              );
+            }
+
+            // Set sizes and size type
+            if (product.size) {
+              setSelectedSizes(Array.isArray(product.size) ? product.size : []);
+              setSizeType(detectedSizeType);
+            }
+
             // Process attributes
             if (product.attributes) {
-              let productAttributes = product.attributes as Record<string, string>;
+              const productAttributes = product.attributes as Record<
+                string,
+                string
+              >;
               const attrArray: { key: string; value: string }[] = [];
-              
-              // Extract colors if they exist
-              if (productAttributes.colors) {
-                try {
-                  const colorsData = JSON.parse(productAttributes.colors);
-                  setSelectedColors(colorsData);
-                  form.setValue("colors", colorsData);
-                  
-                  // Remove colors from attributes to be displayed in form
-                  const { ...restAttributes } = productAttributes;
-                  productAttributes = restAttributes;
-                } catch (e) {
-                  console.error("Error parsing colors data:", e);
-                }
-              }
-              
-              // Convert remaining attributes to array format for form
+
+              // Convert attributes to array format for form
               Object.entries(productAttributes).forEach(([key, value]) => {
                 attrArray.push({ key, value });
               });
-              
+
               if (attrArray.length > 0) {
                 setAttributes(attrArray);
+              } else {
+                setAttributes([{ key: "", value: "" }]);
               }
             }
           } else {
@@ -222,6 +270,25 @@ export default function UpdateProductForm({ storeId, productId }: UpdateProductF
     fetchSubcategories();
   }, [selectedCategoryId, storeId]);
 
+  // When size type changes, preserve custom sizes
+  useEffect(() => {
+    // When size type changes, we preserve custom sizes
+    // but reset the standard size selections
+
+    // First, identify which sizes are custom (not part of any standard size group)
+    const allStandardSizes = Object.values(sizeOptions).flat();
+    const customSizesOnly = selectedSizes.filter(
+      (size) => !allStandardSizes.includes(size),
+    );
+
+    // When changing size type, keep custom sizes but reset standard size selections
+    setSelectedSizes([...customSizesOnly]);
+
+    // Update the form value
+    form.setValue("size", [...customSizesOnly]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sizeType]);
+
   // Handler for multiple images
   const handleMultipleImagesChange = (urls: string[]) => {
     setMultipleImageUrls(urls);
@@ -232,6 +299,12 @@ export default function UpdateProductForm({ storeId, productId }: UpdateProductF
   const handleColorsChange = (colors: ColorOption[]) => {
     setSelectedColors(colors);
     form.setValue("colors", colors);
+  };
+
+  // Handle size selection change
+  const handleSizesChange = (sizes: string[]) => {
+    setSelectedSizes(sizes);
+    form.setValue("size", sizes);
   };
 
   // Handle form submission for updating product
@@ -271,11 +344,6 @@ export default function UpdateProductForm({ storeId, productId }: UpdateProductF
         }
       });
 
-      // Prepare the colors data - Convert the selected colors array to a JSON string
-      if (selectedColors.length > 0) {
-        attributesObject.colors = JSON.stringify(selectedColors);
-      }
-
       // Update product with new data
       const response = await updateProduct({
         id: productId,
@@ -289,14 +357,17 @@ export default function UpdateProductForm({ storeId, productId }: UpdateProductF
         stock_quantity: values.stock_quantity,
         image_urls: values.image_urls,
         attributes: attributesObject,
+        colors: selectedColors, // Now passing colors directly
+        size: selectedSizes, // Now passing sizes directly
         status: values.status,
+        targetGender: values.targetGender,
       });
 
       toast.dismiss(loadingToast);
 
       if (response.success) {
         toast.success("Product updated successfully!");
-        
+
         // Redirect to products list
         router.push(`/stores/${storeId}/products/list`);
         router.refresh();
@@ -415,18 +486,14 @@ export default function UpdateProductForm({ storeId, productId }: UpdateProductF
               )}
             />
 
-            {/* Add Status Selector */}
+            {/* Status Selector */}
             <FormField
               control={form.control}
               name="status"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Product Status</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select product status" />
@@ -441,6 +508,33 @@ export default function UpdateProductForm({ storeId, productId }: UpdateProductF
                   </Select>
                   <FormDescription>
                     Set the current status of your product
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Target Gender Selector - Added to match CreateProductForm */}
+            <FormField
+              control={form.control}
+              name="targetGender"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Target Gender</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select target gender" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="unisex">Unisex</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Select the target gender for this product
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -529,19 +623,88 @@ export default function UpdateProductForm({ storeId, productId }: UpdateProductF
                 </FormItem>
               )}
             />
+          </CardContent>
+        </Card>
 
-            {/* Add Multi-Color Selector */}
+        <Card className="shadow-custom-2xl">
+          <CardHeader className="text-xl font-semibold">
+            Product Variants
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Multi-Color Selector */}
             <FormField
               control={form.control}
               name="colors"
               render={() => (
                 <FormItem>
-                  <MultiColorSelector
-                    value={selectedColors}
-                    onChange={handleColorsChange}
-                  />
+                  <FormLabel>Available Colors</FormLabel>
+                  <FormControl>
+                    <MultiColorSelector
+                      value={selectedColors}
+                      onChange={handleColorsChange}
+                    />
+                  </FormControl>
                   <FormDescription>
-                    Select available colors for this product
+                    Select the available colors for this product
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Size type selector */}
+            <div className="space-y-2">
+              <FormLabel>Size Type</FormLabel>
+              <div className="flex space-x-4">
+                <Button
+                  type="button"
+                  variant={sizeType === "clothing" ? "default" : "outline"}
+                  onClick={() => setSizeType("clothing")}
+                >
+                  Clothing
+                </Button>
+                <Button
+                  type="button"
+                  variant={sizeType === "shoes" ? "default" : "outline"}
+                  onClick={() => setSizeType("shoes")}
+                >
+                  Shoes
+                </Button>
+                <Button
+                  type="button"
+                  variant={sizeType === "accessories" ? "default" : "outline"}
+                  onClick={() => setSizeType("accessories")}
+                >
+                  Accessories
+                </Button>
+                <Button
+                  type="button"
+                  variant={sizeType === "custom" ? "default" : "outline"}
+                  onClick={() => setSizeType("custom")}
+                >
+                  Custom
+                </Button>
+              </div>
+            </div>
+
+            {/* Size Selector */}
+            <FormField
+              control={form.control}
+              name="size"
+              render={() => (
+                <FormItem>
+                  <FormLabel>Available Sizes</FormLabel>
+                  <FormControl>
+                    <SizeSelector
+                      sizes={sizeOptions[sizeType] || []}
+                      selectedSizes={selectedSizes}
+                      onChange={handleSizesChange}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {sizeType === "custom"
+                      ? "Add your own custom sizes for this product"
+                      : "Select the available sizes for this product or add custom ones"}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -554,7 +717,7 @@ export default function UpdateProductForm({ storeId, productId }: UpdateProductF
           <CardHeader className="text-xl font-semibold">
             Product Attributes
             <FormDescription className="font-normal">
-              Add custom attributes such as size, material, etc.
+              Add additional attributes such as material, weight, etc.
             </FormDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -564,7 +727,7 @@ export default function UpdateProductForm({ storeId, productId }: UpdateProductF
                   <FormLabel>{index === 0 ? "Attribute Name" : ""}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g., Size"
+                      placeholder="e.g., Material"
                       value={attr.key}
                       onChange={(e) => {
                         const newAttrs = [...attributes];
@@ -578,7 +741,7 @@ export default function UpdateProductForm({ storeId, productId }: UpdateProductF
                   <FormLabel>{index === 0 ? "Value" : ""}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g., Large"
+                      placeholder="e.g., Cotton"
                       value={attr.value}
                       onChange={(e) => {
                         const newAttrs = [...attributes];

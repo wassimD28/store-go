@@ -13,8 +13,9 @@ import { useState } from "react";
 import { ProductViewSheet } from "../../sheet/product-view-sheet";
 import Image from "next/image";
 import { Badge } from "@/client/components/ui/badge";
+import { ColorOption } from "../../selector/multiColorSelector";
 
-// Interface for products to be displayed in the table
+// Interface for products to be displayed in the table - updated to match new schema
 interface Product {
   id: string;
   storeId: string;
@@ -28,6 +29,11 @@ interface Product {
   image_urls: string[];
   created_at: Date;
   updated_at: Date;
+  attributes: Record<string, string>;
+  colors: ColorOption[];
+  size: string[];
+  targetGender: "male" | "female" | "unisex";
+  unitsSold: number;
 }
 
 interface ProductTableClientProps {
@@ -83,6 +89,32 @@ export function ProductTableClient({
         );
       default:
         return <Badge>{status}</Badge>;
+    }
+  };
+
+  // Get gender badge styling
+  const getGenderBadge = (gender: string) => {
+    switch (gender) {
+      case "male":
+        return (
+          <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">
+            Men
+          </Badge>
+        );
+      case "female":
+        return (
+          <Badge className="bg-pink-100 text-pink-800 hover:bg-pink-200">
+            Women
+          </Badge>
+        );
+      case "unisex":
+        return (
+          <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200">
+            Unisex
+          </Badge>
+        );
+      default:
+        return <Badge>{gender}</Badge>;
     }
   };
 
@@ -144,7 +176,7 @@ export function ProductTableClient({
               )}
             </div>
             <div>
-              <div className="font-medium">{product.name}</div>
+              <div className="font-medium text-sm">{product.name}</div>
               <div className="text-xs text-muted-foreground">
                 Stock: {product.stock_quantity}
               </div>
@@ -188,6 +220,24 @@ export function ProductTableClient({
         return getStatusBadge(status);
       },
     },
+    // Target Gender column (new)
+    {
+      accessorKey: "targetGender",
+      header: ({ column }) => <SortableHeader column={column} title="Gender" />,
+      cell: ({ row }) => {
+        const gender = row.getValue("targetGender") as string;
+        return getGenderBadge(gender);
+      },
+    },
+    // Units Sold column (new)
+    {
+      accessorKey: "unitsSold",
+      header: ({ column }) => <SortableHeader column={column} title="Sold" />,
+      cell: ({ row }) => {
+        const soldCount = row.getValue("unitsSold") as number;
+        return <div>{soldCount}</div>;
+      },
+    },
     // Added date column
     {
       accessorKey: "created_at",
@@ -197,13 +247,64 @@ export function ProductTableClient({
         return <div>{formatDate(date)}</div>;
       },
     },
-    // Stock quantity column (hidden by default)
+    // Stock quantity column
     {
       accessorKey: "stock_quantity",
       header: ({ column }) => <SortableHeader column={column} title="Stock" />,
       cell: ({ row }) => {
         const quantity = row.getValue("stock_quantity") as number;
         return <div>{quantity}</div>;
+      },
+    },
+    // Colors column (new - hidden by default)
+    {
+      accessorKey: "colors",
+      header: "Colors",
+      cell: ({ row }) => {
+        const colors = row.original.colors;
+        if (!colors || colors.length === 0) return <div>-</div>;
+
+        return (
+          <div className="flex flex-wrap gap-1">
+            {colors.slice(0, 3).map((color, i) => {
+              return color.customColor ? (
+                <div
+                  key={i}
+                  className="h-4 w-4 rounded-full border border-gray-300"
+                  style={{backgroundColor: color.customColor }}
+                />
+              ) : (
+                <div
+                  key={i}
+                  className={`h-4 w-4 rounded-full border border-gray-300 ${color.colorClass}`}
+                />
+              );
+            })}
+            {colors.length > 3 && <span>+{colors.length - 3}</span>}
+          </div>
+        );
+      },
+    },
+    // Sizes column (new - hidden by default)
+    {
+      accessorKey: "size",
+      header: "Sizes",
+      cell: ({ row }) => {
+        const sizes = row.original.size;
+        if (!sizes || sizes.length === 0) return <div>-</div>;
+
+        return (
+          <div className="flex flex-wrap gap-1">
+            {sizes.slice(0, 3).map((size, i) => (
+              <span key={i} className="rounded bg-gray-100 px-1 text-xs">
+                {size}
+              </span>
+            ))}
+            {sizes.length > 3 && (
+              <span className="text-xs">+{sizes.length - 3}</span>
+            )}
+          </div>
+        );
       },
     },
     // Subcategory column (hidden by default)
@@ -298,8 +399,12 @@ export function ProductTableClient({
         initialVisibility={{
           description: false,
           subcategoryId: false,
-          stock_quantity: false,
+          colors: false,
+          size: false,
+          attributes: false,
           updated_at: false,
+          targetGender: false,
+          stock_quantity: false
         }}
       />
 

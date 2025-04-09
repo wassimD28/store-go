@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
   SheetClose,
 } from "@/client/components/ui/sheet";
 import { Button } from "@/client/components/ui/button";
@@ -14,7 +13,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/client/components/ui/tabs";
-import { Pencil } from "lucide-react";
+import { Pencil, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 // Import tab content components
@@ -64,12 +63,12 @@ export function ProductViewSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent className="overflow-y-auto rounded-l-2xl px-0 sm:max-w-md md:max-w-lg lg:max-w-3xl">
-        <SheetHeader className="flex items-center justify-between px-3">
+      <SheetContent className="h-full overflow-y-auto rounded-l-2xl px-0 sm:max-w-md md:max-w-lg lg:max-w-3xl [&>button]:hidden">
+        <div className="flex items-center justify-between px-3 py-0">
           <div className="flex w-full justify-between">
             <SheetClose asChild>
-              <Button variant="ghost" size="sm">
-                ×
+              <Button variant="ghost" size="icon">
+                <X />
               </Button>
             </SheetClose>
             <div className="flex space-x-2">
@@ -79,7 +78,7 @@ export function ProductViewSheet({
               </Button>
             </div>
           </div>
-        </SheetHeader>
+        </div>
         <hr className="mt-2" />
 
         <div>

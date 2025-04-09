@@ -6,6 +6,7 @@ import { AppProduct } from "@/lib/db/schema";
 import { ActionResponse } from "@/lib/types/interfaces/common.interface";
 import { eq } from "drizzle-orm";
 
+// Updated to match the new schema structure
 export const createProduct = async ({
   userId,
   storeId,
@@ -17,7 +18,10 @@ export const createProduct = async ({
   stock_quantity,
   image_urls,
   attributes,
+  colors,
+  size,
   status,
+  targetGender,
 }: {
   userId: string;
   storeId: string;
@@ -29,10 +33,13 @@ export const createProduct = async ({
   stock_quantity: number;
   image_urls: string[] | null;
   attributes: Record<string, string>;
+  colors?: any[];
+  size?: string[];
   status?: "draft" | "published" | "out_of_stock" | "archived";
+  targetGender?: "male" | "female" | "unisex";
 }): Promise<ActionResponse<any>> => {
   try {
-    // Insert new product
+    // Insert new product with updated schema
     const [newProduct] = await db
       .insert(AppProduct)
       .values({
@@ -45,9 +52,11 @@ export const createProduct = async ({
         subcategoryId,
         stock_quantity,
         image_urls,
-        // Convert JavaScript object to JSON for the attributes field
-        attributes: attributes as any, // Type assertion to bypass the type checking temporarily
-        status: status || "draft", // Use the provided status or default to "draft"
+        attributes: attributes as any, // Custom attributes
+        colors: colors || {}, // New dedicated colors field
+        size: size || {}, // New dedicated size field
+        status: status || "draft",
+        targetGender: targetGender || "unisex", // New target gender field
         created_at: new Date(),
         updated_at: new Date(),
       })
@@ -66,9 +75,31 @@ export const createProduct = async ({
 
 export const getProductsByStore = async (storeId: string) => {
   try {
-    const products = await db.query.AppProduct.findMany({
-      where: eq(AppProduct.storeId, storeId),
-    });
+    // Updated select to include new schema fields
+    const products = await db
+      .select({
+        id: AppProduct.id,
+        userId: AppProduct.userId,
+        storeId: AppProduct.storeId,
+        name: AppProduct.name,
+        description: AppProduct.description,
+        price: AppProduct.price,
+        status: AppProduct.status,
+        stock_quantity: AppProduct.stock_quantity,
+        categoryId: AppProduct.categoryId,
+        subcategoryId: AppProduct.subcategoryId,
+        image_urls: AppProduct.image_urls,
+        created_at: AppProduct.created_at,
+        updated_at: AppProduct.updated_at,
+        attributes: AppProduct.attributes,
+        colors: AppProduct.colors,
+        size: AppProduct.size,
+        targetGender: AppProduct.targetGender,
+        unitsSold: AppProduct.unitsSold,
+      })
+      .from(AppProduct)
+      .where(eq(AppProduct.storeId, storeId));
+
     return { success: true, products };
   } catch (error) {
     console.error("Error fetching products:", error);
@@ -141,7 +172,10 @@ export const updateProduct = async ({
   stock_quantity,
   image_urls,
   attributes,
+  colors,
+  size,
   status,
+  targetGender,
 }: {
   id: string;
   userId: string;
@@ -154,10 +188,13 @@ export const updateProduct = async ({
   stock_quantity: number;
   image_urls: string[] | null;
   attributes: Record<string, string>;
+  colors?: any[];
+  size?: string[];
   status?: "draft" | "published" | "out_of_stock" | "archived";
+  targetGender?: "male" | "female" | "unisex";
 }): Promise<ActionResponse<any>> => {
   try {
-    // Update existing product
+    // Update existing product with new schema fields
     const [updatedProduct] = await db
       .update(AppProduct)
       .set({
@@ -168,9 +205,11 @@ export const updateProduct = async ({
         subcategoryId,
         stock_quantity,
         image_urls,
-        // Convert JavaScript object to JSON for the attributes field
-        attributes: attributes as any, // Type assertion to bypass the type checking temporarily
-        status: status || "draft", // Use the provided status or default to "draft"
+        attributes: attributes as any,
+        colors: colors || {}, // Updated colors field
+        size: size || {}, // Updated size field
+        status: status || "draft",
+        targetGender: targetGender || "unisex", // Updated target gender field
         updated_at: new Date(),
       })
       .where(eq(AppProduct.id, id))

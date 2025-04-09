@@ -1,8 +1,8 @@
-
 import { getAppCategories } from "@/app/actions/category.actions";
 import { getProductsByStore } from "@/app/actions/product.actions";
 import { getAppSubCategories } from "@/app/actions/subCategory.actions";
 import { ProductTableClient } from "@/client/components/data-table/tables/product.table";
+import { ColorOption } from "@/client/components/selector/multiColorSelector";
 import { Button } from "@/client/components/ui/button";
 import {
   Card,
@@ -41,10 +41,19 @@ async function Page({ params }: Props) {
     });
   }
 
+  // Enhanced type handling for products to support new schema fields
   const typedProducts = productsResult.products
     ? productsResult.products.map((product) => ({
         ...product,
         image_urls: Array.isArray(product.image_urls) ? product.image_urls : [],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        attributes: product.attributes || {} as any, // Add type assertion here
+        colors: Array.isArray(product.colors)
+          ? (product.colors as ColorOption[])
+          : [],
+        size: Array.isArray(product.size) ? product.size : [],
+        targetGender: product.targetGender || "unisex",
+        unitsSold: product.unitsSold || 0,
       }))
     : [];
 

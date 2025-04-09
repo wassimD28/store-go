@@ -101,7 +101,6 @@ export const storeCategory = pgTable("store_category", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-
 // Define a stores table (simplified)
 export const stores = pgTable("stores", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -117,7 +116,6 @@ export const stores = pgTable("stores", {
   lastGeneratedAt: timestamp("last_generated_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
-
 
 export const AppUserAuthType = pgEnum("app_user_auth_type", [
   "email_password",
@@ -143,18 +141,15 @@ export const AppUser = pgTable("app_user", {
   updated_at: timestamp("updated_at").defaultNow(),
 });
 
-
-
-
 // AppAddress table schema
 export const AppAddress = pgTable("app_address", {
   id: uuid("id").primaryKey().defaultRandom(),
   appUserId: uuid("app_user_id")
     .notNull()
     .references(() => AppUser.id),
-  street: varchar("street", { length: 255 }).notNull(), // Added missing street field
+  street: varchar("street", { length: 255 }).notNull(),
   city: varchar("city", { length: 100 }).notNull(),
-  state: varchar("state", { length: 100 }).notNull(), // Added missing state field
+  state: varchar("state", { length: 100 }).notNull(),
   status: varchar("status", { length: 50 }).notNull(),
   postalCode: varchar("postalCode", { length: 20 }).notNull(),
   country: varchar("country", { length: 100 }).notNull(),
@@ -198,24 +193,20 @@ export const AppCollection = pgTable("app_collection", {
   subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
 });
 
-// AppFactory table schema
-export const AppFactory = pgTable("app_factory", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  appUserId: uuid("app_user_id")
-    .notNull()
-    .references(() => AppUser.id),
-  name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"),
-  snapshot: text("snapshot"),
-});
 
 // AppWishlist table schema
 export const AppWishlist = pgTable("app_wishlist", {
   id: uuid("id").primaryKey().defaultRandom(),
+  storeId: uuid("store_id")
+    .notNull()
+    .references(() => stores.id),
+  appUserId: uuid("app_user_id")
+    .notNull()
+    .references(() => AppUser.id),
   product_id: uuid("product_id")
     .notNull()
     .references(() => AppProduct.id),
-  added_date: timestamp("added_date").defaultNow(),
+  added_at: timestamp("added_at").defaultNow(),
 });
 
 // AppCategory table schema
@@ -251,6 +242,30 @@ export const AppSubCategory = pgTable("app_subcategory", {
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const AppReview = pgTable("app_review", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id),
+  storeId: uuid("store_id")
+    .notNull()
+    .references(() => stores.id),
+  appUserId: uuid("app_user_id")
+    .notNull()
+    .references(() => AppUser.id),
+  productId: uuid("product_id")
+    .notNull()
+    .references(() => AppProduct.id),
+  rating: integer("rating").notNull(),
+  content: text("content"),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+export const targetGenderEnum = pgEnum("target_gender", [
+  "male",
+  "female",
+  "unisex",
+]);
 // AppProduct table drizzle schema
 export const AppProduct = pgTable("app_product", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -268,12 +283,17 @@ export const AppProduct = pgTable("app_product", {
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   attributes: json("attributes").default({}),
+  colors: json("colors").default({}),
+  size: json("size").default({}),
   image_urls: json("image_urls").default([]),
   stock_quantity: integer("stock_quantity").default(0).notNull(),
   status: productStatusEnum("status").default("draft").notNull(),
+  targetGender: targetGenderEnum("target_gender").default("unisex").notNull(),
+  unitsSold: integer("units_sold").default(0).notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
+
 
 // Define relations for the stores table
 export const storesRelations = relations(stores, ({ one }) => ({
@@ -294,5 +314,38 @@ export const AppProductRelations = relations(AppProduct, ({ one }) => ({
     fields: [AppProduct.categoryId],
     references: [AppCategory.id],
   }),
-  // Add other relations as needed
+}));
+
+export const AppReviewsRelations = relations(AppReview, ({ one }) => ({
+  product: one(AppProduct, {
+    fields: [AppReview.productId],
+    references: [AppProduct.id],
+  }),
+  appUser: one(AppUser, {
+    fields: [AppReview.appUserId],
+    references: [AppUser.id],
+  }),
+  store: one(stores, {
+    fields: [AppReview.storeId],
+    references: [stores.id],
+  }),
+  user: one(user, {
+    fields: [AppReview.userId],
+    references: [user.id],
+  }),
+}));
+// Define relations for AppWishlist
+export const AppWishlistRelations = relations(AppWishlist, ({ one }) => ({
+  product: one(AppProduct, {
+    fields: [AppWishlist.product_id],
+    references: [AppProduct.id],
+  }),
+  appUser: one(AppUser, {
+    fields: [AppWishlist.appUserId],
+    references: [AppUser.id],
+  }),
+  store: one(stores, {
+    fields: [AppWishlist.storeId],
+    references: [stores.id],
+  }),
 }));
