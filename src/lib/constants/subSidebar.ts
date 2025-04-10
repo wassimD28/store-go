@@ -11,7 +11,7 @@ export const dashboard: SideBarData[] = [
   {
     name: "All Stores",
     icon: ExternalDriveIcon,
-    route: "/dashboard/stores",
+    route: "/dashboard",
   },
   {
     name: "Create Store",
@@ -83,14 +83,14 @@ export const settings: SideBarData[] = [
 
 export const getProductSideBar = (storeId: string): SideBarData[] => [
   {
-    name: "Categories",
-    icon: ExternalDriveIcon,
-    route: `/stores/${storeId}/products/categories`,
-  },
-  {
     name: "Product List",
     icon: ShoppingCartIcon,
     route: `/stores/${storeId}/products/list`,
+  },
+  {
+    name: "Categories",
+    icon: ExternalDriveIcon,
+    route: `/stores/${storeId}/products/categories`,
   },
   {
     name: "Attributes",

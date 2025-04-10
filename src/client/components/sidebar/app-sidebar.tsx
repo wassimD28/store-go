@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { FadeText } from "../ui/fade-text";
-import { cn, isActiveRoute } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { NavUserData, SideBarData } from "@/lib/types/interfaces/common.interface";
 import { NavUser } from "./nav-user";
@@ -22,6 +22,7 @@ function MainSideBar({ user, sideBarData  }: props) {
   const { setSidebarOpen } = useSidebar()
   const [isExpend, setIsExpend] = useState(false);
   const pathname = usePathname(); 
+  const segments = pathname.split("/").filter(Boolean);
 
   const handleOnMouseOver = () => {
     setIsExpend(true);
@@ -31,9 +32,25 @@ function MainSideBar({ user, sideBarData  }: props) {
     setIsExpend(false);
     setSidebarOpen(false)
   }
+
+  const isMainActive = (route: string) => {
+    const routeSegments = route.split("/").filter(Boolean);
+    // For dashboard, check first segment
+    if (routeSegments[0] === "dashboard") {
+      return (
+        segments[0] === "dashboard" &&
+        (routeSegments.length === 1 || routeSegments[1] === segments[1])
+      );
+    }
+    // For stores, match only the main "stores" sections
+    if (routeSegments[0] === "stores") {
+      return segments[0] === "stores" && segments[2] === routeSegments[2];
+    }
+    return false;
+  };
   return (
     <div
-      className="flex fixed z-50 h-full flex-col items-center justify-between overflow-hidden border-r border-sidebar-border bg-sidebar py-6 transition-all duration-200 ease-in-out"
+      className="fixed z-50 flex h-full flex-col items-center justify-between overflow-hidden border-r border-sidebar-border bg-sidebar py-6 transition-all duration-200 ease-in-out"
       style={{
         width: isExpend ? EXPENDED_WIDTH : COLLAPSED_WIDTH,
       }}
@@ -42,17 +59,17 @@ function MainSideBar({ user, sideBarData  }: props) {
     >
       <div className="flex flex-col gap-2">
         {/* logo  */}
-        <Link href={'/dashboard'}>
-        <Image
-          className={cn(
-            "mb-4 transition-all duration-200 ease-in-out",
-            isExpend && "ml-3",
-          )}
-          src={"/icons/logo.svg"}
-          width={40}
-          height={40}
-          alt="logo"
-        />
+        <Link href={"/dashboard"}>
+          <Image
+            className={cn(
+              "mb-4 transition-all duration-200 ease-in-out",
+              isExpend && "ml-3",
+            )}
+            src={"/icons/logo.svg"}
+            width={40}
+            height={40}
+            alt="logo"
+          />
         </Link>
 
         {/* sidebar content */}
@@ -65,8 +82,7 @@ function MainSideBar({ user, sideBarData  }: props) {
               `relative flex h-10 flex-row items-center justify-center gap-2 overflow-hidden rounded-2xl transition-all duration-200 ease-in-out hover:bg-foreground/10`,
               isExpend && ``,
               !isExpend && `p-0`,
-              isActiveRoute(item.route, pathname) &&
-                "bg-primary-gradient text-white",
+              isMainActive(item.route) && "bg-primary-gradient text-white",
             )}
           >
             <item.icon
@@ -77,7 +93,7 @@ function MainSideBar({ user, sideBarData  }: props) {
               width={ICON_WIDTH}
               height={ICON_WIDTH}
               color={
-                isActiveRoute(item.route, pathname)
+                isMainActive(item.route)
                   ? "white"
                   : darkMode
                     ? "white"

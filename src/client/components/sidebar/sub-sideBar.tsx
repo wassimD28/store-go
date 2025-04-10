@@ -2,7 +2,7 @@
 import { useDarkMode } from "@/client/store/darkMode.store";
 import { useSidebar } from "@/client/store/sidebar.store";
 import { SideBarData } from "@/lib/types/interfaces/common.interface";
-import { cn, isActiveRoute } from "@/lib/utils";
+import { cn, isSubNavActive } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -28,7 +28,7 @@ function SubNavBar({title, data}: Props) {
           <Link
             className={cn(
               "flex h-10 w-full flex-row items-center gap-2 overflow-hidden rounded-2xl px-3 transition-all duration-200 ease-in-out hover:bg-foreground/10",
-              isActiveRoute(item.route, pathName) &&
+              isSubNavActive(item.route, pathName) &&
                 "bg-primary text-white hover:bg-primary dark:font-semibold dark:text-sidebar",
             )}
             href={item.route}
@@ -39,7 +39,7 @@ function SubNavBar({title, data}: Props) {
               width={24}
               height={24}
               color={
-                isActiveRoute(item.route, pathName)
+                isSubNavActive(item.route, pathName)
                   ? darkMode
                     ? "black" // Black when dark mode is on and route is active
                     : "white" // White when dark mode is off and route is active

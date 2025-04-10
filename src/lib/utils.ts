@@ -42,15 +42,88 @@ export const truncateEmail = (email: string, maxLength: number = 10) => {
 
 // Function to determine if a route is active
 export const isActiveRoute = (route: string, pathname: string) => {
-  // Exact match
-  if (pathname === route) return true;
+  // Exact match for dashboard-level routes
+  if (route === "/dashboard" && pathname === "/dashboard") {
+    return true;
+  }
 
-  // Handle nested routes (e.g., /dashboard/profile should highlight /dashboard)
-  if (route !== "/" && pathname.startsWith(route)) return true;
+  // For nested routes, ensure we're in the correct section
+  if (route.includes("/dashboard/") && pathname.includes("/dashboard/")) {
+    const routeParts = route.split("/");
+    const pathParts = pathname.split("/");
 
-  return false;
+    // Match the section (3rd part in path)
+    return routeParts[2] === pathParts[2];
+  }
+
+  // For store routes, handle special cases
+  if (route.includes("/stores/")) {
+    const routeParts = route.split("/");
+    const pathParts = pathname.split("/");
+
+    // Ensure store ID matches
+    if (routeParts[2] !== pathParts[2]) return false;
+
+    // For section level matching (like Products)
+    if (routeParts.length >= 4 && pathParts.length >= 4) {
+      return routeParts[3] === pathParts[3];
+    }
+
+    // For subsection matching (like Products/List)
+    if (routeParts.length >= 5 && pathParts.length >= 5) {
+      return routeParts[3] === pathParts[3] && routeParts[4] === pathParts[4];
+    }
+  }
+
+  // Default to exact match
+  return route === pathname;
 };
 
+// Add this to src/lib/utils.ts
+export const isSubNavActive = (route: string, pathname: string) => {
+  // Simple case: exact match
+  if (route === pathname) return true;
+  
+  const routeSegments = route.split("/").filter(Boolean);
+  const pathSegments = pathname.split("/").filter(Boolean);
+  
+  // Must have at least 4 segments for store routes with sub-navigation
+  if (routeSegments.length < 4 || pathSegments.length < 4) return false;
+  
+  // For store routes, match store ID and section
+  if (routeSegments[0] === "stores") {
+    // Make sure we're comparing routes in the same store
+    if (routeSegments[1] !== pathSegments[1]) return false;
+    
+    // For store main sections (products, templates, etc.)
+    if (routeSegments[2] !== pathSegments[2]) return false;
+    
+    // For subsections (categories, list, attributes, etc.)
+    // Here we ensure we match the exact subsection
+    if (routeSegments.length >= 4 && pathSegments.length >= 4) {
+      return routeSegments[3] === pathSegments[3];
+    }
+  }
+  
+  // For dashboard sub-sections
+  if (routeSegments[0] === "dashboard" && pathSegments[0] === "dashboard") {
+    if (routeSegments.length >= 3 && pathSegments.length >= 3) {
+      // Match subsections like apps, pages, themes
+      return routeSegments[2] === pathSegments[2];
+    }
+  }
+  
+  // For team sub-sections
+  if (routeSegments[0] === "team" && pathSegments[0] === "team") {
+    if (routeSegments.length >= 2 && pathSegments.length >= 2) {
+      // Match subsections like members, roles, invitations
+      return routeSegments[1] === pathSegments[1];
+    }
+  }
+  
+  // Default to false if no conditions match
+  return false;
+};
 // function for formatting date
 export function formatDate(date: Date): string {
   return new Intl.DateTimeFormat("en-US", {
