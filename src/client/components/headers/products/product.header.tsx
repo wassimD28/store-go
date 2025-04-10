@@ -1,16 +1,13 @@
 "use client";
-import { ChevronLeft, Eye, Plus } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { Button } from "../../ui/button";
-import { PagesBreadCrumb } from "../../breadcrumb/pages.breadcrumb";
-import { PublishedFilter } from "../../filter/published.filter";
+import { EnhancedBreadcrumb } from "../../breadcrumb/enhanced.breadcrumb";
 import { useSidebar } from "@/client/store/sidebar.store";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
-import { useStoreStore } from "@/client/store/store.store";
 
 function ProductHeader() {
-  const {store} = useStoreStore()
   const { isSidebarOpen } = useSidebar();
+
   return (
     <div className="col-span-full flex w-full justify-between border-b bg-sidebar px-4 py-3 shadow-xl shadow-black/5">
       <div className="flex items-center gap-3">
@@ -23,16 +20,9 @@ function ProductHeader() {
         <Button className="size-9 rounded-full bg-primary/10 hover:bg-primary/20">
           <ChevronLeft className="text-foreground" />
         </Button>
-        <PagesBreadCrumb />
+        <EnhancedBreadcrumb />
       </div>
-      <div className="flex gap-4">
-        <PublishedFilter />
-        <Link href={`/stores/${store?.id}/products/list/new`}>
-            <Button size={"lg"}>
-              Create <Plus />
-            </Button>
-        </Link>
-      </div>
+      <div className="flex gap-4">{/* Your action buttons here */}</div>
     </div>
   );
 }

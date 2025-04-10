@@ -101,3 +101,31 @@ export const deleteCategory = async (
     };
   }
 };
+
+export const getCategoryById = async (categoryId: string) => {
+  try {
+    // Fetch the category that matches the provided ID
+    const category = await db.query.AppCategory.findFirst({
+      where: eq(AppCategory.id, categoryId),
+    });
+
+    if (!category) {
+      return {
+        success: false,
+        error: "Category not found",
+      };
+    }
+
+    return {
+      success: true,
+      category,
+    };
+  } catch (error) {
+    console.error("Error fetching category by ID:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to retrieve category",
+    };
+  }
+};

@@ -1,5 +1,6 @@
 import { JSX } from "react";
 export interface NavUserData {
+  id: string
   name: string;
   email: string;
   avatar: string;

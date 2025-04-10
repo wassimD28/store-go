@@ -44,6 +44,7 @@ export async function createStore({
     };
   }
 }
+
 /**
  * Get all stores for a user with their associated categories
  */
@@ -57,7 +58,7 @@ export async function getUserStores(userId: string) {
     const userStores = await db.query.stores.findMany({
       where: eq(stores.userId, userId),
       with: {
-        category: true
+        category: true,
       },
       orderBy: stores.createdAt,
     });
@@ -67,7 +68,42 @@ export async function getUserStores(userId: string) {
     console.error("Failed to retrieve stores:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to retrieve stores",
+      error:
+        error instanceof Error ? error.message : "Failed to retrieve stores",
+    };
+  }
+}
+
+/**
+ * Get a single store by its ID with its associated category
+ * @param storeId - The unique ID of the store to retrieve
+ * @returns Object containing success flag and either store data or error message
+ */
+export async function getStoreById(storeId: string) {
+  if (!storeId) {
+    return { success: false, error: "Store ID is required" };
+  }
+
+  try {
+    // Using Drizzle's query builder to find a single store with its category
+    const store = await db.query.stores.findFirst({
+      where: eq(stores.id, storeId),
+      with: {
+        category: true,
+      },
+    });
+
+    if (!store) {
+      return { success: false, error: "Store not found" };
+    }
+
+    return { success: true, data: store };
+  } catch (error) {
+    console.error("Failed to retrieve store:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to retrieve store",
     };
   }
 }

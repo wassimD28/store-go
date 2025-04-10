@@ -12,6 +12,7 @@ export default async function RootLayout({
     headers: await headers(),
   });
   const user = {
+    id: session?.user.id ?? "",
     name: session?.user.name ?? "",
     email: session?.user.email ?? "",
     avatar: session?.user.image ?? "",

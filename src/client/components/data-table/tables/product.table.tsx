@@ -176,7 +176,7 @@ export function ProductTableClient({
               )}
             </div>
             <div>
-              <div className="font-medium text-sm">{product.name}</div>
+              <div className="text-sm font-medium">{product.name}</div>
               <div className="text-xs text-muted-foreground">
                 Stock: {product.stock_quantity}
               </div>
@@ -184,6 +184,7 @@ export function ProductTableClient({
           </div>
         );
       },
+      minSize: 400
     },
     // SKU column
     {
@@ -219,6 +220,7 @@ export function ProductTableClient({
         const status = row.getValue("status") as string;
         return getStatusBadge(status);
       },
+      minSize: 180,
     },
     // Target Gender column (new)
     {
@@ -271,7 +273,7 @@ export function ProductTableClient({
                 <div
                   key={i}
                   className="h-4 w-4 rounded-full border border-gray-300"
-                  style={{backgroundColor: color.customColor }}
+                  style={{ backgroundColor: color.customColor }}
                 />
               ) : (
                 <div
@@ -404,7 +406,8 @@ export function ProductTableClient({
           attributes: false,
           updated_at: false,
           targetGender: false,
-          stock_quantity: false
+          stock_quantity: false,
+          id: false
         }}
       />
 

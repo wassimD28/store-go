@@ -10,7 +10,9 @@ import { formatDate } from "@/lib/utils";
 import { SortableHeader } from "@/client/components/data-table/sortableHeader";
 import { DeleteCategoryDialog } from "@/client/components/dialogs/deleteCategoryDialog";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
+// Update interface to include image_url
 interface CategoryTableClientProps {
   categories: AppCategory[];
 }
@@ -43,15 +45,40 @@ export function CategoryTableClient({ categories }: CategoryTableClientProps) {
           aria-label="Select row"
         />
       ),
+      maxSize: 40,
       enableSorting: false,
       enableHiding: false,
     },
     {
       accessorKey: "name",
-      header: ({ column }) => <SortableHeader column={column} title="Name" />,
-      cell: ({ row }) => (
-        <div className="capitalize">{row.getValue("name")}</div>
+      header: ({ column }) => (
+        <SortableHeader column={column} title="Category" />
       ),
+      cell: ({ row }) => {
+        const category = row.original;
+        // Use image_url if available, otherwise use a placeholder
+        const imageUrl = category.imageUrl || "/images/placeholder-category.png";
+
+        return (
+          <div className="flex items-center space-x-3">
+            <div className="h-10 w-10 overflow-hidden rounded-md bg-gray-100">
+              <Image
+                src={imageUrl}
+                alt={category.name}
+                width={40}
+                height={40}
+                className="object-cover"
+              />
+            </div>
+            <div>
+              <div className="text-sm font-medium capitalize">
+                {category.name}
+              </div>
+            </div>
+          </div>
+        );
+      },
+      minSize: 100,
     },
     {
       accessorKey: "description",

@@ -150,7 +150,14 @@ export function DataTable<TData>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="px-4 py-3 font-medium">
+                  <TableHead
+                    key={header.id}
+                    className="px-4 py-3 font-medium"
+                    style={{
+                      width: `${header.getSize()}px`,
+                      maxWidth: `${header.getSize()}px`,
+                    }}
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -170,7 +177,14 @@ export function DataTable<TData>({
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-4 py-3">
+                    <TableCell
+                      key={cell.id}
+                      className="px-4 py-3"
+                      style={{
+                        width: `${cell.column.getSize()}px`,
+                        maxWidth: `${cell.column.getSize()}px`,
+                      }}
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext(),
