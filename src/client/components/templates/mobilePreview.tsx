@@ -4,7 +4,7 @@ import { ReactNode } from "react";
 
 function MobilePreview({ children }: { children: ReactNode }) {
   return (
-    <div className="flex w-full items-center justify-center">
+    <div className="flex w-[310px] 2xl:scale-150 items-center justify-center absolute">
       {/* Mobile device container with appropriate sizing */}
       <div className="m-2 w-full max-w-[300px]">
         {/* Aspect ratio container */}
