@@ -1,7 +1,10 @@
 import { db } from "../../lib/db/db";
 import { eq, and } from "drizzle-orm";
 import { AppAddress } from "@/lib/db/schema";
-import { createAddressSchema, updateAddressSchema } from "../schemas/address.schema";
+import {
+  createAddressSchema,
+  updateAddressSchema,
+} from "../schemas/address.schema";
 import { z } from "zod";
 
 // Define types based on the Zod schemas
@@ -12,7 +15,7 @@ export class AddressRepository {
   static async findAll(userId: string) {
     try {
       return await db.query.AppAddress.findMany({
-        where: eq(AppAddress.appUserId, userId)
+        where: eq(AppAddress.appUserId, userId),
       });
     } catch (error) {
       console.error("Error fetching addresses:", error);
@@ -23,10 +26,7 @@ export class AddressRepository {
   static async findById(id: string, userId: string) {
     try {
       return await db.query.AppAddress.findFirst({
-        where: and(
-          eq(AppAddress.id, id),
-          eq(AppAddress.appUserId, userId)
-        )
+        where: and(eq(AppAddress.id, id), eq(AppAddress.appUserId, userId)),
       });
     } catch (error) {
       console.error(`Error fetching address with ID ${id}:`, error);
@@ -36,16 +36,19 @@ export class AddressRepository {
 
   static async create(addressData: AddressCreateData) {
     try {
-      const [newAddress] = await db.insert(AppAddress).values({
-        appUserId: addressData.app_user_id,
-        street: addressData.street,
-        city: addressData.city,
-        state: addressData.state,
-        postalCode: addressData.postalCode,
-        country: addressData.country,
-        status: "active", // Added required status field with default value
-        isDefault: addressData.isDefault
-      }).returning();
+      const [newAddress] = await db
+        .insert(AppAddress)
+        .values({
+          storeId: addressData.storeId,
+          appUserId: addressData.app_user_id,
+          street: addressData.street,
+          city: addressData.city,
+          state: addressData.state,
+          postalCode: addressData.postalCode,
+          country: addressData.country,
+          isDefault: addressData.isDefault,
+        })
+        .returning();
       return newAddress;
     } catch (error) {
       console.error("Error creating address:", error);
@@ -59,14 +62,20 @@ export class AddressRepository {
         ...(addressData.street !== undefined && { street: addressData.street }),
         ...(addressData.city !== undefined && { city: addressData.city }),
         ...(addressData.state !== undefined && { state: addressData.state }),
-        ...(addressData.postalCode !== undefined && { postalCode: addressData.postalCode }),
-        ...(addressData.country !== undefined && { country: addressData.country }),
-        ...(addressData.isDefault !== undefined && { isDefault: addressData.isDefault })
+        ...(addressData.postalCode !== undefined && {
+          postalCode: addressData.postalCode,
+        }),
+        ...(addressData.country !== undefined && {
+          country: addressData.country,
+        }),
+        ...(addressData.isDefault !== undefined && {
+          isDefault: addressData.isDefault,
+        }),
       };
-      
+
       const [updatedAddress] = await db
         .update(AppAddress)
-        .set(updateValues)
+        .set({ ...updateValues, updated_at: new Date() })
         .where(eq(AppAddress.id, id))
         .returning();
       return updatedAddress;

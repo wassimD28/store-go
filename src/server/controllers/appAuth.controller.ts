@@ -270,7 +270,6 @@ class AppAuthController {
     }
   }
 
-  // Add this method to src\server\controllers\appAuth.controller.ts
 
   static async signOut(c: Context) {
     try {
@@ -285,8 +284,6 @@ class AppAuthController {
           401,
         );
       }
-
-      const accessToken = authHeader.split(" ")[1];
 
       // 2. Instead of directly validating the token (which is causing the error),
       // use a more robust approach with session handling

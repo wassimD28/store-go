@@ -144,16 +144,20 @@ export const AppUser = pgTable("app_user", {
 // AppAddress table schema
 export const AppAddress = pgTable("app_address", {
   id: uuid("id").primaryKey().defaultRandom(),
+  storeId: uuid("store_id")
+    .notNull()
+    .references(() => stores.id),
   appUserId: uuid("app_user_id")
     .notNull()
     .references(() => AppUser.id),
   street: varchar("street", { length: 255 }).notNull(),
   city: varchar("city", { length: 100 }).notNull(),
   state: varchar("state", { length: 100 }).notNull(),
-  status: varchar("status", { length: 50 }).notNull(),
   postalCode: varchar("postalCode", { length: 20 }).notNull(),
   country: varchar("country", { length: 100 }).notNull(),
   isDefault: boolean("isDefault").default(false),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 // AppOrder table schema
 export const AppOrder = pgTable("app_order", {
@@ -165,12 +169,11 @@ export const AppOrder = pgTable("app_order", {
     .notNull()
     .references(() => AppAddress.id),
   data_amount: decimal("data_amount", { precision: 10, scale: 2 }).notNull(),
-  order_date: timestamp("order_date").defaultNow(),
+  order_date: timestamp("order_date").defaultNow().notNull(),
   status: varchar("status", { length: 50 }).notNull(),
   payment_status: varchar("payment_status", { length: 50 }).notNull(),
 });
 // AppPayment table schema
-
 export const AppPayment = pgTable("app_payment", {
   id: uuid("id").primaryKey().defaultRandom(),
   order_id: uuid("order_id")
@@ -179,7 +182,7 @@ export const AppPayment = pgTable("app_payment", {
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   payment_date: timestamp("payment_date").defaultNow(),
   payment_method: varchar("payment_method", { length: 50 }).notNull(),
-  status: varchar("status", { length: 50 }).notNull().default("pending"), // Added status field based on your schema
+  status: varchar("status", { length: 50 }).notNull().default("pending"), 
 });
 
 // AppCollection table schema
@@ -206,7 +209,7 @@ export const AppWishlist = pgTable("app_wishlist", {
   product_id: uuid("product_id")
     .notNull()
     .references(() => AppProduct.id),
-  added_at: timestamp("added_at").defaultNow(),
+  added_at: timestamp("added_at").defaultNow().notNull(),
 });
 
 // AppCategory table schema
@@ -244,9 +247,6 @@ export const AppSubCategory = pgTable("app_subcategory", {
 
 export const AppReview = pgTable("app_review", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id),
   storeId: uuid("store_id")
     .notNull()
     .references(() => stores.id),
@@ -345,10 +345,6 @@ export const AppReviewsRelations = relations(AppReview, ({ one }) => ({
   store: one(stores, {
     fields: [AppReview.storeId],
     references: [stores.id],
-  }),
-  user: one(user, {
-    fields: [AppReview.userId],
-    references: [user.id],
   }),
 }));
 // Define relations for AppWishlist
