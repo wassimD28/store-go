@@ -170,7 +170,6 @@ export const AppOrder = pgTable("app_order", {
   payment_status: varchar("payment_status", { length: 50 }).notNull(),
 });
 // AppPayment table schema
-
 export const AppPayment = pgTable("app_payment", {
   id: uuid("id").primaryKey().defaultRandom(),
   order_id: uuid("order_id")
@@ -179,7 +178,7 @@ export const AppPayment = pgTable("app_payment", {
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   payment_date: timestamp("payment_date").defaultNow(),
   payment_method: varchar("payment_method", { length: 50 }).notNull(),
-  status: varchar("status", { length: 50 }).notNull().default("pending"), // Added status field based on your schema
+  status: varchar("status", { length: 50 }).notNull().default("pending"), 
 });
 
 // AppCollection table schema

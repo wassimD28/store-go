@@ -237,4 +237,15 @@ export const getAnalyticsSideBar = (storeId: string): SideBarData[] => [
   },
 ];
 
-
+export const getCustomersSideBar = (storeId: string): SideBarData[] => [
+  {
+    name: "Authenticated",
+    icon: LinkIcon,
+    route: `/stores/${storeId}/customers/list`,
+  },
+  {
+    name: "Banned",
+    icon: LinkIcon,
+    route: `/stores/${storeId}/customers/banned`,
+  },
+];

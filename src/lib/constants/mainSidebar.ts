@@ -7,6 +7,7 @@ import ShoppingCartIcon from "@/client/components/icons/sidebar/shoppingCartIcon
 import TagIcon from "@/client/components/icons/sidebar/tagIcon";
 import { SideBarData } from "../types/interfaces/common.interface";
 import StarIcon from "@/client/components/icons/sidebar/starIcon";
+import UserIcon from "@/client/components/icons/sidebar/userIcon";
 
 export const getStoreSideBarData = (storeId: string): SideBarData[] => [
   {
@@ -28,6 +29,11 @@ export const getStoreSideBarData = (storeId: string): SideBarData[] => [
     name: "Promotions",
     icon: TagIcon,
     route: `/stores/${storeId}/promotions`,
+  },
+  {
+    name: "Customers",
+    icon: UserIcon,
+    route: `/stores/${storeId}/customers/list`,
   },
   {
     name: "Orders",
