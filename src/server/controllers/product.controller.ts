@@ -80,7 +80,12 @@ export class ProductController {
         );
       }
       const { storeId } = c.get("user");
+
+      // Make sure we're actually filtering by categoryId in the database query
+      // This appears to be the root of the issue
       const products = await ProductRepository.findByCategory(categoryId, storeId);
+      
+      console.log(`Found ${products.length} products for category ${categoryId}`);
 
       return c.json({
         status: "success",
