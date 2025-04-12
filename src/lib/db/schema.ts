@@ -165,7 +165,7 @@ export const AppOrder = pgTable("app_order", {
     .notNull()
     .references(() => AppAddress.id),
   data_amount: decimal("data_amount", { precision: 10, scale: 2 }).notNull(),
-  order_date: timestamp("order_date").defaultNow(),
+  order_date: timestamp("order_date").defaultNow().notNull(),
   status: varchar("status", { length: 50 }).notNull(),
   payment_status: varchar("payment_status", { length: 50 }).notNull(),
 });
@@ -205,7 +205,7 @@ export const AppWishlist = pgTable("app_wishlist", {
   product_id: uuid("product_id")
     .notNull()
     .references(() => AppProduct.id),
-  added_at: timestamp("added_at").defaultNow(),
+  added_at: timestamp("added_at").defaultNow().notNull(),
 });
 
 // AppCategory table schema
@@ -243,9 +243,6 @@ export const AppSubCategory = pgTable("app_subcategory", {
 
 export const AppReview = pgTable("app_review", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id),
   storeId: uuid("store_id")
     .notNull()
     .references(() => stores.id),
@@ -327,10 +324,6 @@ export const AppReviewsRelations = relations(AppReview, ({ one }) => ({
   store: one(stores, {
     fields: [AppReview.storeId],
     references: [stores.id],
-  }),
-  user: one(user, {
-    fields: [AppReview.userId],
-    references: [user.id],
   }),
 }));
 // Define relations for AppWishlist
