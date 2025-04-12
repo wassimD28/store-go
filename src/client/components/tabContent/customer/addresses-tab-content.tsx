@@ -6,19 +6,17 @@ import { ScrollArea } from "@/client/components/ui/scroll-area";
 import { Card, CardContent } from "@/client/components/ui/card";
 import { Badge } from "@/client/components/ui/badge";
 import { Skeleton } from "@/client/components/ui/skeleton";
-import { Home, Building, MapPin } from "lucide-react";
-
 interface AddressesTabContentProps {
   userId: string;
 }
 
 interface Address {
   id: string;
+  storeId:string;
   appUserId: string;
   street: string;
   city: string;
   state: string;
-  status: string;
   postalCode: string;
   country: string;
   isDefault: boolean | null;
@@ -45,18 +43,6 @@ export function AddressesTabContent({ userId }: AddressesTabContentProps) {
     fetchAddresses();
   }, [userId]);
 
-  // Helper to get the appropriate icon based on status
-  const getAddressIcon = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "home":
-        return <Home className="h-4 w-4" />;
-      case "work":
-        return <Building className="h-4 w-4" />;
-      default:
-        return <MapPin className="h-4 w-4" />;
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="space-y-4 p-4">
@@ -82,14 +68,10 @@ export function AddressesTabContent({ userId }: AddressesTabContentProps) {
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
                 <div className="flex items-start space-x-2">
-                  <div className="mt-0.5 rounded-full bg-primary/10 p-1">
-                    {getAddressIcon(address.status)}
-                  </div>
+            
                   <div>
                     <div className="flex items-center space-x-2">
-                      <h3 className="font-medium capitalize">
-                        {address.status} Address
-                      </h3>
+                      
                       {address.isDefault && (
                         <Badge variant="outline" className="text-xs">
                           Default
