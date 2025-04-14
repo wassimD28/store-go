@@ -124,7 +124,6 @@ export async function getCustomerOrders(
       orderBy: (orders, { desc }) => [desc(orders.order_date)],
       with: {
         address: true,
-        // We could expand with additional relations if needed
       },
     });
 

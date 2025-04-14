@@ -30,7 +30,9 @@ export const createCategory = async ({
   description,
   storeId,
   imageUrl,
-}: Omit < IAppCategory , 'id'| 'created_at'| 'updated_at'>): Promise<ActionResponse<IAppCategory>> => {
+}: Omit<IAppCategory, "id" | "created_at" | "updated_at">): Promise<
+  ActionResponse<IAppCategory>
+> => {
   try {
     // Insert new category [[10]]
     const [newCategory] = await db
@@ -56,7 +58,6 @@ export const createCategory = async ({
     };
   }
 };
-
 
 export const deleteCategory = async (
   categoryId: string,
@@ -126,6 +127,55 @@ export const getCategoryById = async (categoryId: string) => {
       success: false,
       error:
         error instanceof Error ? error.message : "Failed to retrieve category",
+    };
+  }
+};
+
+export const updateCategory = async ({
+  id,
+  name,
+  description,
+  imageUrl,
+}: {
+  id: string;
+  name: string;
+  description: string | null;
+  imageUrl: string | null;
+  storeId: string;
+  userId: string;
+}): Promise<ActionResponse<IAppCategory>> => {
+  try {
+    // Check if the category exists
+    const existingCategory = await db.query.AppCategory.findFirst({
+      where: eq(AppCategory.id, id),
+    });
+
+    if (!existingCategory) {
+      return {
+        success: false,
+        error: "Category not found",
+      };
+    }
+
+    // Update the category
+    const [updatedCategory] = await db
+      .update(AppCategory)
+      .set({
+        name,
+        description,
+        imageUrl,
+        updated_at: new Date(),
+      })
+      .where(eq(AppCategory.id, id))
+      .returning();
+
+    return { success: true, data: updatedCategory };
+  } catch (error) {
+    console.error("Error updating category:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to update category",
     };
   }
 };
