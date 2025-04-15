@@ -1,31 +1,12 @@
-// src/server/repositories/cart.repository.ts
-
 import { db } from "../../lib/db/db";
 import { eq, and } from "drizzle-orm";
 import { AppCart } from "@/lib/db/schema";
 
-export class CartRepository {
-  // Find cart item by ID
-  static async findById(
-    id: string,
-    appUserId: string,
-    storeId: string,
-  ) {
-    try {
-      return await db.query.AppCart.findFirst({
-        where: and(
-          eq(AppCart.id, id),
-          eq(AppCart.appUserId, appUserId),
-          eq(AppCart.storeId, storeId),
-        ),
-      });
-    } catch (error) {
-      console.error("Error finding cart item by ID:", error);
-      throw new Error("Failed to find cart item");
-    }
-  }
+// Define a proper type for variants
+type VariantObject = Record<string, string | number | boolean | null>;
 
-  // Find cart item by product and user
+export class CartRepository {
+  // Check if a product is in the user's cart
   static async findByProductAndUser(
     productId: string,
     appUserId: string,
@@ -45,16 +26,16 @@ export class CartRepository {
     }
   }
 
-  // Add or update item in cart
-  static async addOrUpdate(data: {
+  // Add a product to the cart
+  static async add(data: {
     storeId: string;
     appUserId: string;
     productId: string;
     quantity: number;
-    variants?: Record<string, string>;
+    variants?: VariantObject;
   }) {
     try {
-      const { storeId, appUserId, productId, quantity, variants } = data;
+      const { storeId, appUserId, productId, quantity, variants = {} } = data;
 
       // Check if already in cart
       const existing = await this.findByProductAndUser(
@@ -62,14 +43,14 @@ export class CartRepository {
         appUserId,
         storeId,
       );
-
+      
       if (existing) {
-        // Update existing cart item
+        // Update quantity instead of adding new item
         return await db
           .update(AppCart)
           .set({
-            quantity: quantity,
-            variants: variants || existing.variants,
+            quantity: existing.quantity + quantity,
+            variants: variants,
             updated_at: new Date(),
           })
           .where(
@@ -77,12 +58,12 @@ export class CartRepository {
               eq(AppCart.product_id, productId),
               eq(AppCart.appUserId, appUserId),
               eq(AppCart.storeId, storeId),
-            ),
+            )
           )
           .returning();
       }
 
-      // Add new item to cart
+      // Add to cart
       return await db
         .insert(AppCart)
         .values({
@@ -90,7 +71,7 @@ export class CartRepository {
           appUserId,
           product_id: productId,
           quantity,
-          variants: variants || {},
+          variants,
         })
         .returning();
     } catch (error) {
@@ -99,28 +80,40 @@ export class CartRepository {
     }
   }
 
-  // Update an existing cart item
+  // Update cart item quantity
   static async update(
-    id: string,
-    appUserId: string,
+    productId: string, 
+    appUserId: string, 
     storeId: string,
     quantity: number,
-    variants: Record<string, string>,
+    variants?: VariantObject
   ) {
     try {
+      // Define proper type for updateData
+      interface UpdatePayload {
+        quantity: number;
+        updated_at: Date;
+        variants?: VariantObject;
+      }
+
+      const updateData: UpdatePayload = {
+        quantity,
+        updated_at: new Date(),
+      };
+
+      if (variants) {
+        updateData.variants = variants;
+      }
+
       return await db
         .update(AppCart)
-        .set({
-          quantity: quantity,
-          variants: variants,
-          updated_at: new Date(),
-        })
+        .set(updateData)
         .where(
           and(
-            eq(AppCart.id, id),
+            eq(AppCart.product_id, productId),
             eq(AppCart.appUserId, appUserId),
             eq(AppCart.storeId, storeId),
-          ),
+          )
         )
         .returning();
     } catch (error) {
@@ -129,27 +122,8 @@ export class CartRepository {
     }
   }
 
-  // Remove an item from cart by ID
-  static async removeById(id: string, appUserId: string, storeId: string) {
-    try {
-      return await db
-        .delete(AppCart)
-        .where(
-          and(
-            eq(AppCart.id, id),
-            eq(AppCart.appUserId, appUserId),
-            eq(AppCart.storeId, storeId),
-          ),
-        )
-        .returning();
-    } catch (error) {
-      console.error("Error removing from cart:", error);
-      throw new Error("Failed to remove item from cart");
-    }
-  }
-
-  // Remove an item from cart by product ID
-  static async removeByProductId(productId: string, appUserId: string, storeId: string) {
+  // Remove a product from the cart
+  static async remove(productId: string, appUserId: string, storeId: string) {
     try {
       return await db
         .delete(AppCart)
@@ -158,30 +132,12 @@ export class CartRepository {
             eq(AppCart.product_id, productId),
             eq(AppCart.appUserId, appUserId),
             eq(AppCart.storeId, storeId),
-          ),
+          )
         )
         .returning();
     } catch (error) {
       console.error("Error removing from cart:", error);
       throw new Error("Failed to remove item from cart");
-    }
-  }
-
-  // Clear all items from cart
-  static async clearCart(appUserId: string, storeId: string) {
-    try {
-      return await db
-        .delete(AppCart)
-        .where(
-          and(
-            eq(AppCart.appUserId, appUserId),
-            eq(AppCart.storeId, storeId),
-          ),
-        )
-        .returning();
-    } catch (error) {
-      console.error("Error clearing cart:", error);
-      throw new Error("Failed to clear cart");
     }
   }
 
@@ -200,6 +156,24 @@ export class CartRepository {
     } catch (error) {
       console.error("Error fetching cart:", error);
       throw new Error("Failed to fetch cart");
+    }
+  }
+
+  // Clear user's cart
+  static async clearCart(appUserId: string, storeId: string) {
+    try {
+      return await db
+        .delete(AppCart)
+        .where(
+          and(
+            eq(AppCart.appUserId, appUserId),
+            eq(AppCart.storeId, storeId),
+          )
+        )
+        .returning();
+    } catch (error) {
+      console.error("Error clearing cart:", error);
+      throw new Error("Failed to clear cart");
     }
   }
 }
