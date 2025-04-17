@@ -122,4 +122,43 @@ export class SubcategoryController {
       );
     }
   }
+
+  static async getSubcategoriesByCategoryId(c: Context) {
+    try {
+      const categoryId = c.req.param("categoryId");
+      // ensure id is valid
+      const validId = idSchema.safeParse(categoryId);
+      if (!validId.success) {
+        return c.json(
+          {
+            status: "error",
+            message: "Invalid category ID",
+          },
+          400,
+        );
+      }
+
+      const { storeId } = c.get("user");
+
+      // Get all subcategories for this category
+      const subcategories = await SubcategoryRepository.findByCategoryId(
+        categoryId,
+        storeId,
+      );
+
+      return c.json({
+        status: "success",
+        data: subcategories,
+      });
+    } catch (error) {
+      console.error("Error in getSubcategoriesByCategoryId:", error);
+      return c.json(
+        {
+          status: "error",
+          message: "Failed to fetch subcategories for this category",
+        },
+        500,
+      );
+    }
+  }
 }

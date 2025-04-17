@@ -3,6 +3,27 @@ import { eq } from "drizzle-orm";
 import { AppSubCategory, AppProduct } from "@/lib/db/schema";
 
 export class SubcategoryRepository {
+  static async findByCategoryId(categoryId: string, storeId: string) {
+    try {
+      // Find all subcategories that belong to the given category ID and store ID
+      return await db.query.AppSubCategory.findMany({
+        where: (subcategory) => {
+          return (
+            eq(subcategory.parentCategoryId, categoryId) &&
+            eq(subcategory.storeId, storeId)
+          );
+        },
+      });
+    } catch (error) {
+      console.error(
+        `Error fetching subcategories for category ID ${categoryId}:`,
+        error,
+      );
+      throw new Error(
+        `Failed to fetch subcategories for category ID ${categoryId}`,
+      );
+    }
+  }
   static async findAll(storeId: string) {
     try {
       return await db.query.AppSubCategory.findMany({
