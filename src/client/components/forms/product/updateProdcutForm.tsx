@@ -436,7 +436,7 @@ export default function UpdateProductForm({
                   <FormControl>
                     <Textarea
                       placeholder="Type a description"
-                      className="resize-none"
+                      className="resize-none h-44"
                       {...field}
                       value={field.value || ""}
                     />
