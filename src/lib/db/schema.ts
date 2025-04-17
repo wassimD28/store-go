@@ -348,6 +348,10 @@ export const AppProductRelations = relations(AppProduct, ({ one }) => ({
     fields: [AppProduct.categoryId],
     references: [AppCategory.id],
   }),
+  subCategory: one(AppSubCategory, {
+    fields: [AppProduct.categoryId],
+    references: [AppSubCategory.id],
+  }),
 }));
 
 export const AppReviewsRelations = relations(AppReview, ({ one }) => ({
