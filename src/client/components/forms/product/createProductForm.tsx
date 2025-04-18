@@ -67,7 +67,7 @@ const sizeOptions = {
   clothing: ["XS", "S", "M", "L", "XL", "XXL", "XXXL"],
   shoes: ["35","36", "37", "38", "39", "40", "41", "42", "43", "44", "45"],
   accessories: ["One Size"],
-  custom: [], // Empty array for pure custom sizes
+  custom: [], 
 };
 // Define the component props interface
 interface CreateProductFormProps {

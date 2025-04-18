@@ -138,8 +138,10 @@ export function CategoryTableClient({ categories }: CategoryTableClientProps) {
               variant="ghost"
               size="icon"
               onClick={() => {
-                // Implement edit logic
-                console.log("Edit category:", category.id);
+                // Navigate to the update category page
+                router.push(
+                  `/stores/${category.storeId}/products/categories/edit/${category.id}`,
+                );
               }}
               title="Edit Category"
             >

@@ -80,15 +80,14 @@ function MainSideBar({ user, sideBarData  }: props) {
             style={{ width: isExpend ? EXPENDED_WIDTH - 8 : ICON_WIDTH + 16 }}
             className={cn(
               `relative flex h-10 flex-row items-center justify-center gap-2 overflow-hidden rounded-2xl transition-all duration-200 ease-in-out hover:bg-foreground/10`,
-              isExpend && ``,
               !isExpend && `p-0`,
               isMainActive(item.route) && "bg-primary-gradient text-white",
             )}
           >
             <item.icon
               className={cn(
-                "absolute translate-x-0 transition-all duration-200 ease-in-out",
-                isExpend && "-translate-x-16",
+                " translate-x-2 transition-all duration-200 ease-in-out",
+                isExpend && "translate-x-5",
               )}
               width={ICON_WIDTH}
               height={ICON_WIDTH}
@@ -102,7 +101,7 @@ function MainSideBar({ user, sideBarData  }: props) {
             />
             <div className="relative flex flex-1 items-center justify-start">
               <FadeText
-                className={`absolute left-0 -translate-y-2.5 pl-14 font-poppins text-sm font-normal`}
+                className={`absolute -left-8 -translate-y-2.5 pl-14 font-poppins text-sm font-normal`}
                 direction="left"
                 text={item.name}
                 isVisible={isExpend}

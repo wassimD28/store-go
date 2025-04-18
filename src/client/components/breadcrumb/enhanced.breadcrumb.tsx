@@ -246,20 +246,7 @@ export function EnhancedBreadcrumb() {
   // Render a breadcrumb item with proper styling based on context
   const renderBreadcrumbItem = (segment: SegmentInfo) => {
     // Define context-specific styling
-    const getContextStyle = (context?: string) => {
-      switch (context) {
-        case "store":
-          return "text-blue-600 font-medium";
-        case "product":
-          return "text-green-600 font-medium";
-        case "category":
-          return "text-yellow-600 font-medium";
-        case "user":
-          return "text-purple-600 font-medium";
-        default:
-          return "";
-      }
-    };
+    
 
     if (segment.isLoading) {
       return (
@@ -271,7 +258,7 @@ export function EnhancedBreadcrumb() {
 
     if (segment.isPage) {
       return (
-        <BreadcrumbPage className={getContextStyle(segment.context)}>
+        <BreadcrumbPage >
           {segment.displayName}
         </BreadcrumbPage>
       );
@@ -283,7 +270,7 @@ export function EnhancedBreadcrumb() {
           <TooltipTrigger asChild>
             <BreadcrumbLink
               href={segment.href}
-              className={`transition-colors hover:underline ${getContextStyle(segment.context)}`}
+              className={`transition-colors hover:underline `}
             >
               {segment.displayName}
             </BreadcrumbLink>
