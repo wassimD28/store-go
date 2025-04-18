@@ -1,8 +1,8 @@
-
 import { Context } from "hono";
 import { ReviewRepository } from "@/server/repositories/review.repository";
 import { idSchema } from "../schemas/common.schema";
 import { z } from "zod";
+import Pusher from "pusher";
 
 // Define a schema for review data validation
 const reviewSchema = z.object({
@@ -13,13 +13,39 @@ const reviewSchema = z.object({
 
 // Define types to match repository
 
-
 interface ReviewUpdateData {
   rating?: number;
   content?: string;
 }
 
 export class ReviewController {
+  static pusherServer = (() => {
+    try {
+      // Check if all required variables are defined
+      const appId = process.env.PUSHER_APP_ID!;
+      const key = process.env.NEXT_PUBLIC_PUSHER_KEY!;
+      const secret = process.env.PUSHER_APP_SECRET!;
+      const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER!;
+
+      if (!appId || !key || !secret || !cluster) {
+        console.warn(
+          "Pusher environment variables are missing. Real-time notifications will be disabled.",
+        );
+        return null;
+      }
+
+      return new Pusher({
+        appId,
+        key,
+        secret,
+        cluster,
+      });
+    } catch (error) {
+      console.error("Failed to initialize Pusher:", error);
+      return null;
+    }
+  })();
+
   static async getReviewsByProductId(c: Context) {
     try {
       const productId = c.req.param("productId");
@@ -219,6 +245,25 @@ export class ReviewController {
       };
 
       const newReview = await ReviewRepository.create(reviewData);
+      // Trigger notification after review is created
+      // Only trigger if pusherServer is initialized
+      if (ReviewController.pusherServer) {
+        try {
+          await ReviewController.pusherServer.trigger(
+            `store-${storeId}`,
+            "new-review",
+            {
+              productId,
+              reviewId: newReview.id,
+              rating: newReview.rating,
+              userId: appUserId,
+            },
+          );
+        } catch (error) {
+          console.error("Error triggering Pusher notification:", error);
+          // Continue with the response - don't let Pusher failure break the API
+        }
+      }
 
       return c.json(
         {

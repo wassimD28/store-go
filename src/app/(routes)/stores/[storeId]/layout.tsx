@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import MainSideBar from "@/client/components/sidebar/app-sidebar";
 import { ReactNode } from "react";
 import { getStoreSideBarData } from "@/lib/constants/mainSidebar";
+import { PusherProvider } from "@/client/providers/pusher.provider";
 
 export default async function RootLayout({
   children,
@@ -31,8 +32,10 @@ export default async function RootLayout({
 
   return (
     <div className="relative h-svh w-svw">
-      <MainSideBar user={user} sideBarData={sideBarData} />
-      {children}
+      <PusherProvider storeId={storeId} userId={user.id}>
+        <MainSideBar user={user} sideBarData={sideBarData} />
+        {children}
+      </PusherProvider>
     </div>
   );
 }
