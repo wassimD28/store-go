@@ -1,12 +1,71 @@
 import { Context } from "hono";
 import { ProductRepository } from "@/server/repositories/product.repository";
 import { idSchema } from "../schemas/common.schema";
+import { desc, eq } from "drizzle-orm";
+import { db } from "@/lib/db/db";
+import { AppProduct } from "@/lib/db/schema";
 
 export class ProductController {
   static async getAllProducts(c: Context) {
     try {
       const { storeId } = c.get("user");
-      const products = await ProductRepository.findAll(storeId);
+      const query = c.req.query();
+
+      let products;
+      if (query.featured === "true") {
+        products = await db.query.AppProduct.findMany({
+          where: eq(AppProduct.storeId, storeId),
+          columns: {
+            id: true,
+            userId: true,
+            storeId: true,
+            categoryId: true,
+            subcategoryId: true,
+            name: true,
+            description: true,
+            price: true,
+            attributes: true,
+            colors: true,
+            size: true,
+            image_urls: true,
+            stock_quantity: true,
+            status: true,
+            targetGender: true,
+            unitsSold: true,
+            created_at: true,
+            updated_at: true,
+          },
+          orderBy: desc(AppProduct.unitsSold),
+        });
+      } else if (query.sort === "newest") {
+        products = await db.query.AppProduct.findMany({
+          where: eq(AppProduct.storeId, storeId),
+          columns: {
+            id: true,
+            userId: true,
+            storeId: true,
+            categoryId: true,
+            subcategoryId: true,
+            name: true,
+            description: true,
+            price: true,
+            attributes: true,
+            colors: true,
+            size: true,
+            image_urls: true,
+            stock_quantity: true,
+            status: true,
+            targetGender: true,
+            unitsSold: true,
+            created_at: true,
+            updated_at: true,
+          },
+          orderBy: desc(AppProduct.created_at),
+        });
+      } else {
+        products = await ProductRepository.findAll(storeId);
+      }
+
       return c.json({
         status: "success",
         data: products,
@@ -26,7 +85,6 @@ export class ProductController {
   static async getProductById(c: Context) {
     try {
       const id = c.req.param("id");
-      // Ensure id is valid
       const validId = idSchema.safeParse(id);
       if (!validId.success) {
         return c.json(
@@ -68,7 +126,6 @@ export class ProductController {
   static async getProductsByCategory(c: Context) {
     try {
       const categoryId = c.req.param("categoryId");
-      // Ensure categoryId is valid
       const validId = idSchema.safeParse(categoryId);
       if (!validId.success) {
         return c.json(
@@ -81,10 +138,7 @@ export class ProductController {
       }
       const { storeId } = c.get("user");
 
-      // Make sure we're actually filtering by categoryId in the database query
-      // This appears to be the root of the issue
       const products = await ProductRepository.findByCategory(categoryId, storeId);
-      
       console.log(`Found ${products.length} products for category ${categoryId}`);
 
       return c.json({

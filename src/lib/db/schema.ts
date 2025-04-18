@@ -326,11 +326,14 @@ export const storeCategoryRelations = relations(storeCategory, ({ many }) => ({
 }));
 
 // Define relations for AppProduct
-export const AppProductRelations = relations(AppProduct, ({ one }) => ({
+// Define relations for AppProduct
+export const AppProductRelations = relations(AppProduct, ({ one, many }) => ({
   category: one(AppCategory, {
     fields: [AppProduct.categoryId],
     references: [AppCategory.id],
   }),
+  // Ajout de la relation many vers les reviews
+  reviews: many(AppReview),
 }));
 
 export const AppReviewsRelations = relations(AppReview, ({ one }) => ({
