@@ -26,13 +26,6 @@ export const AgeRangeEnum = pgEnum("age_range_enum", [
   "60+",
 ]);
 
-export const discountTypeEnum = pgEnum("discount_type", [
-  "percentage",
-  "fixed_amount",
-  "free_shipping",
-  "buy_x_get_y",
-]);
-
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -151,18 +144,15 @@ export const AppUser = pgTable("app_user", {
 // AppAddress table schema
 export const AppAddress = pgTable("app_address", {
   id: uuid("id").primaryKey().defaultRandom(),
-  storeId: uuid("store_id")
-    .notNull()
-    .references(() => stores.id),
-  appUserId: uuid("app_user_id")
-    .notNull()
-    .references(() => AppUser.id),
+  storeId: uuid("store_id").notNull().references(() => stores.id),
+  appUserId: uuid("app_user_id").notNull().references(() => AppUser.id),
   street: varchar("street", { length: 255 }).notNull(),
   city: varchar("city", { length: 100 }).notNull(),
   state: varchar("state", { length: 100 }).notNull(),
   postalCode: varchar("postalCode", { length: 20 }).notNull(),
   country: varchar("country", { length: 100 }).notNull(),
   isDefault: boolean("isDefault").default(false),
+  status: varchar("status", { length: 50 }).default("active"), // Add status column
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -175,13 +165,6 @@ export const AppOrder = pgTable("app_order", {
   address_id: uuid("address_id")
     .notNull()
     .references(() => AppAddress.id),
-  discountAmount: decimal("discount_amount", { precision: 10, scale: 2 })
-    .default('0')
-    .notNull(),
-  appliedPromotionId: uuid("applied_promotion_id").references(
-    () => AppPromotion.id,
-  ),
-  couponCode: varchar("coupon_code", { length: 50 }),
   data_amount: decimal("data_amount", { precision: 10, scale: 2 }).notNull(),
   order_date: timestamp("order_date").defaultNow().notNull(),
   status: varchar("status", { length: 50 }).notNull(),
@@ -196,7 +179,7 @@ export const AppPayment = pgTable("app_payment", {
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   payment_date: timestamp("payment_date").defaultNow(),
   payment_method: varchar("payment_method", { length: 50 }).notNull(),
-  status: varchar("status", { length: 50 }).notNull().default("pending"),
+  status: varchar("status", { length: 50 }).notNull().default("pending"), 
 });
 
 // AppCollection table schema
@@ -209,6 +192,7 @@ export const AppCollection = pgTable("app_collection", {
   unit_price: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
   subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
 });
+
 
 // AppWishlist table schema
 export const AppWishlist = pgTable("app_wishlist", {
@@ -307,6 +291,23 @@ export const AppProduct = pgTable("app_product", {
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// AppCart table schema
+export const AppCart = pgTable("app_cart", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  storeId: uuid("store_id")
+    .notNull()
+    .references(() => stores.id),
+  appUserId: uuid("app_user_id")
+    .notNull()
+    .references(() => AppUser.id),
+  product_id: uuid("product_id")
+    .notNull()
+    .references(() => AppProduct.id),
+  quantity: integer("quantity").notNull().default(1),
+  variants: json("variants").default({}),
+  added_at: timestamp("added_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
 
 // Define relations for the stores table
 export const storesRelations = relations(stores, ({ one }) => ({
@@ -328,6 +329,8 @@ export const AppProductRelations = relations(AppProduct, ({ one, many }) => ({
     fields: [AppProduct.categoryId],
     references: [AppCategory.id],
   }),
+  // Ajout de la relation many vers les reviews
+  reviews: many(AppReview),
 }));
 
 export const AppReviewsRelations = relations(AppReview, ({ one }) => ({
@@ -376,23 +379,5 @@ export const AppCartRelations = relations(AppCart, ({ one }) => ({
   store: one(stores, {
     fields: [AppCart.storeId],
     references: [stores.id],
-  }),
-}));
-
-export const AppPromotionRelations = relations(AppPromotion, ({ one }) => ({
-  store: one(stores, {
-    fields: [AppPromotion.storeId],
-    references: [stores.id],
-  }),
-}));
-
-export const AppOrderRelations = relations(AppOrder, ({ one }) => ({
-  appliedPromotion: one(AppPromotion, {
-    fields: [AppOrder.appliedPromotionId],
-    references: [AppPromotion.id],
-  }),
-  address: one(AppAddress, {
-    fields: [AppOrder.address_id],
-    references: [AppAddress.id],
   }),
 }));

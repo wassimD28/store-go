@@ -9,6 +9,9 @@ export const createAddressSchema = z.object({
   postalCode: z.string().min(1, "Postal code is required"),
   country: z.string().min(1, "Country is required"),
   isDefault: z.boolean().default(false),
+  status: z.string().optional(), // Add status field
 });
 
-export const updateAddressSchema = createAddressSchema.omit({ app_user_id: true }).partial();
+export const updateAddressSchema = createAddressSchema
+  .omit({ app_user_id: true })
+  .partial();
