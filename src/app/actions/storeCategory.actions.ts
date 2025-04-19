@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db/db";
-import { storeCategory } from "@/lib/db/schema";
+import { storeCategory } from "@/lib/db";
 
 export async function getStoreCategories() {
   try {
@@ -12,7 +12,7 @@ export async function getStoreCategories() {
         description: storeCategory.description,
         imageUrl: storeCategory.imageUrl,
       })
-      .from(storeCategory)
+      .from(storeCategory);
 
     return {
       success: true,

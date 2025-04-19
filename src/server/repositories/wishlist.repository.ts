@@ -2,7 +2,7 @@
 
 import { db } from "../../lib/db/db";
 import { eq, and } from "drizzle-orm";
-import { AppWishlist } from "@/lib/db/schema";
+import { AppWishlist } from "@/lib/db";
 
 export class WishlistRepository {
   // Check if a product is in the user's wishlist
@@ -96,4 +96,3 @@ export class WishlistRepository {
     }
   }
 }
-

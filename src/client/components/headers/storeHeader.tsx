@@ -1,12 +1,20 @@
 "use client";
 import { ChevronLeft } from "lucide-react";
-import { Button } from "../../ui/button";
-import { EnhancedBreadcrumb } from "../../breadcrumb/enhanced.breadcrumb";
+import { Button } from "../ui/button";
 import { useSidebar } from "@/client/store/sidebar.store";
 import { cn } from "@/lib/utils";
+import { EnhancedBreadcrumb } from "../breadcrumb/enhanced.breadcrumb";
+import { NotificationBell } from "../popover/notificationBell";
 
-function ProductHeader() {
+interface Props {
+  storeId: string;
+}
+function StoreHeader({ storeId }: Props) {
   const { isSidebarOpen } = useSidebar();
+
+  if (!storeId) {
+    throw "No store ID provided to 'StoreHeader'";
+  }
 
   return (
     <div className="col-span-full flex w-full justify-between border-b bg-sidebar px-4 py-3 shadow-xl shadow-black/5">
@@ -22,9 +30,11 @@ function ProductHeader() {
         </Button>
         <EnhancedBreadcrumb />
       </div>
-      <div className="flex gap-4">{/* Your action buttons here */}</div>
+      <div className="flex gap-4">
+        <NotificationBell storeId={storeId} />
+      </div>
     </div>
   );
 }
 
-export default ProductHeader;
+export default StoreHeader;

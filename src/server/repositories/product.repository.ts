@@ -1,6 +1,6 @@
 import { db } from "@/lib/db/db";
 import { eq, and } from "drizzle-orm";
-import { AppProduct, AppReview } from "@/lib/db/schema";
+import { AppProduct, AppReview } from "@/lib/db";
 
 export class ProductRepository {
   static async findAll(storeId: string) {
@@ -118,7 +118,10 @@ export class ProductRepository {
         },
       });
     } catch (error) {
-      console.error(`Error fetching products for category ${categoryId}:`, error);
+      console.error(
+        `Error fetching products for category ${categoryId}:`,
+        error,
+      );
       throw new Error(`Failed to fetch products for category ${categoryId}`);
     }
   }

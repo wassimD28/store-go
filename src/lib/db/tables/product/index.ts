@@ -1,0 +1,5 @@
+export * from './appProduct.table'
+export * from './appCategory.table'
+export * from './appSubcategory.table'
+export * from './appReview.table'
+export * from './appPromotion.table'

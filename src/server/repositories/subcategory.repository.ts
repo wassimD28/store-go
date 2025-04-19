@@ -1,6 +1,6 @@
 import { db } from "../../lib/db/db";
 import { eq } from "drizzle-orm";
-import { AppSubCategory, AppProduct } from "@/lib/db/schema";
+import { AppSubCategory, AppProduct } from "@/lib/db";
 
 export class SubcategoryRepository {
   static async findByCategoryId(categoryId: string, storeId: string) {

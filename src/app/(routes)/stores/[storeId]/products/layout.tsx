@@ -1,4 +1,4 @@
-import FixedHeader from "@/client/components/headers/fixedheader";
+import StoreHeader from "@/client/components/headers/globalHeader";
 import SubNavBar from "@/client/components/sidebar/sub-sideBar";
 import { getProductSideBar } from "@/lib/constants/subSidebar";
 import { ReactNode } from "react";
@@ -20,7 +20,7 @@ async function Layout({
   return (
     <div className="grid h-screen w-screen grid-cols-[auto_1fr] grid-rows-[auto_1fr]">
       {/* Header spanning full width */}
-      <FixedHeader storeId={storeId} />
+      <StoreHeader storeId={storeId} />
 
       {/* Sidebar in the first column */}
       <SubNavBar title="products" data={sideBarData} />

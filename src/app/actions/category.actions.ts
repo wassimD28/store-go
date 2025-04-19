@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db/db";
-import { AppCategory, AppSubCategory } from "@/lib/db/schema";
+import { AppCategory, AppSubCategory } from "@/lib/db";
 import { ActionResponse } from "@/lib/types/interfaces/common.interface";
 import { AppCategory as IAppCategory } from "@/lib/types/interfaces/schema.interface";
 import { eq } from "drizzle-orm";

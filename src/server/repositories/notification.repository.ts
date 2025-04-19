@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { db } from "../../lib/db/db";
 import { eq, and, count } from "drizzle-orm";
-import { AppNotification, notificationTypeEnum } from "@/lib/db/schema";
+import { AppNotification, notificationTypeEnum } from "@/lib/db";
 
 // Define types for notification data using the actual enum type
 type NotificationType = (typeof notificationTypeEnum.enumValues)[number];

@@ -1,5 +1,5 @@
 import { use } from "react";
-import FixedHeader from "@/client/components/headers/fixedheader";
+import StoreHeader from "@/client/components/headers/globalHeader";
 import SubNavBar from "@/client/components/sidebar/sub-sideBar";
 import { getAppGenerationSideBar } from "@/lib/constants/subSidebar";
 import { ReactNode } from "react";
@@ -18,7 +18,7 @@ function Layout({
   return (
     <div className="grid h-screen w-screen grid-cols-[auto_1fr] grid-rows-[auto_1fr] overflow-hidden">
       {/* Header spanning full width */}
-      <FixedHeader />
+      <StoreHeader />
 
       {/* Sidebar in the first column */}
       <SubNavBar title="generations" data={getAppGenerationSideBar(storeId)} />

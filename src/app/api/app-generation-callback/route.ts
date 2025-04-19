@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db/db";
 import { eq } from "drizzle-orm";
-import { generationJobs, stores } from "@/lib/db/schema";
+import { generationJobs, stores } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     if (!jobId || !status) {
       return NextResponse.json(
         { error: "Invalid callback data" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
         success: false,
         error: "Failed to process callback",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

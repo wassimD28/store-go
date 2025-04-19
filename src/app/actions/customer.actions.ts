@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db/db";
-import { AppAddress, AppOrder, AppReview, AppWishlist } from "@/lib/db/schema";
+import { AppAddress, AppOrder, AppReview, AppWishlist } from "@/lib/db";
 import { ActionResponse } from "@/lib/types/interfaces/common.interface";
 import { eq, and, count } from "drizzle-orm";
 

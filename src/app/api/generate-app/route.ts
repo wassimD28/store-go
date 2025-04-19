@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "@/lib/db/db";
-import { generationJobs, stores } from "@/lib/db/schema";
+import { generationJobs, stores } from "@/lib/db";
 
 // Create a jobs table with Drizzle if you want to persist jobs
 // If not, you can continue using the Map as in your example
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     if (!storeName) {
       return NextResponse.json(
         { error: "Store name is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
             callbackUrl,
           },
         }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
           error: "Failed to trigger app generation",
           details: errorText,
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
         success: false,
         error: "Failed to start app generation",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

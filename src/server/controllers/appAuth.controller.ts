@@ -2,7 +2,7 @@ import { Context } from "hono";
 import { createClient } from "@supabase/supabase-js";
 import { db } from "@/lib/db/db";
 import { hash } from "bcrypt";
-import { AppUser } from "@/lib/db/schema";
+import { AppUser } from "@/lib/db";
 import { appSignInSchema, appSignUpSchema } from "@/server/schemas/auth.schema";
 
 class AppAuthController {
@@ -269,7 +269,6 @@ class AppAuthController {
       );
     }
   }
-
 
   static async signOut(c: Context) {
     try {

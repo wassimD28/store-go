@@ -1,6 +1,6 @@
 import { db } from "../../lib/db/db";
 import { eq, and } from "drizzle-orm";
-import { AppAddress } from "@/lib/db/schema";
+import { AppAddress } from "@/lib/db";
 import {
   createAddressSchema,
   updateAddressSchema,

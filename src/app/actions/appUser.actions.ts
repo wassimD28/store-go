@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db/db";
-import { AppUser } from "@/lib/db/schema";
+import { AppUser } from "@/lib/db";
 import { ActionResponse } from "@/lib/types/interfaces/common.interface";
 import { createClient } from "@supabase/supabase-js";
 import { eq, and } from "drizzle-orm";
@@ -173,9 +173,8 @@ export const deleteAppUser = async (
     );
 
     // Delete the user from Supabase Auth
-    const { error: supabaseError } = await supabaseAdmin.auth.admin.deleteUser(
-      appUserId
-    );
+    const { error: supabaseError } =
+      await supabaseAdmin.auth.admin.deleteUser(appUserId);
 
     if (supabaseError) {
       console.error("Error deleting user from Supabase Auth:", supabaseError);

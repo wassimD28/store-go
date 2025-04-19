@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db/db";
-import { user } from "@/lib/db/schema";
+import { user } from "@/lib/db";
 import { ActionResponse } from "@/lib/types/interfaces/common.interface";
 import { eq } from "drizzle-orm";
 

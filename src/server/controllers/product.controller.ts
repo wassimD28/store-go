@@ -3,7 +3,7 @@ import { ProductRepository } from "@/server/repositories/product.repository";
 import { idSchema } from "../schemas/common.schema";
 import { desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db/db";
-import { AppProduct } from "@/lib/db/schema";
+import { AppProduct } from "@/lib/db";
 
 export class ProductController {
   static async getAllProducts(c: Context) {
@@ -77,7 +77,7 @@ export class ProductController {
           status: "error",
           message: "Failed to fetch products",
         },
-        500
+        500,
       );
     }
   }
@@ -92,7 +92,7 @@ export class ProductController {
             status: "error",
             message: "Invalid ID",
           },
-          400
+          400,
         );
       }
 
@@ -103,7 +103,7 @@ export class ProductController {
             status: "error",
             message: "Product not found",
           },
-          404
+          404,
         );
       }
 
@@ -118,7 +118,7 @@ export class ProductController {
           status: "error",
           message: "Failed to fetch product",
         },
-        500
+        500,
       );
     }
   }
@@ -133,13 +133,18 @@ export class ProductController {
             status: "error",
             message: "Invalid category ID",
           },
-          400
+          400,
         );
       }
       const { storeId } = c.get("user");
 
-      const products = await ProductRepository.findByCategory(categoryId, storeId);
-      console.log(`Found ${products.length} products for category ${categoryId}`);
+      const products = await ProductRepository.findByCategory(
+        categoryId,
+        storeId,
+      );
+      console.log(
+        `Found ${products.length} products for category ${categoryId}`,
+      );
 
       return c.json({
         status: "success",
@@ -152,7 +157,7 @@ export class ProductController {
           status: "error",
           message: "Failed to fetch products by category",
         },
-        500
+        500,
       );
     }
   }
