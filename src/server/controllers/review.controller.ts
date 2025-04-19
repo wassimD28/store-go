@@ -95,8 +95,11 @@ export class ReviewController {
   static async createReview(c: Context) {
     try {
       const productId = c.req.param("productId");
+      console.log(`Received request to create review for product: ${productId}`);
+      
       const validId = idSchema.safeParse(productId);
       if (!validId.success) {
+        console.log(`Invalid product ID: ${productId}`);
         return c.json(
           {
             status: "error",
@@ -106,16 +109,41 @@ export class ReviewController {
         );
       }
 
-      const { id: appUserId, storeId } = c.get("user");
+      const user = c.get("user");
+      if (!user || !user.id) {
+        console.log('User authentication failed: user or user.id missing');
+        return c.json(
+          {
+            status: "error",
+            message: "User not authenticated or user ID missing",
+          },
+          401,
+        );
+      }
+
+      const { id: appUserId, storeId } = user;
+      if (!appUserId) {
+        console.log('User ID is missing');
+        return c.json(
+          {
+            status: "error",
+            message: "User ID is required",
+          },
+          400,
+        );
+      }
+      console.log(`Authenticated user: ${appUserId}, store: ${storeId}`);
 
       const contentType = c.req.header("Content-Type");
       const contentLength = parseInt(c.req.header("Content-Length") || "0");
+      console.log(`Content-Type: ${contentType}, Content-Length: ${contentLength}`);
 
       if (
         !contentType ||
         !contentType.includes("application/json") ||
         contentLength === 0
       ) {
+        console.log('Invalid request body: Content-Type or body missing');
         return c.json(
           {
             status: "error",
@@ -128,7 +156,9 @@ export class ReviewController {
       let body;
       try {
         body = await c.req.json();
+        console.log('Request body:', body);
       } catch (error) {
+        console.log('Invalid JSON in request body:', error);
         return c.json(
           {
             status: "error",
@@ -139,6 +169,7 @@ export class ReviewController {
       }
 
       if (!body || Object.keys(body).length === 0) {
+        console.log('Review data is empty');
         return c.json(
           {
             status: "error",
@@ -154,6 +185,7 @@ export class ReviewController {
       });
 
       if (!validatedData.success) {
+        console.log('Invalid review data:', validatedData.error.format());
         return c.json(
           {
             status: "error",
@@ -169,6 +201,7 @@ export class ReviewController {
         storeId,
       );
       if (!product) {
+        console.log(`Product not found: ${productId} in store ${storeId}`);
         return c.json(
           {
             status: "error",
@@ -177,12 +210,14 @@ export class ReviewController {
           404,
         );
       }
+      console.log(`Product found: ${productId}`);
 
       const existingReview = await ReviewRepository.findByUserAndProduct(
         appUserId,
         productId,
       );
       if (existingReview) {
+        console.log(`Duplicate review by user ${appUserId} for product ${productId}`);
         return c.json(
           {
             status: "error",
@@ -200,8 +235,11 @@ export class ReviewController {
         content: validatedData.data.content || null,
       };
 
+      console.log("Creating review with data:", JSON.stringify(reviewData));
+      
       const newReview = await ReviewRepository.create(reviewData);
 
+      console.log('Review created successfully:', newReview);
       return c.json(
         {
           status: "success",
@@ -215,7 +253,7 @@ export class ReviewController {
       return c.json(
         {
           status: "error",
-          message: "Failed to create review",
+          message: error instanceof Error ? error.message : "Failed to create review",
         },
         500,
       );

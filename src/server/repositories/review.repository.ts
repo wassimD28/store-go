@@ -49,7 +49,7 @@ export class ReviewRepository {
           product: true,
         },
       });
-      return result ?? null; // Convert undefined to null
+      return result ?? null;
     } catch (error) {
       console.error(`Error fetching review ${reviewId}:`, error);
       throw new Error(`Failed to fetch review ${reviewId}`);
@@ -67,7 +67,7 @@ export class ReviewRepository {
           eq(AppReview.productId, productId),
         ),
       });
-      return result ?? null; // Convert undefined to null
+      return result ?? null;
     } catch (error) {
       console.error(
         `Error finding review for user ${appUserId} and product ${productId}:`,
@@ -90,7 +90,7 @@ export class ReviewRepository {
           eq(AppProduct.storeId, storeId),
         ),
       });
-      return result ?? null; // Convert undefined to null
+      return result ?? null;
     } catch (error) {
       console.error(`Error checking if product ${productId} exists:`, error);
       throw new Error(`Failed to check if product ${productId} exists`);
@@ -101,14 +101,24 @@ export class ReviewRepository {
     reviewData: ReviewData,
   ): Promise<typeof AppReview.$inferSelect> {
     try {
+      // Map appUserId to user_id for database compatibility
+      const dataToInsert = {
+        ...reviewData,
+        user_id: reviewData.appUserId, // Add user_id field for the database
+      };
+      
       const [newReview] = await db
         .insert(AppReview)
-        .values(reviewData)
+        .values(dataToInsert)
         .returning();
+        
+      if (!newReview) {
+        throw new Error("Failed to create review: No data returned from database");
+      }
       return newReview;
     } catch (error) {
       console.error("Error creating review:", error);
-      throw new Error("Failed to create review");
+      throw new Error(`Failed to create review: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
