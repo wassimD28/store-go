@@ -1,4 +1,4 @@
-import StoreHeader from "@/client/components/headers/globalHeader";
+import StoreHeader from "@/client/components/headers/storeHeader";
 import SubNavBar from "@/client/components/sidebar/sub-sideBar";
 import { getProductSideBar } from "@/lib/constants/subSidebar";
 import { ReactNode } from "react";
