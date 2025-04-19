@@ -9,8 +9,8 @@ import {
 export class AddressController {
   static async getAllAddresses(c: Context) {
     try {
-      const { id: userId } = c.get("user");
-      const addresses = await AddressRepository.findAll(userId);
+      const { id: userId, storeId } = c.get("user");
+      const addresses = await AddressRepository.findAll(userId, storeId);
 
       return c.json({
         status: "success",
@@ -31,7 +31,6 @@ export class AddressController {
   static async getAddressById(c: Context) {
     try {
       const addressId = c.req.param("addressId");
-      // Validate address ID
       const validId = idSchema.safeParse(addressId);
       if (!validId.success) {
         return c.json(
@@ -43,8 +42,8 @@ export class AddressController {
         );
       }
 
-      const { id: userId } = c.get("user");
-      const address = await AddressRepository.findById(addressId, userId);
+      const { id: userId, storeId } = c.get("user");
+      const address = await AddressRepository.findById(addressId, userId, storeId);
 
       if (!address) {
         return c.json(
@@ -74,14 +73,11 @@ export class AddressController {
 
   static async createAddress(c: Context) {
     try {
-      // Get user data from authenticated context
       const { id: userId, storeId } = c.get("user");
 
-      // Check if the request has content before trying to parse it
       const contentType = c.req.header("Content-Type");
       const contentLength = parseInt(c.req.header("Content-Length") || "0");
 
-      // Check if the request body is empty
       if (
         !contentType ||
         !contentType.includes("application/json") ||
@@ -96,11 +92,9 @@ export class AddressController {
         );
       }
 
-      // Try to parse the body with error handling
       let body;
       try {
         body = await c.req.json();
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         return c.json(
           {
@@ -111,7 +105,6 @@ export class AddressController {
         );
       }
 
-      // Check if body is empty after parsing
       if (!body || Object.keys(body).length === 0) {
         return c.json(
           {
@@ -122,7 +115,6 @@ export class AddressController {
         );
       }
 
-      // Parse and validate request body
       const validatedData = createAddressSchema.safeParse({
         ...body,
         app_user_id: userId,
@@ -165,7 +157,6 @@ export class AddressController {
   static async updateAddress(c: Context) {
     try {
       const addressId = c.req.param("addressId");
-      // Validate address ID
       const validId = idSchema.safeParse(addressId);
       if (!validId.success) {
         return c.json(
@@ -177,14 +168,22 @@ export class AddressController {
         );
       }
 
-      // Get user data from authenticated context
-      const { id: userId } = c.get("user");
+      const { id: userId, storeId } = c.get("user");
 
-      // Check if the request has content before trying to parse it
+      const existingAddress = await AddressRepository.findById(addressId, userId, storeId);
+      if (!existingAddress) {
+        return c.json(
+          {
+            status: "error",
+            message: "Address not found",
+          },
+          404,
+        );
+      }
+
       const contentType = c.req.header("Content-Type");
       const contentLength = parseInt(c.req.header("Content-Length") || "0");
 
-      // Check if the request body is empty
       if (
         !contentType ||
         !contentType.includes("application/json") ||
@@ -199,26 +198,9 @@ export class AddressController {
         );
       }
 
-      // Check if address exists and belongs to the user
-      const existingAddress = await AddressRepository.findById(
-        addressId,
-        userId,
-      );
-      if (!existingAddress) {
-        return c.json(
-          {
-            status: "error",
-            message: "Address not found",
-          },
-          404,
-        );
-      }
-
-      // Parse and validate request body
       let body;
       try {
         body = await c.req.json();
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         return c.json(
           {
@@ -229,7 +211,6 @@ export class AddressController {
         );
       }
 
-      // Check for typos in field names by using strict validation
       const updateSchema = updateAddressSchema
         .strict()
         .refine((data) => Object.keys(data).length > 0, {
@@ -248,7 +229,6 @@ export class AddressController {
         );
       }
 
-      // Update the address
       const updatedAddress = await AddressRepository.update(
         addressId,
         validatedData.data,
@@ -274,7 +254,6 @@ export class AddressController {
   static async deleteAddress(c: Context) {
     try {
       const addressId = c.req.param("addressId");
-      // Validate address ID
       const validId = idSchema.safeParse(addressId);
       if (!validId.success) {
         return c.json(
@@ -286,14 +265,9 @@ export class AddressController {
         );
       }
 
-      // Get user data from authenticated context
-      const { id: userId } = c.get("user");
+      const { id: userId, storeId } = c.get("user");
 
-      // Check if address exists and belongs to the user
-      const existingAddress = await AddressRepository.findById(
-        addressId,
-        userId,
-      );
+      const existingAddress = await AddressRepository.findById(addressId, userId, storeId);
       if (!existingAddress) {
         return c.json(
           {
@@ -304,7 +278,6 @@ export class AddressController {
         );
       }
 
-      // Delete the address
       await AddressRepository.delete(addressId);
 
       return c.json({

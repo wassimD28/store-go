@@ -163,18 +163,15 @@ export const AppUser = pgTable("app_user", {
 // AppAddress table schema
 export const AppAddress = pgTable("app_address", {
   id: uuid("id").primaryKey().defaultRandom(),
-  storeId: uuid("store_id")
-    .notNull()
-    .references(() => stores.id),
-  appUserId: uuid("app_user_id")
-    .notNull()
-    .references(() => AppUser.id),
+  storeId: uuid("store_id").notNull().references(() => stores.id),
+  appUserId: uuid("app_user_id").notNull().references(() => AppUser.id),
   street: varchar("street", { length: 255 }).notNull(),
   city: varchar("city", { length: 100 }).notNull(),
   state: varchar("state", { length: 100 }).notNull(),
   postalCode: varchar("postalCode", { length: 20 }).notNull(),
   country: varchar("country", { length: 100 }).notNull(),
   isDefault: boolean("isDefault").default(false),
+  status: varchar("status", { length: 50 }).default("active"), // Add status column
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -187,13 +184,6 @@ export const AppOrder = pgTable("app_order", {
   address_id: uuid("address_id")
     .notNull()
     .references(() => AppAddress.id),
-  discountAmount: decimal("discount_amount", { precision: 10, scale: 2 })
-    .default('0')
-    .notNull(),
-  appliedPromotionId: uuid("applied_promotion_id").references(
-    () => AppPromotion.id,
-  ),
-  couponCode: varchar("coupon_code", { length: 50 }),
   data_amount: decimal("data_amount", { precision: 10, scale: 2 }).notNull(),
   order_date: timestamp("order_date").defaultNow().notNull(),
   status: varchar("status", { length: 50 }).notNull(),
@@ -208,7 +198,7 @@ export const AppPayment = pgTable("app_payment", {
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   payment_date: timestamp("payment_date").defaultNow(),
   payment_method: varchar("payment_method", { length: 50 }).notNull(),
-  status: varchar("status", { length: 50 }).notNull().default("pending"),
+  status: varchar("status", { length: 50 }).notNull().default("pending"), 
 });
 
 // AppCollection table schema
@@ -221,6 +211,7 @@ export const AppCollection = pgTable("app_collection", {
   unit_price: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
   subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
 });
+
 
 // AppWishlist table schema
 export const AppWishlist = pgTable("app_wishlist", {
@@ -319,27 +310,22 @@ export const AppProduct = pgTable("app_product", {
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const AppPromotion = pgTable("app_promotion", {
+// AppCart table schema
+export const AppCart = pgTable("app_cart", {
   id: uuid("id").primaryKey().defaultRandom(),
   storeId: uuid("store_id")
     .notNull()
     .references(() => stores.id),
-  userId: text("user_id")
+  appUserId: uuid("app_user_id")
     .notNull()
-    .references(() => user.id),
-  name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"),
-  discountType: discountTypeEnum("discount_type").notNull(), // percentage, fixed_amount, free_shipping, buy_x_get_y
-  discountValue: decimal("discount_value", { precision: 10, scale: 2 }), // Amount or percentage off
-  couponCode: varchar("coupon_code", { length: 50 }), // Optional coupon code
-  minimumPurchase: decimal("minimum_purchase", { precision: 10, scale: 2 }).default('0'), // Minimum order value
-  startDate: timestamp("start_date").notNull(),
-  endDate: timestamp("end_date").notNull(),
-  isActive: boolean("is_active").default(true).notNull(),
-  applicableProducts: json("applicable_products").default([]), // Array of product IDs
-  applicableCategories: json("applicable_categories").default([]), // Array of category IDs
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
+    .references(() => AppUser.id),
+  product_id: uuid("product_id")
+    .notNull()
+    .references(() => AppProduct.id),
+  quantity: integer("quantity").notNull().default(1),
+  variants: json("variants").default({}),
+  added_at: timestamp("added_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 // Notifications table schema
@@ -381,15 +367,14 @@ export const storeCategoryRelations = relations(storeCategory, ({ many }) => ({
 }));
 
 // Define relations for AppProduct
-export const AppProductRelations = relations(AppProduct, ({ one }) => ({
+// Define relations for AppProduct
+export const AppProductRelations = relations(AppProduct, ({ one, many }) => ({
   category: one(AppCategory, {
     fields: [AppProduct.categoryId],
     references: [AppCategory.id],
   }),
-  subCategory: one(AppSubCategory, {
-    fields: [AppProduct.categoryId],
-    references: [AppSubCategory.id],
-  }),
+  // Ajout de la relation many vers les reviews
+  reviews: many(AppReview),
 }));
 
 export const AppReviewsRelations = relations(AppReview, ({ one }) => ({
@@ -420,22 +405,23 @@ export const AppWishlistRelations = relations(AppWishlist, ({ one }) => ({
     fields: [AppWishlist.storeId],
     references: [stores.id],
   }),
+  
 }));
+// Add this to your schema.ts file
 
-export const AppPromotionRelations = relations(AppPromotion, ({ one }) => ({
+
+// Define relations for AppCart
+export const AppCartRelations = relations(AppCart, ({ one }) => ({
+  product: one(AppProduct, {
+    fields: [AppCart.product_id],
+    references: [AppProduct.id],
+  }),
+  appUser: one(AppUser, {
+    fields: [AppCart.appUserId],
+    references: [AppUser.id],
+  }),
   store: one(stores, {
-    fields: [AppPromotion.storeId],
+    fields: [AppCart.storeId],
     references: [stores.id],
-  }),
-}));
-
-export const AppOrderRelations = relations(AppOrder, ({ one }) => ({
-  appliedPromotion: one(AppPromotion, {
-    fields: [AppOrder.appliedPromotionId],
-    references: [AppPromotion.id],
-  }),
-  address: one(AppAddress, {
-    fields: [AppOrder.address_id],
-    references: [AppAddress.id],
   }),
 }));

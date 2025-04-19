@@ -5,7 +5,6 @@ import { z } from "zod";
 import Pusher from "pusher";
 import { NotificationRepository } from "../repositories/notification.repository";
 
-// Define a schema for review data validation
 const reviewSchema = z.object({
   rating: z.number().min(1).max(5),
   content: z.string().optional(),
@@ -13,6 +12,7 @@ const reviewSchema = z.object({
 });
 
 // Define types to match repository
+
 
 interface ReviewUpdateData {
   rating?: number;
@@ -50,7 +50,6 @@ export class ReviewController {
   static async getReviewsByProductId(c: Context) {
     try {
       const productId = c.req.param("productId");
-      // Validate product ID
       const validId = idSchema.safeParse(productId);
       if (!validId.success) {
         return c.json(
@@ -87,7 +86,6 @@ export class ReviewController {
   static async getReviewById(c: Context) {
     try {
       const reviewId = c.req.param("reviewId");
-      // Validate review ID
       const validId = idSchema.safeParse(reviewId);
       if (!validId.success) {
         return c.json(
@@ -129,7 +127,6 @@ export class ReviewController {
   static async createReview(c: Context) {
     try {
       const productId = c.req.param("productId");
-      // Validate product ID
       const validId = idSchema.safeParse(productId);
       if (!validId.success) {
         return c.json(
@@ -141,14 +138,11 @@ export class ReviewController {
         );
       }
 
-      // Get user data from authenticated context
       const { id: appUserId, storeId } = c.get("user");
 
-      // Check if the request has content before trying to parse it
       const contentType = c.req.header("Content-Type");
       const contentLength = parseInt(c.req.header("Content-Length") || "0");
 
-      // Check if the request body is empty
       if (
         !contentType ||
         !contentType.includes("application/json") ||
@@ -163,11 +157,9 @@ export class ReviewController {
         );
       }
 
-      // Try to parse the body with error handling
       let body;
       try {
         body = await c.req.json();
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         return c.json(
           {
@@ -178,7 +170,6 @@ export class ReviewController {
         );
       }
 
-      // Check if body is empty after parsing (could be {})
       if (!body || Object.keys(body).length === 0) {
         return c.json(
           {
@@ -189,7 +180,6 @@ export class ReviewController {
         );
       }
 
-      // Parse and validate request body
       const validatedData = reviewSchema.safeParse({
         ...body,
         productId,
@@ -206,7 +196,6 @@ export class ReviewController {
         );
       }
 
-      // Check if product exists
       const product = await ReviewRepository.checkProductExists(
         productId,
         storeId,
@@ -221,7 +210,6 @@ export class ReviewController {
         );
       }
 
-      // Check if user already reviewed this product
       const existingReview = await ReviewRepository.findByUserAndProduct(
         appUserId,
         productId,
@@ -236,7 +224,6 @@ export class ReviewController {
         );
       }
 
-      // Create the review
       const reviewData = {
         storeId,
         appUserId,
@@ -303,7 +290,6 @@ export class ReviewController {
   static async updateReview(c: Context) {
     try {
       const reviewId = c.req.param("reviewId");
-      // Validate review ID
       const validId = idSchema.safeParse(reviewId);
       if (!validId.success) {
         return c.json(
@@ -315,14 +301,11 @@ export class ReviewController {
         );
       }
 
-      // Get user data from authenticated context
       const { id: appUserId } = c.get("user");
 
-      // Check if the request has content before trying to parse it
       const contentType = c.req.header("Content-Type");
       const contentLength = parseInt(c.req.header("Content-Length") || "0");
 
-      // Check if the request body is empty
       if (
         !contentType ||
         !contentType.includes("application/json") ||
@@ -337,7 +320,6 @@ export class ReviewController {
         );
       }
 
-      // Check if review exists and belongs to the user
       const existingReview = await ReviewRepository.findById(reviewId);
       if (!existingReview) {
         return c.json(
@@ -359,10 +341,8 @@ export class ReviewController {
         );
       }
 
-      // Parse and validate request body
       const body = await c.req.json();
 
-      // Check for typos in field names by using strict validation
       const updateSchema = z
         .object({
           rating: z.number().min(1).max(5).optional(),
@@ -385,7 +365,6 @@ export class ReviewController {
         );
       }
 
-      // Update the review
       const updateData: ReviewUpdateData = validatedData.data;
       const updatedReview = await ReviewRepository.update(reviewId, updateData);
 
@@ -409,7 +388,6 @@ export class ReviewController {
   static async deleteReview(c: Context) {
     try {
       const reviewId = c.req.param("reviewId");
-      // Validate review ID
       const validId = idSchema.safeParse(reviewId);
       if (!validId.success) {
         return c.json(
@@ -421,10 +399,8 @@ export class ReviewController {
         );
       }
 
-      // Get user data from authenticated context
       const { id: appUserId } = c.get("user");
 
-      // Check if review exists and belongs to the user
       const existingReview = await ReviewRepository.findById(reviewId);
       if (!existingReview) {
         return c.json(
@@ -446,7 +422,6 @@ export class ReviewController {
         );
       }
 
-      // Delete the review
       await ReviewRepository.delete(reviewId);
 
       return c.json({

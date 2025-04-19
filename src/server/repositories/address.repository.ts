@@ -12,10 +12,13 @@ type AddressCreateData = z.infer<typeof createAddressSchema>;
 type AddressUpdateData = z.infer<typeof updateAddressSchema>;
 
 export class AddressRepository {
-  static async findAll(userId: string) {
+  static async findAll(userId: string, storeId: string) {
     try {
       return await db.query.AppAddress.findMany({
-        where: eq(AppAddress.appUserId, userId),
+        where: and(
+          eq(AppAddress.appUserId, userId),
+          eq(AppAddress.storeId, storeId),
+        ),
       });
     } catch (error) {
       console.error("Error fetching addresses:", error);
@@ -23,10 +26,14 @@ export class AddressRepository {
     }
   }
 
-  static async findById(id: string, userId: string) {
+  static async findById(id: string, userId: string, storeId: string) {
     try {
       return await db.query.AppAddress.findFirst({
-        where: and(eq(AppAddress.id, id), eq(AppAddress.appUserId, userId)),
+        where: and(
+          eq(AppAddress.id, id),
+          eq(AppAddress.appUserId, userId),
+          eq(AppAddress.storeId, storeId),
+        ),
       });
     } catch (error) {
       console.error(`Error fetching address with ID ${id}:`, error);
@@ -47,6 +54,7 @@ export class AddressRepository {
           postalCode: addressData.postalCode,
           country: addressData.country,
           isDefault: addressData.isDefault,
+          status: addressData.status, // Add status field
         })
         .returning();
       return newAddress;
@@ -71,6 +79,7 @@ export class AddressRepository {
         ...(addressData.isDefault !== undefined && {
           isDefault: addressData.isDefault,
         }),
+        ...(addressData.status !== undefined && { status: addressData.status }), // Add status field
       };
 
       const [updatedAddress] = await db
