@@ -18,7 +18,7 @@ function Layout({
   return (
     <div className="grid h-screen w-screen grid-cols-[auto_1fr] grid-rows-[auto_1fr] overflow-hidden">
       {/* Header spanning full width */}
-      <FixedHeader />
+      <FixedHeader storeId={storeId} />
 
       {/* Sidebar in the first column */}
       <SubNavBar title="CUSTOMERS" data={getCustomersSideBar(storeId)} />

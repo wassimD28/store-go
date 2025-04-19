@@ -30,7 +30,7 @@ interface ProductViewProps {
     name: string;
     description: string | null;
     price: string;
-    status: string
+    status: string;
     stock_quantity: number;
     categoryId: string;
     subcategoryId: string | null;
@@ -43,6 +43,7 @@ interface ProductViewProps {
   subcategoryName?: string | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  initialTab?: string;
 }
 
 export function ProductViewSheet({
@@ -51,9 +52,10 @@ export function ProductViewSheet({
   subcategoryName,
   isOpen,
   onOpenChange,
+  initialTab = "details",
 }: ProductViewProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("details");
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   // Handle edit button click
   const handleEdit = () => {

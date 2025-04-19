@@ -4,9 +4,17 @@ import { Button } from "../ui/button";
 import { useSidebar } from "@/client/store/sidebar.store";
 import { cn } from "@/lib/utils";
 import { EnhancedBreadcrumb } from "../breadcrumb/enhanced.breadcrumb";
+import { NotificationBell } from "../popover/notificationBell";
 
-function FixedHeader() {
+interface Props{
+  storeId : string
+}
+function FixedHeader({storeId}:Props) {
   const { isSidebarOpen } = useSidebar();
+ 
+  if (!storeId){
+    throw("No store ID provided to 'FixedHeader'")
+  }
 
   return (
     <div className="col-span-full flex w-full justify-between border-b bg-sidebar px-4 py-3 shadow-xl shadow-black/5">
@@ -22,7 +30,9 @@ function FixedHeader() {
         </Button>
         <EnhancedBreadcrumb />
       </div>
-      <div className="flex gap-4"></div>
+      <div className="flex gap-4">
+        <NotificationBell storeId={storeId}/>
+      </div>
     </div>
   );
 }

@@ -33,6 +33,17 @@ export const discountTypeEnum = pgEnum("discount_type", [
   "buy_x_get_y",
 ]);
 
+// Define an enum for notification types
+export const notificationTypeEnum = pgEnum("notification_type", [
+  "new_review",
+  "new_order",
+  "product_out_of_stock",
+  "order_status_change",
+  "payment_received",
+  "promotion_created",
+  // Add other notification types as needed
+]);
+
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -147,6 +158,7 @@ export const AppUser = pgTable("app_user", {
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
+
 
 // AppAddress table schema
 export const AppAddress = pgTable("app_address", {
@@ -329,6 +341,32 @@ export const AppPromotion = pgTable("app_promotion", {
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
+
+// Notifications table schema
+export const AppNotification = pgTable("app_notification", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  storeId: uuid("store_id")
+    .notNull()
+    .references(() => stores.id),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id),
+  type: notificationTypeEnum("type").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  data: json("data").default({}), // For storing additional data (productId, reviewId, etc.)
+  isRead: boolean("is_read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  readAt: timestamp("read_at"),
+});
+
+// Define relations for the notifications table
+export const AppNotificationRelations = relations(AppNotification, ({ one }) => ({
+  store: one(stores, {
+    fields: [AppNotification.storeId],
+    references: [stores.id],
+  }),
+}));
 // Define relations for the stores table
 export const storesRelations = relations(stores, ({ one }) => ({
   category: one(storeCategory, {

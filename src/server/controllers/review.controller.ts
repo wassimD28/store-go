@@ -3,6 +3,7 @@ import { ReviewRepository } from "@/server/repositories/review.repository";
 import { idSchema } from "../schemas/common.schema";
 import { z } from "zod";
 import Pusher from "pusher";
+import { NotificationRepository } from "../repositories/notification.repository";
 
 // Define a schema for review data validation
 const reviewSchema = z.object({
@@ -245,6 +246,20 @@ export class ReviewController {
       };
 
       const newReview = await ReviewRepository.create(reviewData);
+      // Create notification record
+      await NotificationRepository.create({
+        storeId,
+        userId: product.userId, // The store owner's user ID
+        type: "new_review",
+        title: "New review received",
+        content: `A product received a ${validatedData.data.rating}-star review`,
+        data: {
+          productId,
+          reviewId: newReview.id,
+          rating: newReview.rating,
+        },
+      });
+
       // Trigger notification after review is created
       // Only trigger if pusherServer is initialized
       if (ReviewController.pusherServer) {

@@ -46,7 +46,7 @@ export const PusherProvider = ({
 
         toast.success(
           <Link
-            href={`/stores/${storeId}/products/edit/${data.productId}?tab=reviews`}
+            href={`/stores/${storeId}/products/list?productId=${data.productId}&tab=reviews`}
             className="flex flex-col"
           >
             <span className="font-semibold">New review received!</span>
