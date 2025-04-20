@@ -2,7 +2,7 @@
 "use server";
 
 import { db } from "@/lib/db/db";
-import { AppNotification } from "@/lib/db";
+import { AppNotification } from "@/lib/db/schema";
 import { ActionResponse } from "@/lib/types/interfaces/common.interface";
 import { eq, and } from "drizzle-orm";
 

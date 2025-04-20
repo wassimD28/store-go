@@ -1,6 +1,6 @@
 import { db } from "../../lib/db/db";
 import { eq, and, lte, gte } from "drizzle-orm";
-import { AppPromotion } from "@/lib/db";
+import { AppPromotion } from "@/lib/db/schema";
 
 export class PromotionRepository {
   static async findAll(storeId: string) {

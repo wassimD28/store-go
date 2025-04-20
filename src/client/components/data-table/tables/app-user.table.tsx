@@ -5,7 +5,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/client/components/ui/checkbox";
 import { Button } from "@/client/components/ui/button";
 import { Eye, Pencil } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatTimeDifference } from "@/lib/utils";
 import { SortableHeader } from "@/client/components/data-table/sortableHeader";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -23,6 +23,8 @@ interface AppUser {
   gender?: string | null;
   age_range?: string | null;
   auth_type: string;
+  is_online: boolean;
+  last_seen: Date | null;
   auth_provider?: string | null;
   status: boolean;
   created_at: Date;
@@ -90,10 +92,11 @@ export function AppUserTableClient({
       cell: ({ row }) => {
         const user = row.original;
         const avatarUrl = user.avatar || "/unknown-user.svg";
+        const isOnline = user.is_online;
 
         return (
           <div className="flex items-center space-x-3">
-            <div className="h-10 w-10 min-w-10 overflow-hidden rounded-full bg-gray-100">
+            <div className="relative h-10 w-10 min-w-10 overflow-hidden rounded-full bg-gray-100">
               <Image
                 src={avatarUrl}
                 alt={user.name}
@@ -101,6 +104,21 @@ export function AppUserTableClient({
                 height={40}
                 className="h-full w-full object-cover"
               />
+              {/* Status indicator dot */}
+              <div className="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 transform">
+                <div
+                  className={`h-3 w-3 rounded-full border-2 border-white ${
+                    isOnline
+                      ? "animate-pulse bg-green-500"
+                      : user.last_seen &&
+                          new Date().getTime() -
+                            new Date(user.last_seen).getTime() <
+                            600000
+                        ? "bg-yellow-500"
+                        : "bg-gray-300"
+                  }`}
+                />
+              </div>
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium">{user.name}</div>
@@ -114,6 +132,59 @@ export function AppUserTableClient({
       minSize: 200,
     },
     {
+      accessorKey: "is_online",
+      header: "Online Status",
+      cell: ({ row }) => {
+        const isOnline = row.getValue("is_online") as boolean;
+        const lastSeen = row.original.last_seen as Date | null;
+
+        if (isOnline) {
+          return (
+            <div className="flex items-center">
+              <div className="relative mr-2">
+                <div className="h-3 w-3 animate-pulse rounded-full bg-green-500"></div>
+              </div>
+              <span>Online</span>
+            </div>
+          );
+        } else if (lastSeen) {
+          const now = new Date();
+          const diff = now.getTime() - new Date(lastSeen).getTime();
+          const minutes = Math.floor(diff / 60000);
+
+          // If seen within last 10 minutes, show "Away"
+          if (minutes < 10) {
+            return (
+              <div className="flex items-center">
+                <div className="relative mr-2">
+                  <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
+                </div>
+                <span>Away ({minutes}m)</span>
+              </div>
+            );
+          } else {
+            return (
+              <div className="flex items-center">
+                <div className="relative mr-2">
+                  <div className="h-3 w-3 rounded-full bg-gray-300"></div>
+                </div>
+                <span>Offline · {formatTimeDifference(lastSeen)}</span>
+              </div>
+            );
+          }
+        }
+
+        return (
+          <div className="flex items-center">
+            <div className="relative mr-2">
+              <div className="h-3 w-3 rounded-full bg-gray-300"></div>
+            </div>
+            <span>Never online</span>
+          </div>
+        );
+      },
+    },
+    {
       accessorKey: "email",
       header: ({ column }) => <SortableHeader column={column} title="Email" />,
       cell: ({ row }) => {
@@ -124,8 +195,8 @@ export function AppUserTableClient({
           </div>
         );
       },
-      maxSize:300,
-      minSize:200
+      maxSize: 300,
+      minSize: 200,
     },
     {
       accessorKey: "gender",

@@ -3,7 +3,7 @@ import { ProductRepository } from "@/server/repositories/product.repository";
 import { idSchema } from "../schemas/common.schema";
 import { desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db/db";
-import { AppProduct } from "@/lib/db";
+import { AppProduct } from "@/lib/db/schema";
 
 export class ProductController {
   static async getAllProducts(c: Context) {

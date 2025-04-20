@@ -15,6 +15,8 @@ export const AppUser = pgTable("app_user", {
   auth_type: AppUserAuthType("auth_type").notNull().default("email_password"),
   auth_provider: varchar("auth_provider", { length: 50 }), // "google", "facebook", etc.
   provider_user_id: varchar("provider_user_id", { length: 255 }), // ID from the provider
+  is_online: boolean("is_online").default(false),
+  last_seen: timestamp("last_seen"),
   status: boolean("status").default(true),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),

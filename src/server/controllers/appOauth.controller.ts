@@ -1,7 +1,7 @@
 import { Context } from "hono";
 import { createClient } from "@supabase/supabase-js";
 import { db } from "@/lib/db/db";
-import { AppUser } from "@/lib/db";
+import { AppUser } from "@/lib/db/schema";
 import { oauthProviderSchema } from "@/server/schemas/Oauth.schema";
 import { and, eq } from "drizzle-orm";
 import { OAuthService } from "../services/oauth.service";

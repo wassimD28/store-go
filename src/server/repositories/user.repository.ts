@@ -1,6 +1,6 @@
 import { db } from "../../lib/db/db";
 import { eq } from "drizzle-orm";
-import { AppUser } from "@/lib/db";
+import { AppUser } from "@/lib/db/schema";
 
 export class UserRepository {
   static async update(id: string, data: Partial<typeof AppUser.$inferInsert>) {

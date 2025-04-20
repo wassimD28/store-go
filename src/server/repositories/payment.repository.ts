@@ -1,6 +1,6 @@
 import { db } from "../../lib/db/db";
 import { eq, and } from "drizzle-orm";
-import { AppPayment, AppOrder } from "@/lib/db";
+import { AppPayment, AppOrder } from "@/lib/db/schema";
 import {
   createPaymentSchema,
   updatePaymentSchema,

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db/db";
-import { stores } from "@/lib/db";
+import { stores } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 // Interface to match your form's data structure

@@ -1,6 +1,6 @@
 import { db } from "@/lib/db/db";
 import { eq, and } from "drizzle-orm";
-import { AppProduct, AppReview } from "@/lib/db";
+import { AppProduct, AppReview } from "@/lib/db/schema";
 
 export class ProductRepository {
   static async findAll(storeId: string) {

@@ -30,7 +30,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "order_status_change",
   "payment_received",
   "promotion_created",
-  // Add other notification types as needed
+  "new_product",
 ]);
 
 export const targetGenderEnum = pgEnum("target_gender", [

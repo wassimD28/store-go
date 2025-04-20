@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db/db";
-import { storeCategory } from "@/lib/db";
+import { storeCategory } from "@/lib/db/schema";
 
 export async function getStoreCategories() {
   try {

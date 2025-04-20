@@ -1,6 +1,6 @@
 import { db } from "../../lib/db/db";
 import { eq, and } from "drizzle-orm";
-import { AppReview, AppProduct } from "@/lib/db";
+import { AppReview, AppProduct } from "@/lib/db/schema";
 
 // Define types for review data
 interface ReviewData {

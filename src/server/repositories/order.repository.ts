@@ -1,6 +1,6 @@
 import { db } from "../../lib/db/db";
 import { eq, and } from "drizzle-orm";
-import { AppOrder } from "@/lib/db";
+import { AppOrder } from "@/lib/db/schema";
 import { createOrderSchema, updateOrderSchema } from "../schemas/order.schema"; // Adjust this import path as needed
 import { z } from "zod";
 

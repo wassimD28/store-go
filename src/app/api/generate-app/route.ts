@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "@/lib/db/db";
-import { generationJobs, stores } from "@/lib/db";
+import { generationJobs, stores } from "@/lib/db/schema";
 
 // Create a jobs table with Drizzle if you want to persist jobs
 // If not, you can continue using the Map as in your example

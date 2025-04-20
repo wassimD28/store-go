@@ -1,6 +1,6 @@
 import { db } from "../../lib/db/db";
 import { eq } from "drizzle-orm";
-import { AppCategory, AppProduct } from "@/lib/db";
+import { AppCategory, AppProduct } from "@/lib/db/schema";
 
 export class CategoryRepository {
   static async findAll(storeId: string) {

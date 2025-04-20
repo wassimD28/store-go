@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db/db";
-import { AppUser } from "@/lib/db";
+import { AppUser } from "@/lib/db/schema";
 import { ActionResponse } from "@/lib/types/interfaces/common.interface";
 import { createClient } from "@supabase/supabase-js";
 import { eq, and } from "drizzle-orm";

@@ -1,6 +1,6 @@
 import { db } from "../../lib/db/db";
 import { eq, and } from "drizzle-orm";
-import { AppCart } from "@/lib/db";
+import { AppCart } from "@/lib/db/schema";
 
 type VariantObject = Record<string, string | number | boolean | null>;
 

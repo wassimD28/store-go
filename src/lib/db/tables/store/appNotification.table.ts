@@ -10,7 +10,6 @@ export const AppNotification = pgTable("app_notification", {
     .notNull()
     .references(() => stores.id),
   userId: text("user_id")
-    .notNull()
     .references(() => user.id),
   type: notificationTypeEnum("type").notNull(),
   title: varchar("title", { length: 255 }).notNull(),

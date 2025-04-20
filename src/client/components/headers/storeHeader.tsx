@@ -4,7 +4,7 @@ import { Button } from "../ui/button";
 import { useSidebar } from "@/client/store/sidebar.store";
 import { cn } from "@/lib/utils";
 import { EnhancedBreadcrumb } from "../breadcrumb/enhanced.breadcrumb";
-import { NotificationBell } from "../popover/notificationBell";
+import { NotificationBell } from "../real-time/notificationBell";
 
 interface Props {
   storeId: string;
