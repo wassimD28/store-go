@@ -12,7 +12,7 @@ export async function getStoreCategories() {
         description: storeCategory.description,
         imageUrl: storeCategory.imageUrl,
       })
-      .from(storeCategory)
+      .from(storeCategory);
 
     return {
       success: true,

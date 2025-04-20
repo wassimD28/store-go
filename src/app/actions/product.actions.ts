@@ -5,8 +5,37 @@ import { db } from "@/lib/db/db";
 import { AppProduct } from "@/lib/db/schema";
 import { ActionResponse } from "@/lib/types/interfaces/common.interface";
 import { eq } from "drizzle-orm";
+import Pusher from "pusher";
+import { NotificationRepository } from "@/server/repositories/notification.repository";
 
-// Updated to match the new schema structure
+// Pusher initialization (similar to what's in ReviewController)
+const pusherServer = (() => {
+  try {
+    // Check if all required variables are defined
+    const appId = process.env.PUSHER_APP_ID!;
+    const key = process.env.NEXT_PUBLIC_PUSHER_KEY!;
+    const secret = process.env.PUSHER_APP_SECRET!;
+    const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER!;
+
+    if (!appId || !key || !secret || !cluster) {
+      console.warn(
+        "Pusher environment variables are missing. Real-time notifications will be disabled.",
+      );
+      return null;
+    }
+
+    return new Pusher({
+      appId,
+      key,
+      secret,
+      cluster,
+    });
+  } catch (error) {
+    console.error("Failed to initialize Pusher:", error);
+    return null;
+  }
+})();
+
 export const createProduct = async ({
   userId,
   storeId,
@@ -61,6 +90,46 @@ export const createProduct = async ({
         updated_at: new Date(),
       })
       .returning();
+
+    // Only trigger notification if the product status is "published"
+    if (
+      newProduct &&
+      (status === "published" || newProduct.status === "published")
+    ) {
+      // Create a notification record in the database - this will be useful for users who weren't online
+      try {
+        await NotificationRepository.create({
+          storeId,
+          // Using null for userId means this is a broadcast notification for all store users
+          userId: null,
+          type: "new_product",
+          title: "New product available!",
+          content: `${name} is now available in the store`,
+          data: {
+            productId: newProduct.id,
+            productName: name,
+            price: price.toString(),
+            imageUrl:
+              image_urls && image_urls.length > 0 ? image_urls[0] : null,
+          },
+        });
+
+        // Trigger Pusher notification
+        if (pusherServer) {
+          await pusherServer.trigger(`store-${storeId}`, "new-product", {
+            productId: newProduct.id,
+            productName: name,
+            price: price.toString(),
+            imageUrl:
+              image_urls && image_urls.length > 0 ? image_urls[0] : null,
+            createdAt: new Date().toISOString(),
+          });
+        }
+      } catch (error) {
+        console.error("Error sending product notification:", error);
+        // Continue with the response - don't let notification failure break the API
+      }
+    }
 
     return { success: true, data: newProduct };
   } catch (error) {

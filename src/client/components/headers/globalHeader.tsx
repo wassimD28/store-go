@@ -1,11 +1,12 @@
 "use client";
 import { ChevronLeft } from "lucide-react";
-import { Button } from "../../ui/button";
-import { EnhancedBreadcrumb } from "../../breadcrumb/enhanced.breadcrumb";
+import { Button } from "../ui/button";
 import { useSidebar } from "@/client/store/sidebar.store";
 import { cn } from "@/lib/utils";
+import { EnhancedBreadcrumb } from "../breadcrumb/enhanced.breadcrumb";
 
-function ProductHeader() {
+
+function GlobalHeader() {
   const { isSidebarOpen } = useSidebar();
 
   return (
@@ -22,9 +23,11 @@ function ProductHeader() {
         </Button>
         <EnhancedBreadcrumb />
       </div>
-      <div className="flex gap-4">{/* Your action buttons here */}</div>
+      <div className="flex gap-4">
+        
+      </div>
     </div>
   );
 }
 
-export default ProductHeader;
+export default GlobalHeader;

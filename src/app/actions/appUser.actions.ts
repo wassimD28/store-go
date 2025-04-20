@@ -173,9 +173,8 @@ export const deleteAppUser = async (
     );
 
     // Delete the user from Supabase Auth
-    const { error: supabaseError } = await supabaseAdmin.auth.admin.deleteUser(
-      appUserId
-    );
+    const { error: supabaseError } =
+      await supabaseAdmin.auth.admin.deleteUser(appUserId);
 
     if (supabaseError) {
       console.error("Error deleting user from Supabase Auth:", supabaseError);

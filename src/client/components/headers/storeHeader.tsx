@@ -1,13 +1,21 @@
 "use client";
-import { ChevronLeft, Eye } from "lucide-react";
-import { Button } from "../../ui/button";
-import { PublishedFilter } from "../../filter/published.filter";
+import { ChevronLeft } from "lucide-react";
+import { Button } from "../ui/button";
 import { useSidebar } from "@/client/store/sidebar.store";
 import { cn } from "@/lib/utils";
-import { DynamicBreadcrumb } from "../../breadcrumb/dynamic.breadcrumb";
+import { EnhancedBreadcrumb } from "../breadcrumb/enhanced.breadcrumb";
+import { NotificationBell } from "../real-time/notificationBell";
 
-function PagesHeader() {
+interface Props {
+  storeId: string;
+}
+function StoreHeader({ storeId }: Props) {
   const { isSidebarOpen } = useSidebar();
+
+  if (!storeId) {
+    throw "No store ID provided to 'StoreHeader'";
+  }
+
   return (
     <div className="col-span-full flex w-full justify-between border-b bg-sidebar px-4 py-3 shadow-xl shadow-black/5">
       <div className="flex items-center gap-3">
@@ -20,20 +28,13 @@ function PagesHeader() {
         <Button className="size-9 rounded-full bg-primary/10 hover:bg-primary/20">
           <ChevronLeft className="text-foreground" />
         </Button>
-        <DynamicBreadcrumb />
+        <EnhancedBreadcrumb />
       </div>
       <div className="flex gap-4">
-        <PublishedFilter />
-        <Button size={"lg"}>Save</Button>
-        <Button size={"lg"} className="bg-sidebar" variant={"outline"}>
-          <span className="flex size-6 items-center justify-center rounded-full bg-foreground/10">
-            <Eye />
-          </span>
-          Preview
-        </Button>
+        <NotificationBell storeId={storeId} />
       </div>
     </div>
   );
 }
 
-export default PagesHeader;
+export default StoreHeader;

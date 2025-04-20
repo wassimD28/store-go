@@ -1,13 +1,13 @@
 interface StorePageProps {
-  params: {
-    storeId: string;
-  };
+  params: Promise<{ storeId: string }> | { storeId: string };
 }
 
-export default function StorePage({ params }: StorePageProps) {
+export default async function StorePage({ params }: StorePageProps) {
+  const resolvedParams = await Promise.resolve(params);
+  const storeId = resolvedParams.storeId;
   return (
     <div className="flex h-full w-full items-center justify-center text-2xl uppercase">
-      Store ID: {params.storeId}
+      Store ID: {storeId}
     </div>
   );
 }

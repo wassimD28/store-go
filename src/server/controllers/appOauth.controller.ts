@@ -197,18 +197,18 @@ class AppOauthController {
   static async handleOauthCallback(c: Context) {
     try {
       // Extract data from the request
-        const { accessToken, storeId, provider, providerToken } =
-          await c.req.json();
+      const { accessToken, storeId, provider, providerToken } =
+        await c.req.json();
 
-        if (!accessToken || !storeId || !provider || !providerToken) {
-          return c.json(
-            {
-              success: false,
-              error: "Missing required authentication parameters",
-            },
-            400,
-          );
-        }
+      if (!accessToken || !storeId || !provider || !providerToken) {
+        return c.json(
+          {
+            success: false,
+            error: "Missing required authentication parameters",
+          },
+          400,
+        );
+      }
 
       // Get user data from Supabase using the token
       const {
@@ -226,7 +226,7 @@ class AppOauthController {
         );
       }
       // check if user email exist
-      if (!user.email){
+      if (!user.email) {
         return c.json(
           {
             success: false,
@@ -295,8 +295,6 @@ class AppOauthController {
       );
     }
   }
-
-  
 }
 
 export default AppOauthController;

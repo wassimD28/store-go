@@ -118,7 +118,10 @@ export class ProductRepository {
         },
       });
     } catch (error) {
-      console.error(`Error fetching products for category ${categoryId}:`, error);
+      console.error(
+        `Error fetching products for category ${categoryId}:`,
+        error,
+      );
       throw new Error(`Failed to fetch products for category ${categoryId}`);
     }
   }

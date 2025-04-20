@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     if (!storeName) {
       return NextResponse.json(
         { error: "Store name is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
             callbackUrl,
           },
         }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
           error: "Failed to trigger app generation",
           details: errorText,
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
         success: false,
         error: "Failed to start app generation",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

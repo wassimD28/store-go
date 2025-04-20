@@ -14,6 +14,7 @@ import { ProductViewSheet } from "../../sheet/product-view-sheet";
 import Image from "next/image";
 import { Badge } from "@/client/components/ui/badge";
 import { ColorOption } from "../../selector/multiColorSelector";
+import { useEffect } from "react";
 
 // Interface for products to be displayed in the table - updated to match new schema
 interface Product {
@@ -40,12 +41,16 @@ interface ProductTableClientProps {
   products: Product[];
   categoryNames: Record<string, string>; // Maps category IDs to names
   subcategoryNames: Record<string, string>; // Maps subcategory IDs to names
+  initialProductId?: string; // New prop for initial product to select
+  initialTab?: string; // New prop for initial tab to open
 }
 
 export function ProductTableClient({
   products,
   categoryNames,
   subcategoryNames,
+  initialProductId,
+  initialTab,
 }: ProductTableClientProps) {
   const router = useRouter();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -59,6 +64,16 @@ export function ProductTableClient({
     setSelectedProduct(product);
     setIsViewOpen(true);
   };
+
+  useEffect(() => {
+    if (initialProductId) {
+      const productToOpen = products.find((p) => p.id === initialProductId);
+      if (productToOpen) {
+        setSelectedProduct(productToOpen);
+        setIsViewOpen(true);
+      }
+    }
+  }, [initialProductId, products]);
 
   // Function to get status badge styling
   const getStatusBadge = (status: string) => {
@@ -184,7 +199,7 @@ export function ProductTableClient({
           </div>
         );
       },
-      minSize: 400
+      minSize: 400,
     },
     // SKU column
     {
@@ -407,7 +422,7 @@ export function ProductTableClient({
           updated_at: false,
           targetGender: false,
           stock_quantity: false,
-          id: false
+          id: false,
         }}
       />
 
@@ -422,6 +437,7 @@ export function ProductTableClient({
           }
           isOpen={isViewOpen}
           onOpenChange={setIsViewOpen}
+          initialTab={initialTab}
         />
       )}
     </>

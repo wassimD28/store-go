@@ -15,11 +15,17 @@ import Link from "next/link";
 
 interface Props {
   params: Promise<{ storeId: string }> | { storeId: string };
+  searchParams?: {
+    productId?: string;
+    tab?: string;
+  };
 }
 
-async function Page({ params }: Props) {
-  const resolvedParams = await Promise.resolve(params);
-  const { storeId } = resolvedParams;
+async function Page({ params , searchParams}: Props) {
+   const resolvedParams = await Promise.resolve(params);
+   const { storeId } = resolvedParams;
+   const productIdToSelect = searchParams?.productId;
+   const tabToOpen = searchParams?.tab;
 
   // Fetch products, categories, and subcategories
   const productsResult = await getProductsByStore(storeId);
@@ -103,6 +109,8 @@ async function Page({ params }: Props) {
           products={typedProducts}
           categoryNames={categoryIdToName}
           subcategoryNames={subcategoryIdToName}
+          initialProductId={productIdToSelect}
+          initialTab={tabToOpen}
         />
       )}
     </div>

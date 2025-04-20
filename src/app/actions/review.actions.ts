@@ -8,11 +8,11 @@ import { eq } from "drizzle-orm";
 // Updated type definition with all necessary fields
 export type ReviewWithUser = {
   id: string;
-  storeId: string; 
+  storeId: string;
   appUserId: string;
   productId: string;
   rating: number;
-  content: string | null; 
+  content: string | null;
   created_at: Date;
   updated_at: Date;
   appUser: {

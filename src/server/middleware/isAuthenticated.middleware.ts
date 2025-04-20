@@ -68,7 +68,7 @@ export async function isAuthenticated(c: Context, next: Next) {
         c.set('user', {
             id: data.user.id,
             email: data.user.email,
-            storeId: storeId
+            storeId,
         });
         
         // Continue to the next middleware or route handler

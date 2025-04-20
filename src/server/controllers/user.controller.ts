@@ -2,6 +2,9 @@ import { UserRepository } from "@/server/repositories/user.repository";
 import { idSchema } from "../schemas/common.schema";
 import { z } from "zod";
 import { Context } from "hono";
+import { AppUser } from "@/lib/db/schema";
+import { db } from "@/lib/db/db";
+import { eq } from "drizzle-orm";
 
 // Define validation schema for user updates with more specific validations
 const updateUserSchema = z
@@ -144,74 +147,102 @@ export class UserController {
     }
   }
 
+  static async getUserById(c: Context) {
+    try {
+      // Get user ID from params
+      const id = c.req.param("userId");
 
-static async getUserById(c: Context) {
-  try {
-    // Get user ID from params
-    const id = c.req.param("userId");
-
-    // Validate user ID
-    const validId = idSchema.safeParse(id);
-    if (!validId.success) {
-      return c.json(
-        {
-          status: "error",
-          message: "Invalid user ID format",
-          details: validId.error.errors,
-        },
-        400,
-      );
-    }
-
-    // Check if the user exists
-    const appUser = await UserRepository.findById(id);
-    if (!appUser) {
-      return c.json(
-        {
-          status: "error",
-          message: `User with ID ${id} not found`,
-        },
-        404,
-      );
-    }
-
-    // Check permissions (optional - depending on your requirements)
-    // This assumes you have some way to get the current user's ID from the auth context
-    const { id: currentUserId } = c.get("user"); // This would be set by your auth middleware
-    if (currentUserId !== id) {
-      // If the user is not accessing their own profile and isn't an admin
-      const isAdmin = c.get("isAdmin") || false;
-      if (!isAdmin) {
+      // Validate user ID
+      const validId = idSchema.safeParse(id);
+      if (!validId.success) {
         return c.json(
           {
             status: "error",
-            message: "You don't have permission to access this user's information",
+            message: "Invalid user ID format",
+            details: validId.error.errors,
           },
-          403,
+          400,
         );
       }
+
+      // Check if the user exists
+      const appUser = await UserRepository.findById(id);
+      if (!appUser) {
+        return c.json(
+          {
+            status: "error",
+            message: `User with ID ${id} not found`,
+          },
+          404,
+        );
+      }
+
+      // Check permissions (optional - depending on your requirements)
+      // This assumes you have some way to get the current user's ID from the auth context
+      const { id: currentUserId } = c.get("user"); // This would be set by your auth middleware
+      if (currentUserId !== id) {
+        // If the user is not accessing their own profile and isn't an admin
+        const isAdmin = c.get("isAdmin") || false;
+        if (!isAdmin) {
+          return c.json(
+            {
+              status: "error",
+              message:
+                "You don't have permission to access this user's information",
+            },
+            403,
+          );
+        }
+      }
+
+      // Return success response with user data
+      return c.json({
+        status: "success",
+        message: "User retrieved successfully",
+        data: appUser,
+      });
+    } catch (error) {
+      console.error("Error in getUserById:", error);
+
+      // General error handler
+      return c.json(
+        {
+          status: "error",
+          message: "Failed to retrieve user information",
+          details: error instanceof Error ? error.message : "Unknown error",
+        },
+        500,
+      );
     }
-
-    // Return success response with user data
-    return c.json({
-      status: "success",
-      message: "User retrieved successfully",
-      data: appUser,
-    });
-  } catch (error) {
-    console.error("Error in getUserById:", error);
-
-    // General error handler
-    return c.json(
-      {
-        status: "error",
-        message: "Failed to retrieve user information",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
-      500,
-    );
   }
-}
 
+  static async updateUserStatus(c: Context) {
+    try {
+      const { id: userId } = c.get("user");
+      const { isOnline, lastSeen } = await c.req.json();
 
+      // Update user status in database
+      await db
+        .update(AppUser)
+        .set({
+          is_online: isOnline,
+          last_seen: lastSeen ? new Date(lastSeen) : new Date(),
+        })
+        .where(eq(AppUser.id, userId));
+
+      return c.json({
+        success: true,
+        message: "Status updated successfully",
+      });
+    } catch (error) {
+      console.error("Failed to update user status:", error);
+      return c.json(
+        {
+          success: false,
+          error: "Failed to update user status",
+        },
+        500,
+      );
+    }
+  }
 }

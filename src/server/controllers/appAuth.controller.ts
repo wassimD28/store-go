@@ -270,7 +270,6 @@ class AppAuthController {
     }
   }
 
-
   static async signOut(c: Context) {
     try {
       // 1. Get the access token from the Authorization header
