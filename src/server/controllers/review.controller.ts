@@ -160,6 +160,7 @@ export class ReviewController {
       let body;
       try {
         body = await c.req.json();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         return c.json(
           {

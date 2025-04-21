@@ -28,7 +28,6 @@ export const PusherProvider = ({
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
     });
 
-
     // Subscribe to the store channel
     const channel = client.subscribe(`store-${storeId}`);
 
@@ -60,7 +59,12 @@ export const PusherProvider = ({
         );
       },
     );
-
+    // Add this to your existing channel bindings
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    channel.bind("user-status-changed", (data:any) => {
+      console.log("PusherProvider received user-status-changed:", data);
+      // You don't need to handle it here as the UserStatusContext is doing that
+    });
     // Add more event listeners for other notification types
     // Example:
     // channel.bind("new-order", (data) => { ... });

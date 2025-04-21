@@ -4,7 +4,8 @@ import { z } from "zod";
 import { Context } from "hono";
 import { AppUser } from "@/lib/db/schema";
 import { db } from "@/lib/db/db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import Pusher from "pusher";
 
 // Define validation schema for user updates with more specific validations
 const updateUserSchema = z
@@ -19,16 +20,13 @@ const updateUserSchema = z
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field must be provided for update",
-    path: ["_all"], // This indicates the error applies to the whole object
+    path: ["_all"],
   });
 
 export class UserController {
   static async updateUser(c: Context) {
     try {
-      // Get user ID from params
       const id = c.req.param("userId");
-
-      // Validate user ID
       const validId = idSchema.safeParse(id);
       if (!validId.success) {
         return c.json(
@@ -41,7 +39,6 @@ export class UserController {
         );
       }
 
-      // Check if request body exists
       let body;
       try {
         body = await c.req.json();
@@ -56,7 +53,6 @@ export class UserController {
         );
       }
 
-      // Check for empty request body
       if (!body || Object.keys(body).length === 0) {
         return c.json(
           {
@@ -68,7 +64,6 @@ export class UserController {
         );
       }
 
-      // Parse and validate request data
       const validatedData = updateUserSchema.safeParse(body);
       if (!validatedData.success) {
         return c.json(
@@ -81,7 +76,6 @@ export class UserController {
         );
       }
 
-      // Verify the user exists before attempting update
       const existingUser = await UserRepository.findById(id);
       if (!existingUser) {
         return c.json(
@@ -93,11 +87,8 @@ export class UserController {
         );
       }
 
-      // Check permissions (optional - depending on your requirements)
-      // This assumes you have some way to get the current user's ID from the auth context
-      const { id: currentUserId } = c.get("user"); // This would be set by your auth middleware
+      const { id: currentUserId } = c.get("user");
       if (currentUserId !== id) {
-        // If the user is not updating their own profile and isn't an admin
         const isAdmin = c.get("isAdmin") || false;
         if (!isAdmin) {
           return c.json(
@@ -110,10 +101,8 @@ export class UserController {
         }
       }
 
-      // Update the user
       const updatedUser = await UserRepository.update(id, validatedData.data);
 
-      // Return success response with updated user data
       return c.json({
         status: "success",
         message: "User updated successfully",
@@ -122,7 +111,6 @@ export class UserController {
     } catch (error) {
       console.error("Error in updateUser:", error);
 
-      // Handle specific error types
       if (error instanceof Error) {
         if (error.message.includes("unique constraint")) {
           return c.json(
@@ -130,12 +118,11 @@ export class UserController {
               status: "error",
               message: "Email already in use by another account",
             },
-            409, // Conflict
+            409,
           );
         }
       }
 
-      // General error handler
       return c.json(
         {
           status: "error",
@@ -149,10 +136,7 @@ export class UserController {
 
   static async getUserById(c: Context) {
     try {
-      // Get user ID from params
       const id = c.req.param("userId");
-
-      // Validate user ID
       const validId = idSchema.safeParse(id);
       if (!validId.success) {
         return c.json(
@@ -165,7 +149,6 @@ export class UserController {
         );
       }
 
-      // Check if the user exists
       const appUser = await UserRepository.findById(id);
       if (!appUser) {
         return c.json(
@@ -177,11 +160,8 @@ export class UserController {
         );
       }
 
-      // Check permissions (optional - depending on your requirements)
-      // This assumes you have some way to get the current user's ID from the auth context
-      const { id: currentUserId } = c.get("user"); // This would be set by your auth middleware
+      const { id: currentUserId } = c.get("user");
       if (currentUserId !== id) {
-        // If the user is not accessing their own profile and isn't an admin
         const isAdmin = c.get("isAdmin") || false;
         if (!isAdmin) {
           return c.json(
@@ -195,7 +175,6 @@ export class UserController {
         }
       }
 
-      // Return success response with user data
       return c.json({
         status: "success",
         message: "User retrieved successfully",
@@ -204,7 +183,6 @@ export class UserController {
     } catch (error) {
       console.error("Error in getUserById:", error);
 
-      // General error handler
       return c.json(
         {
           status: "error",
@@ -218,8 +196,33 @@ export class UserController {
 
   static async updateUserStatus(c: Context) {
     try {
-      const { id: userId } = c.get("user");
+      const { id: userId, email, storeId } = c.get("user");
       const { isOnline, lastSeen } = await c.req.json();
+
+      // Fetch AppUser ID using storeId and email
+      const appUser = await db
+        .select({ id: AppUser.id })
+        .from(AppUser)
+        .where(
+          and(
+            eq(AppUser.id, userId),
+            eq(AppUser.storeId, storeId),
+            eq(AppUser.email, email),
+          ),
+        )
+        .then((rows) => rows[0]);
+
+      if (!appUser) {
+        return c.json(
+          {
+            success: false,
+            error: "AppUser not found",
+          },
+          404,
+        );
+      }
+
+      const appUserId = appUser.id;
 
       // Update user status in database
       await db
@@ -228,7 +231,22 @@ export class UserController {
           is_online: isOnline,
           last_seen: lastSeen ? new Date(lastSeen) : new Date(),
         })
-        .where(eq(AppUser.id, userId));
+        .where(eq(AppUser.id, appUserId));
+
+      // Initialize Pusher
+      const pusher = new Pusher({
+        appId: process.env.PUSHER_APP_ID!,
+        key: process.env.NEXT_PUBLIC_PUSHER_KEY!,
+        secret: process.env.PUSHER_APP_SECRET!,
+        cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
+      });
+
+      // Trigger Pusher event on public channel
+      await pusher.trigger(`store-${storeId}`, "user-status-changed", {
+        userId: appUserId, // Make sure this matches the string format expected
+        isOnline,
+        lastSeen: lastSeen || new Date().toISOString(), // Ensure proper date format
+      });
 
       return c.json({
         success: true,
