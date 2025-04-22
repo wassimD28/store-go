@@ -3,7 +3,7 @@ import { ReviewRepository } from "@/server/repositories/review.repository";
 import { idSchema } from "../schemas/common.schema";
 import { z } from "zod";
 import Pusher from "pusher";
-import { NotificationRepository } from "../repositories/notification.repository";
+import { StoreNotificationRepository } from "../repositories/notification.repository";
 
 const reviewSchema = z.object({
   rating: z.number().min(1).max(5),
@@ -235,9 +235,8 @@ export class ReviewController {
 
       const newReview = await ReviewRepository.create(reviewData);
       // Create notification record
-      await NotificationRepository.create({
+      await StoreNotificationRepository.create({
         storeId,
-        userId: product.userId, // The store owner's user ID
         type: "new_review",
         title: "New review received",
         content: `A product received a ${validatedData.data.rating}-star review`,
@@ -245,6 +244,7 @@ export class ReviewController {
           productId,
           reviewId: newReview.id,
           rating: newReview.rating,
+          appUserId
         },
       });
 
@@ -259,7 +259,7 @@ export class ReviewController {
               productId,
               reviewId: newReview.id,
               rating: newReview.rating,
-              userId: appUserId,
+              appUserId
             },
           );
         } catch (error) {

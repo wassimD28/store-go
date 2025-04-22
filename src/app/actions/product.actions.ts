@@ -4,10 +4,10 @@
 import { db } from "@/lib/db/db";
 import { AppProduct } from "@/lib/db/schema";
 import { ActionResponse } from "@/lib/types/interfaces/common.interface";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import Pusher from "pusher";
-import { NotificationRepository } from "@/server/repositories/notification.repository";
-
+import { createBroadcastNotification } from "./appUsersNotification.actions";
+import { AppNotificationType } from "@/lib/types/enums/common.enum";
 // Pusher initialization (similar to what's in ReviewController)
 const pusherServer = (() => {
   try {
@@ -98,25 +98,23 @@ export const createProduct = async ({
     ) {
       // Create a notification record in the database - this will be useful for users who weren't online
       try {
-        await NotificationRepository.create({
+        await createBroadcastNotification(
           storeId,
-          // Using null for userId means this is a broadcast notification for all store users
-          userId: null,
-          type: "new_product",
-          title: "New product available!",
-          content: `${name} is now available in the store`,
-          data: {
+          "new_product",
+          "New product available!",
+          `${name} is now available in the store`,
+          {
             productId: newProduct.id,
             productName: name,
             price: price.toString(),
             imageUrl:
               image_urls && image_urls.length > 0 ? image_urls[0] : null,
           },
-        });
+        );
 
         // Trigger Pusher notification
         if (pusherServer) {
-          await pusherServer.trigger(`store-${storeId}`, "new-product", {
+          await pusherServer.trigger(`store-${storeId}`, AppNotificationType.NewProduct , {
             productId: newProduct.id,
             productName: name,
             price: price.toString(),
@@ -298,6 +296,53 @@ export const updateProduct = async ({
       success: false,
       error:
         error instanceof Error ? error.message : "Failed to update product",
+    };
+  }
+};
+
+export const getProductForNotification = async (
+  productId: string,
+  storeId: string,
+): Promise<ActionResponse<{ image: string | null; name: string }>> => {
+  try {
+    const [product] = await db
+      .select({
+        name: AppProduct.name,
+        image_urls: AppProduct.image_urls,
+      })
+      .from(AppProduct)
+      .where(
+        and(eq(AppProduct.storeId, storeId), eq(AppProduct.id, productId)),
+      );
+
+    if (!product) {
+      return {
+        success: false,
+        error: "Product not found",
+      };
+    }
+
+    // Now TypeScript knows image_urls is a string[] so we can safely access it
+    const firstImage =
+      Array.isArray(product.image_urls) && product.image_urls.length > 0
+        ? product.image_urls[0]
+        : null;
+
+    return {
+      success: true,
+      data: {
+        image: firstImage,
+        name: product.name,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching product for notification:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to retrieve product information",
     };
   }
 };

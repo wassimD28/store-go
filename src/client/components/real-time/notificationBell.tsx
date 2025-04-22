@@ -13,22 +13,17 @@ import { useEffect, useState } from "react";
 import Pusher from "pusher-js";
 import { useRouter } from "next/navigation";
 import { formatTimeDifference } from "@/lib/utils";
-import { getAllNotifications, markAllNotificationsAsRead, markNotificationAsRead } from "@/app/actions/notification.actions";
+import { getAllNotifications, markAllNotificationsAsRead, markNotificationAsRead } from "@/app/actions/storeNotification.actions";
+import { storeNotificationTypeEnum } from "@/lib/db/schema";
 
 // Define types based on your app schema
-type NotificationType =
-  | "new_review"
-  | "new_order"
-  | "product_out_of_stock"
-  | "order_status_change"
-  | "payment_received"
-  | "promotion_created";
+type StoreNotificationType = (typeof storeNotificationTypeEnum.enumValues)[number];
+
 
 interface Notification {
   id: string;
   storeId: string;
-  userId: string;
-  type: NotificationType;
+  type: StoreNotificationType;
   title: string;
   content: string;
   data: Record<string, any>;
@@ -163,7 +158,7 @@ export function NotificationBell({ storeId }: NotificationBellProps) {
   };
 
   // Function to determine notification icon based on type
-  const getNotificationIcon = (type: NotificationType) => {
+  const getNotificationIcon = (type: StoreNotificationType) => {
     switch (type) {
       case "new_review":
         return "⭐";
@@ -173,8 +168,6 @@ export function NotificationBell({ storeId }: NotificationBellProps) {
         return "⚠️";
       case "payment_received":
         return "💰";
-      case "promotion_created":
-        return "🏷️";
       default:
         return "📣";
     }
@@ -191,7 +184,7 @@ export function NotificationBell({ storeId }: NotificationBellProps) {
         >
           <Bell size={16} strokeWidth={2} aria-hidden="true" />
           {unreadCount > 0 && (
-            <Badge className="absolute -top-2 left-full min-w-5 -translate-x-1/2 px-1">
+            <Badge className="absolute -top-2 left-full min-w-4 max-h-5 text-xs -translate-x-1/2 flex-center">
               {unreadCount > 99 ? "99+" : unreadCount}
             </Badge>
           )}

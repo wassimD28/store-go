@@ -22,16 +22,45 @@ export const discountTypeEnum = pgEnum("discount_type", [
   "buy_x_get_y",
 ]);
 
-// Define an enum for notification types
-export const notificationTypeEnum = pgEnum("notification_type", [
+
+
+// For store owner notifications
+export const storeNotificationTypeEnum = pgEnum("store_notification_type", [
   "new_review",
   "new_order",
   "product_out_of_stock",
   "order_status_change",
   "payment_received",
   "promotion_created",
+  "low_inventory",
+  "high_traffic_alert",
+  "sales_milestone",
+  "new_app_user_registration",
+  "abandoned_cart",
+  "refund_request",
+  "customer_support_inquiry",
+  "order_fulfillment_delay",
+  "security_alert",
+  "app_usage_analytics",
+]);
+
+export const appNotificationTypeEnum = pgEnum("app_user_notification_type", [
+  "order_status_update",
+  "delivery_update",
+  "payment_confirmation",
+  "price_drop",
+  "back_in_stock",
+  "new_promotion",
+  "order_shipped",
+  "review_reminder",
+  "welcome_message",
+  "cart_reminder",
+  "personalized_offer",
+  "return_status_update",
   "new_product",
 ]);
+
+
 
 export const targetGenderEnum = pgEnum("target_gender", [
   "male",
