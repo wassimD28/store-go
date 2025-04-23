@@ -5,18 +5,15 @@ import Pusher from "pusher-js";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Avatar, AvatarImage, AvatarFallback } from "@/client/components/ui/avatar";
+import { getProductForNotification } from "@/app/actions/product.actions";
 
 interface PusherProviderProps {
   children: ReactNode;
   storeId?: string;
-  userId?: string;
 }
 
-export const PusherProvider = ({
-  children,
-  storeId,
-  userId,
-}: PusherProviderProps) => {
+export const PusherProvider = ({ children, storeId }: PusherProviderProps) => {
   const router = useRouter();
 
   useEffect(() => {
@@ -28,42 +25,88 @@ export const PusherProvider = ({
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
     });
 
-
     // Subscribe to the store channel
     const channel = client.subscribe(`store-${storeId}`);
 
-    // Listen for new review events
+    // Listen for new review events with product avatar
     channel.bind(
       "new-review",
-      (data: {
+      async (data: {
         productId: string;
         reviewId: string;
         rating: number;
-        userId: string;
+        appUserId: string;
       }) => {
-        // Don't show notification for the user's own reviews
-        if (data.userId === userId) return;
+        try {
+          // Get product details to display product image in the review notification
+          const productDetails = await getProductForNotification(
+            data.productId,
+            storeId,
+          );
 
-        toast.success(
-          <Link
-            href={`/stores/${storeId}/products/list?productId=${data.productId}&tab=reviews`}
-            className="flex flex-col"
-          >
-            <span className="font-semibold">New review received!</span>
-            <span>A product received a {data.rating}-star review</span>
-          </Link>,
-          {
-            duration: 5000,
-            position: "bottom-right",
-            icon: "⭐",
-          },
-        );
+          // Create the notification with product avatar
+          toast.success(
+            <Link
+              href={`/stores/${storeId}/products/list?productId=${data.productId}&tab=reviews`}
+              className="flex items-center gap-3"
+            >
+              <Avatar className="h-10 w-10 border border-gray-200">
+                {productDetails.success && productDetails.data.image ? (
+                  <AvatarImage
+                    src={productDetails.data.image}
+                    alt={productDetails.data.name}
+                  />
+                ) : (
+                  <AvatarFallback className="bg-gray-600 text-yellow-800">
+                    ⭐
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="font-semibold">New review received!</span>
+                <span>
+                  {productDetails.success
+                    ? productDetails.data.name
+                    : "A product"}{" "}
+                  received a {data.rating}-star review
+                </span>
+              </div>
+            </Link>,
+            {
+              duration: 5000,
+              position: "bottom-right",
+              icon: null
+            },
+          );
+        } catch (error) {
+          // Fallback to simpler notification if fetching product details fails
+          console.error("Error fetching product details for review:", error);
+          toast.success(
+            <Link
+              href={`/stores/${storeId}/products/list?productId=${data.productId}&tab=reviews`}
+              className="flex items-center gap-3"
+            >
+              <Avatar className="h-10 w-10 border border-gray-200">
+                <AvatarFallback className="bg-yellow-100 text-yellow-800">
+                  ⭐
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="font-semibold">New review received!</span>
+                <span>A product received a {data.rating}-star review</span>
+              </div>
+            </Link>,
+            {
+              duration: 5000,
+              position: "bottom-right",
+              icon: null
+            },
+          );
+        }
       },
     );
 
-    // Add more event listeners for other notification types
-    // Example:
-    // channel.bind("new-order", (data) => { ... });
+    // You can add more notification types here following the same pattern
 
     // Cleanup on unmount
     return () => {
@@ -73,7 +116,7 @@ export const PusherProvider = ({
         client.disconnect();
       }
     };
-  }, [storeId, userId, router]);
+  }, [storeId, router]);
 
   return <>{children}</>;
 };

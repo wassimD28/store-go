@@ -2,96 +2,142 @@
 "use server";
 
 import { db } from "@/lib/db/db";
-import { AppPromotion } from "@/lib/db/schema";
+import { AppPromotion } from "@/lib/db/tables/product/appPromotion.table";
 import { ActionResponse } from "@/lib/types/interfaces/common.interface";
-import { eq, and, gte, lte } from "drizzle-orm";
+import { eq } from "drizzle-orm";
+import Pusher from "pusher";
+import { createBroadcastNotification } from "./appUsersNotification.actions";
+import { AppNotificationType, DiscountType } from "@/lib/types/enums/common.enum";
 
-/**
- * Create a new promotion for a store
- */
+// Pusher initialization
+const pusherServer = (() => {
+  try {
+    // Check if all required variables are defined
+    const appId = process.env.PUSHER_APP_ID!;
+    const key = process.env.NEXT_PUBLIC_PUSHER_KEY!;
+    const secret = process.env.PUSHER_APP_SECRET!;
+    const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER!;
+
+    if (!appId || !key || !secret || !cluster) {
+      console.warn(
+        "Pusher environment variables are missing. Real-time notifications will be disabled.",
+      );
+      return null;
+    }
+
+    return new Pusher({
+      appId,
+      key,
+      secret,
+      cluster,
+    });
+  } catch (error) {
+    console.error("Failed to initialize Pusher:", error);
+    return null;
+  }
+})();
+
 export const createPromotion = async ({
-  storeId,
   userId,
+  storeId,
   name,
   description,
   discountType,
   discountValue,
   couponCode,
   minimumPurchase,
+  promotionImage,
+  buyQuantity,
+  getQuantity,
   startDate,
   endDate,
   isActive,
   applicableProducts,
   applicableCategories,
 }: {
-  storeId: string;
   userId: string;
+  storeId: string;
   name: string;
   description: string | null;
-  discountType: "percentage" | "fixed_amount" | "free_shipping" | "buy_x_get_y";
-  discountValue: number | null;
+  discountType: DiscountType;
+  discountValue: number;
   couponCode: string | null;
   minimumPurchase: number;
+  promotionImage: string | null;
   startDate: Date;
   endDate: Date;
   isActive: boolean;
+  buyQuantity?: number;
+  getQuantity?: number;
   applicableProducts: string[];
   applicableCategories: string[];
-}): Promise<ActionResponse<typeof AppPromotion.$inferSelect>> => {
+}): Promise<ActionResponse<any>> => {
   try {
-    // Validate inputs
-    if (!name || !discountType || !startDate || !endDate) {
-      return {
-        success: false,
-        error: "Missing required fields for creating a promotion",
-      };
-    }
-
-    // Validate dates
-    if (new Date(startDate) > new Date(endDate)) {
-      return {
-        success: false,
-        error: "Start date must be before end date",
-      };
-    }
-
-    // Validate discount value based on type
-    if (
-      (discountType === "percentage" || discountType === "fixed_amount") &&
-      (!discountValue || discountValue <= 0)
-    ) {
-      return {
-        success: false,
-        error: `A valid discount value is required for ${discountType} promotions`,
-      };
-    }
-
     // Insert new promotion
     const [newPromotion] = await db
       .insert(AppPromotion)
       .values({
-        storeId,
         userId,
+        storeId,
         name,
         description,
         discountType,
-        discountValue: discountValue ? discountValue.toString() : null,
+        discountValue: discountValue.toString(),
         couponCode,
         minimumPurchase: minimumPurchase.toString(),
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
+        promotionImage,
+        startDate: startDate,
+        endDate: endDate,
+        buyQuantity,
+        getQuantity,
         isActive,
-        applicableProducts: applicableProducts as any,
-        applicableCategories: applicableCategories as any,
+        applicableProducts,
+        applicableCategories,
         created_at: new Date(),
         updated_at: new Date(),
       })
       .returning();
 
-    return {
-      success: true,
-      data: newPromotion,
-    };
+    // Only send notification if the promotion is active and should start now or soon
+    if (newPromotion && isActive && new Date() >= startDate) {
+      try {
+        // Create a notification record in the database
+        await createBroadcastNotification(
+          storeId,
+          "new_promotion",
+          "New promotion available!",
+          `${name} - Check out this special offer!`,
+          {
+            promotionId: newPromotion.id,
+            promotionName: name,
+            discountType,
+            discountValue: discountValue.toString(),
+            imageUrl: promotionImage,
+          },
+        );
+
+        // Trigger Pusher notification
+        if (pusherServer) {
+          await pusherServer.trigger(
+            `store-${storeId}`,
+            AppNotificationType.NewPromotion,
+            {
+              promotionId: newPromotion.id,
+              promotionName: name,
+              discountType,
+              discountValue: discountValue.toString(),
+              imageUrl: promotionImage,
+              createdAt: new Date().toISOString(),
+            },
+          );
+        }
+      } catch (error) {
+        console.error("Error sending promotion notification:", error);
+        // Continue with the response - don't let notification failure break the API
+      }
+    }
+
+    return { success: true, data: newPromotion };
   } catch (error) {
     console.error("Error creating promotion:", error);
     return {
@@ -102,67 +148,49 @@ export const createPromotion = async ({
   }
 };
 
-/**
- * Get all promotions for a specific store
- */
-export const getPromotionsByStore = async (
-  storeId: string,
-): Promise<ActionResponse<(typeof AppPromotion.$inferSelect)[]>> => {
+export const getPromotionsByStore = async (storeId: string) => {
   try {
-    const promotions = await db.query.AppPromotion.findMany({
-      where: eq(AppPromotion.storeId, storeId),
-      orderBy: (promotions, { desc }) => [desc(promotions.created_at)],
-    });
+    const promotions = await db
+      .select()
+      .from(AppPromotion)
+      .where(eq(AppPromotion.storeId, storeId));
 
-    return {
-      success: true,
-      data: promotions,
-    };
+    return { success: true, promotions };
   } catch (error) {
     console.error("Error fetching promotions:", error);
     return {
       success: false,
       error:
-        error instanceof Error ? error.message : "Failed to fetch promotions",
+        error instanceof Error
+          ? error.message
+          : "Failed to retrieve promotions",
     };
   }
 };
 
-/**
- * Get a specific promotion by ID
- */
-export const getPromotionById = async (
-  promotionId: string,
-): Promise<ActionResponse<typeof AppPromotion.$inferSelect>> => {
+export const getPromotionById = async (promotionId: string) => {
   try {
-    const promotion = await db.query.AppPromotion.findFirst({
-      where: eq(AppPromotion.id, promotionId),
-    });
+    const promotion = await db
+      .select()
+      .from(AppPromotion)
+      .where(eq(AppPromotion.id, promotionId))
+      .limit(1);
 
-    if (!promotion) {
-      return {
-        success: false,
-        error: "Promotion not found",
-      };
+    if (!promotion || promotion.length === 0) {
+      return { success: false, error: "Promotion not found" };
     }
 
-    return {
-      success: true,
-      data: promotion,
-    };
+    return { success: true, promotion: promotion[0] };
   } catch (error) {
     console.error("Error fetching promotion:", error);
     return {
       success: false,
       error:
-        error instanceof Error ? error.message : "Failed to fetch promotion",
+        error instanceof Error ? error.message : "Failed to retrieve promotion",
     };
   }
 };
 
-/**
- * Update an existing promotion
- */
 export const updatePromotion = async ({
   id,
   name,
@@ -171,6 +199,7 @@ export const updatePromotion = async ({
   discountValue,
   couponCode,
   minimumPurchase,
+  promotionImage,
   startDate,
   endDate,
   isActive,
@@ -178,77 +207,50 @@ export const updatePromotion = async ({
   applicableCategories,
 }: {
   id: string;
-  name?: string;
-  description?: string | null;
-  discountType?:
-    | "percentage"
-    | "fixed_amount"
-    | "free_shipping"
-    | "buy_x_get_y";
-  discountValue?: number | null;
-  couponCode?: string | null;
-  minimumPurchase?: number;
-  startDate?: Date;
-  endDate?: Date;
-  isActive?: boolean;
-  applicableProducts?: string[];
-  applicableCategories?: string[];
-}): Promise<ActionResponse<typeof AppPromotion.$inferSelect>> => {
+  userId: string;
+  storeId: string;
+  name: string;
+  description: string | null;
+  discountType: DiscountType;
+  discountValue: number;
+  couponCode: string | null;
+  minimumPurchase: number;
+  promotionImage: string | null;
+  startDate: Date;
+  endDate: Date;
+  isActive: boolean;
+  applicableProducts: string[];
+  applicableCategories: string[];
+}): Promise<ActionResponse<any>> => {
   try {
-    // Check if promotion exists
-    const existingPromotion = await db.query.AppPromotion.findFirst({
-      where: eq(AppPromotion.id, id),
-    });
-
-    if (!existingPromotion) {
-      return {
-        success: false,
-        error: "Promotion not found",
-      };
-    }
-
-    // Validate dates if provided
-    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-      return {
-        success: false,
-        error: "Start date must be before end date",
-      };
-    }
-
-    // Create update object with only the fields that are provided
-    const updateData: Partial<typeof AppPromotion.$inferInsert> = {
-      updated_at: new Date(),
-    };
-
-    if (name !== undefined) updateData.name = name;
-    if (description !== undefined) updateData.description = description;
-    if (discountType !== undefined) updateData.discountType = discountType;
-    if (discountValue !== undefined)
-      updateData.discountValue = discountValue
-        ? discountValue.toString()
-        : null;
-    if (couponCode !== undefined) updateData.couponCode = couponCode;
-    if (minimumPurchase !== undefined)
-      updateData.minimumPurchase = minimumPurchase.toString();
-    if (startDate !== undefined) updateData.startDate = new Date(startDate);
-    if (endDate !== undefined) updateData.endDate = new Date(endDate);
-    if (isActive !== undefined) updateData.isActive = isActive;
-    if (applicableProducts !== undefined)
-      updateData.applicableProducts = applicableProducts as any;
-    if (applicableCategories !== undefined)
-      updateData.applicableCategories = applicableCategories as any;
-
-    // Update the promotion
     const [updatedPromotion] = await db
       .update(AppPromotion)
-      .set(updateData)
+      .set({
+        name,
+        description,
+        discountType,
+        discountValue: discountValue.toString(),
+        couponCode,
+        minimumPurchase: minimumPurchase.toString(),
+        promotionImage,
+        startDate,
+        endDate,
+        isActive,
+        applicableProducts,
+        applicableCategories,
+        updated_at: new Date(),
+      })
       .where(eq(AppPromotion.id, id))
       .returning();
 
-    return {
-      success: true,
-      data: updatedPromotion,
-    };
+    if (!updatedPromotion) {
+      return {
+        success: false,
+        error: "Promotion not found or you don't have permission to update it",
+      };
+    }
+
+    return { success: true, data: updatedPromotion };
   } catch (error) {
     console.error("Error updating promotion:", error);
     return {
@@ -259,9 +261,6 @@ export const updatePromotion = async ({
   }
 };
 
-/**
- * Delete a promotion
- */
 export const deletePromotion = async (
   promotionId: string,
 ): Promise<ActionResponse<{ id: string }>> => {
@@ -274,7 +273,7 @@ export const deletePromotion = async (
     if (!deletedPromotion) {
       return {
         success: false,
-        error: "Promotion not found or already deleted",
+        error: "Promotion not found",
       };
     }
 
@@ -288,186 +287,6 @@ export const deletePromotion = async (
       success: false,
       error:
         error instanceof Error ? error.message : "Failed to delete promotion",
-    };
-  }
-};
-
-/**
- * Toggle a promotion's active status
- */
-export const togglePromotionStatus = async (
-  promotionId: string,
-): Promise<ActionResponse<typeof AppPromotion.$inferSelect>> => {
-  try {
-    // First get the current status
-    const promotion = await db.query.AppPromotion.findFirst({
-      where: eq(AppPromotion.id, promotionId),
-    });
-
-    if (!promotion) {
-      return {
-        success: false,
-        error: "Promotion not found",
-      };
-    }
-
-    // Toggle the status
-    const [updatedPromotion] = await db
-      .update(AppPromotion)
-      .set({
-        isActive: !promotion.isActive,
-        updated_at: new Date(),
-      })
-      .where(eq(AppPromotion.id, promotionId))
-      .returning();
-
-    return {
-      success: true,
-      data: updatedPromotion,
-    };
-  } catch (error) {
-    console.error("Error toggling promotion status:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to toggle promotion status",
-    };
-  }
-};
-
-/**
- * Get active promotions for a store
- */
-export const getActivePromotions = async (
-  storeId: string,
-): Promise<ActionResponse<(typeof AppPromotion.$inferSelect)[]>> => {
-  try {
-    const now = new Date();
-
-    const promotions = await db.query.AppPromotion.findMany({
-      where: and(
-        eq(AppPromotion.storeId, storeId),
-        eq(AppPromotion.isActive, true),
-        lte(AppPromotion.startDate, now),
-        gte(AppPromotion.endDate, now),
-      ),
-    });
-
-    return {
-      success: true,
-      data: promotions,
-    };
-  } catch (error) {
-    console.error("Error fetching active promotions:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to fetch active promotions",
-    };
-  }
-};
-
-/**
- * Validate a coupon code and return the associated promotion if valid
- */
-export const validateCouponCode = async (
-  storeId: string,
-  couponCode: string,
-): Promise<ActionResponse<typeof AppPromotion.$inferSelect>> => {
-  try {
-    const now = new Date();
-
-    const promotion = await db.query.AppPromotion.findFirst({
-      where: and(
-        eq(AppPromotion.storeId, storeId),
-        eq(AppPromotion.couponCode, couponCode),
-        eq(AppPromotion.isActive, true),
-        lte(AppPromotion.startDate, now),
-        gte(AppPromotion.endDate, now),
-      ),
-    });
-
-    if (!promotion) {
-      return {
-        success: false,
-        error: "Invalid or expired coupon code",
-      };
-    }
-
-    return {
-      success: true,
-      data: promotion,
-    };
-  } catch (error) {
-    console.error("Error validating coupon code:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to validate coupon code",
-    };
-  }
-};
-
-/**
- * Get applicable promotions for a specific product
- */
-export const getProductPromotions = async (
-  storeId: string,
-  productId: string,
-): Promise<ActionResponse<(typeof AppPromotion.$inferSelect)[]>> => {
-  try {
-    const now = new Date();
-
-    // Get all active promotions for the store
-    const allActivePromotions = await db.query.AppPromotion.findMany({
-      where: and(
-        eq(AppPromotion.storeId, storeId),
-        eq(AppPromotion.isActive, true),
-        lte(AppPromotion.startDate, now),
-        gte(AppPromotion.endDate, now),
-      ),
-    });
-
-    // Filter to find promotions applicable to this product
-    const applicablePromotions = allActivePromotions.filter((promotion) => {
-      const productList = (promotion.applicableProducts as string[]) || [];
-      const categoryList = (promotion.applicableCategories as string[]) || [];
-
-      // If both lists are empty, promotion applies to all products
-      if (productList.length === 0 && categoryList.length === 0) {
-        return true;
-      }
-
-      // Check if product is directly in the applicable products list
-      if (productList.includes(productId)) {
-        return true;
-      }
-
-      // For category-based promotions, we would need to check if the product's category
-      // is in the applicable categories list, but that would require an additional query
-      // This is a placeholder for that logic
-
-      return false;
-    });
-
-    return {
-      success: true,
-      data: applicablePromotions,
-    };
-  } catch (error) {
-    console.error("Error fetching product promotions:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to fetch product promotions",
     };
   }
 };

@@ -3,8 +3,12 @@ import { Geist , Poppins} from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/client/providers/theme.provider";
 import { Toaster } from "react-hot-toast";
+import { startWorkers } from "@/server/workers/scheduler";
 
-
+// Initialize workers in server environment
+if (typeof window === 'undefined') {
+  startWorkers();
+}
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],

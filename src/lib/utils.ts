@@ -161,3 +161,157 @@ export const formatTimeDifference = (date: Date) => {
       return `${Math.floor(diffInSeconds / 86400)} days ago`;
     return `${Math.floor(diffInSeconds / 604800)} weeks ago`;
   };
+
+  // src/lib/utils.ts
+
+import { 
+  differenceInSeconds, 
+  differenceInMinutes, 
+  differenceInHours, 
+  differenceInDays, 
+  differenceInWeeks, 
+  differenceInMonths, 
+  differenceInYears 
+} from "date-fns";
+
+/**
+ * Calculates a detailed duration string between two dates with precise time units
+ * 
+ * @param startDate - The starting date
+ * @param endDate - The ending date
+ * @param options - Options for formatting
+ * @returns A formatted string representing the duration
+ */
+export function calculateDetailedDuration(
+  startDate: Date, 
+  endDate: Date,
+  options: {
+    includeSeconds?: boolean;
+    maxUnits?: number;  // Maximum number of time units to include (e.g., 2 would show "2 months 5 days" but not smaller units)
+    condensed?: boolean; // If true, returns more compact format (e.g., "2m 5d" instead of "2 months 5 days")
+  } = {}
+): string {
+  const { 
+    includeSeconds = false, 
+    maxUnits = 3,
+    condensed = false 
+  } = options;
+  
+  if (!startDate || !endDate) return "Invalid dates";
+  
+  // Calculate differences in various time units
+  const years = differenceInYears(endDate, startDate);
+  const months = differenceInMonths(endDate, startDate) % 12;
+  const weeks = differenceInWeeks(endDate, startDate) % 4;
+  const days = differenceInDays(endDate, startDate) % 7;
+  const hours = differenceInHours(endDate, startDate) % 24;
+  const minutes = differenceInMinutes(endDate, startDate) % 60;
+  const seconds = includeSeconds ? differenceInSeconds(endDate, startDate) % 60 : 0;
+  
+  // Initialize units array with calculated differences
+  const units = [
+    { value: years, singular: "year", plural: "years", short: "y" },
+    { value: months, singular: "month", plural: "months", short: "m" },
+    { value: weeks, singular: "week", plural: "weeks", short: "w" },
+    { value: days, singular: "day", plural: "days", short: "d" },
+    { value: hours, singular: "hour", plural: "hours", short: "h" },
+    { value: minutes, singular: "minute", plural: "minutes", short: "min" },
+  ];
+  
+  // Add seconds only if includeSeconds is true
+  if (includeSeconds) {
+    units.push({ value: seconds, singular: "second", plural: "seconds", short: "s" });
+  }
+  
+  // Filter out units with zero value and limit to maxUnits
+  const nonZeroUnits = units
+    .filter(unit => unit.value > 0)
+    .slice(0, maxUnits);
+  
+  // If all units are zero (same time), handle specially
+  if (nonZeroUnits.length === 0) {
+    // If dates are exactly the same or almost same
+    if (includeSeconds) {
+      return "0 seconds";
+    } else if (differenceInSeconds(endDate, startDate) < 60) {
+      return "Less than a minute";
+    } else {
+      return "Same time";
+    }
+  }
+  
+  // Format the duration string
+  if (condensed) {
+    return nonZeroUnits
+      .map(unit => `${unit.value}${unit.short}`)
+      .join(" ");
+  } else {
+    return nonZeroUnits
+      .map(unit => {
+        const label = unit.value === 1 ? unit.singular : unit.plural;
+        return `${unit.value} ${label}`;
+      })
+      .join(", ");
+  }
+}
+
+/**
+ * Returns a human-readable duration estimate between two dates
+ * Optimized for promotion duration display with natural language
+ * 
+ * @param startDate - The start date of the promotion
+ * @param endDate - The end date of the promotion
+ * @returns A formatted string representing the duration
+ */
+export function formatPromotionDuration(startDate: Date, endDate: Date): string {
+  if (!startDate || !endDate) return "";
+  
+  const totalDays = differenceInDays(endDate, startDate);
+  
+  // Handle invalid duration
+  if (totalDays < 0) {
+    return "Invalid duration";
+  }
+  
+  // Same day special case
+  if (totalDays === 0) {
+    const hours = differenceInHours(endDate, startDate);
+    if (hours < 24 && hours > 0) {
+      return `${hours} hour${hours !== 1 ? 's' : ''}`;
+    }
+    return "Same day";
+  }
+  
+  const years = differenceInYears(endDate, startDate);
+  if (years > 0) {
+    const remainingMonths = differenceInMonths(endDate, startDate) % 12;
+    let result = `${years} year${years !== 1 ? 's' : ''}`;
+    if (remainingMonths > 0) {
+      result += ` and ${remainingMonths} month${remainingMonths !== 1 ? 's' : ''}`;
+    }
+    return result;
+  }
+  
+  const months = differenceInMonths(endDate, startDate);
+  if (months > 0) {
+    const remainingDays = totalDays - (months * 30);
+    let result = `${months} month${months !== 1 ? 's' : ''}`;
+    if (remainingDays > 0) {
+      result += ` and ${remainingDays} day${remainingDays !== 1 ? 's' : ''}`;
+    }
+    return result;
+  }
+  
+  const weeks = Math.floor(totalDays / 7);
+  if (weeks > 0) {
+    const remainingDays = totalDays % 7;
+    let result = `${weeks} week${weeks !== 1 ? 's' : ''}`;
+    if (remainingDays > 0) {
+      result += ` and ${remainingDays} day${remainingDays !== 1 ? 's' : ''}`;
+    }
+    return result;
+  }
+  
+  // Just days
+  return `${totalDays} day${totalDays !== 1 ? 's' : ''}`;
+}

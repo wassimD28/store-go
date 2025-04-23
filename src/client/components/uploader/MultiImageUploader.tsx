@@ -205,7 +205,7 @@ function MultiImageUploader({
             >
               <IKImage
                 path={image.filePath}
-                transformation={[{ width: 96, height: 96, quality: 80 }]}
+                transformation={[{ width: "96", height: "96", quality: "80" }]}
                 loading="lazy"
                 className="h-full w-full object-cover"
                 alt={`Product image ${index + 1}`}

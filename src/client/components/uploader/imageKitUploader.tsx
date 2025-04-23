@@ -184,7 +184,7 @@ export default function ImageKitUploader({
           <div className="relative h-40 w-40 overflow-hidden rounded-md border border-border">
             <IKImage
               path={filePath || ""}
-              transformation={[{ width: 160, height: 160, quality: 80 }]}
+              transformation={[{ width: "160", height: "160", quality: "80" }]}
               loading="lazy"
               className="h-full w-full object-cover"
               alt="Uploaded image"

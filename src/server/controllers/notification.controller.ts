@@ -1,6 +1,5 @@
-
 import { Context } from "hono";
-import { NotificationRepository } from "../repositories/notification.repository";
+import { NotificationRepository } from "../repositories/appUserNotification.repository";
 import { idSchema } from "../schemas/common.schema";
 
 export class NotificationController {

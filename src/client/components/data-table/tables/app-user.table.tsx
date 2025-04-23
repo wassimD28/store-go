@@ -1,5 +1,3 @@
-"use client";
-
 import { DataTable } from "@/client/components/data-table/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/client/components/ui/checkbox";
@@ -10,9 +8,10 @@ import { SortableHeader } from "@/client/components/data-table/sortableHeader";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Badge } from "@/client/components/ui/badge";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppUserViewSheet } from "../../sheet/app-user-view-sheet";
 import { AppUserDeleteDialog } from "../../dialogs/deleteAppUserDialog";
+import { useUserStatus } from "@/client/contexts/UserStatusContext";
 
 interface AppUser {
   id: string;
@@ -43,6 +42,30 @@ export function AppUserTableClient({
   const router = useRouter();
   const [selectedUser, setSelectedUser] = useState<AppUser | null>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
+  const [usersWithStatus, setUsersWithStatus] = useState<AppUser[]>(users);
+  // Get real-time status from context
+  const { userStatus } = useUserStatus();
+
+  
+  useEffect(() => {
+    // Create a new array with updated status information
+    const updatedUsers = users.map((user) => {
+      const realtimeStatus = userStatus[user.id];
+
+
+      if (realtimeStatus) {
+        return {
+          ...user,
+          is_online: realtimeStatus.isOnline,
+          last_seen: realtimeStatus.lastSeen || user.last_seen,
+        };
+      }
+
+      return user;
+    });
+
+    setUsersWithStatus(updatedUsers);
+  }, [users, userStatus]);
 
   const refreshData = () => {
     router.refresh();
@@ -53,6 +76,7 @@ export function AppUserTableClient({
     setSelectedUser(user);
     setIsViewOpen(true);
   };
+
   // Function to truncate email with ellipsis if too long
   const truncateEmail = (email: string, maxLength = 25) => {
     if (email.length <= maxLength) return email;
@@ -92,7 +116,9 @@ export function AppUserTableClient({
       cell: ({ row }) => {
         const user = row.original;
         const avatarUrl = user.avatar || "/unknown-user.svg";
-        const isOnline = user.is_online;
+        // Get real-time status from context
+        const realtimeStatus = userStatus[user.id];
+        const isOnline = realtimeStatus?.isOnline ?? user.is_online;
 
         return (
           <div className="flex items-center space-x-3">
@@ -110,9 +136,9 @@ export function AppUserTableClient({
                   className={`h-3 w-3 rounded-full border-2 border-white ${
                     isOnline
                       ? "animate-pulse bg-green-500"
-                      : user.last_seen &&
+                      : realtimeStatus?.lastSeen &&
                           new Date().getTime() -
-                            new Date(user.last_seen).getTime() <
+                            new Date(realtimeStatus.lastSeen).getTime() <
                             600000
                         ? "bg-yellow-500"
                         : "bg-gray-300"
@@ -135,8 +161,11 @@ export function AppUserTableClient({
       accessorKey: "is_online",
       header: "Online Status",
       cell: ({ row }) => {
-        const isOnline = row.getValue("is_online") as boolean;
-        const lastSeen = row.original.last_seen as Date | null;
+        const user = row.original;
+        // Get real-time status from context
+        const realtimeStatus = userStatus[user.id];
+        const isOnline = realtimeStatus?.isOnline ?? user.is_online;
+        const lastSeen = realtimeStatus?.lastSeen || user.last_seen;
 
         if (isOnline) {
           return (
@@ -184,6 +213,7 @@ export function AppUserTableClient({
         );
       },
     },
+    // Other columns remain the same...
     {
       accessorKey: "email",
       header: ({ column }) => <SortableHeader column={column} title="Email" />,
@@ -300,7 +330,7 @@ export function AppUserTableClient({
   return (
     <>
       <DataTable
-        data={users}
+        data={usersWithStatus}
         columns={columns}
         filterColumn="name"
         filterPlaceholder="Search customers..."

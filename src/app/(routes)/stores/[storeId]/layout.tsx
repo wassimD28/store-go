@@ -32,7 +32,7 @@ export default async function RootLayout({
 
   return (
     <div className="relative h-svh w-svw">
-      <PusherProvider storeId={storeId} userId={user.id}>
+      <PusherProvider storeId={storeId}>
         <MainSideBar user={user} sideBarData={sideBarData} />
         {children}
       </PusherProvider>
