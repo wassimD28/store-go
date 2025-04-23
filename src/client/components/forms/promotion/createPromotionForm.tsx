@@ -7,31 +7,23 @@ import * as z from "zod";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Button } from "@/client/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/client/components/ui/form";
-import { Input } from "@/client/components/ui/input";
-import { Textarea } from "@/client/components/ui/textarea";
+import { Form } from "@/client/components/ui/form";
 import { Card, CardContent, CardHeader } from "@/client/components/ui/card";
 import { authClient } from "@/lib/auth-client";
-import ImageKitUploader from "../../uploader/imageKitUploader";
 import { DiscountType } from "@/lib/types/enums/common.enum";
-import ProductSelector from "../../selector/productSelector";
-import PromotionDurationPicker from "../../picker/promotionDurationPicker";
-import DiscountDetails from "../../promotion/discountDetailsSection";
-
-// Server action imports
 import { createPromotion } from "@/app/actions/promotion.actions";
-import { Switch } from "../../ui/switch";
-import CategorySelector from "../../selector/categorySelector";
 
-// Create the promotion schema
+// Import refactored sections
+import BasicInfoSection from "../../promotion/BasicInfoSection";
+import DiscountTypeSection from "../../promotion/DiscountTypeSection";
+import BuyXGetYSection from "../../promotion/BuyXGetYSection";
+import DiscountDetailsSection from "../../promotion/discountDetailsSection";
+import ProductSelectionSection from "../../promotion/ProductSelectionSection";
+import PromotionDurationPicker from "../../promotion/promotionDurationPicker";
+import PromotionImageSection from "../../promotion/PromotionImageSection";
+import PromotionPreview from "../../promotion/promotionPreview";
+
+// Create the promotion schema (keep this unchanged)
 export const createPromotionSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   description: z.string().optional(),
@@ -51,13 +43,26 @@ export const createPromotionSchema = z.object({
   startDate: z.date(),
   endDate: z.date(),
   isActive: z.boolean().default(true),
-  buyQuantity: z.number().optional(),
-  getQuantity: z.number().optional(),
+
+  // Buy X Get Y specific fields
+  buyQuantity: z.number().min(1).optional(),
+  getQuantity: z.number().min(1).optional(),
+
+  // X products/categories - what customers need to buy
+  xSelectionType: z
+    .enum(["specific_products", "categories"])
+    .default("specific_products"),
+  xApplicableProducts: z.array(z.string()).default([]),
+  xApplicableCategories: z.array(z.string()).default([]),
+
+  // Y products/categories - what customers get discounted/free
   ySelectionType: z
     .enum(["same_product", "specific_products", "categories"])
     .default("same_product"),
   yApplicableProducts: z.array(z.string()).default([]),
   yApplicableCategories: z.array(z.string()).default([]),
+
+  // Standard product/category selection - for non Buy X Get Y discounts
   applicableProducts: z.array(z.string()).default([]),
   applicableCategories: z.array(z.string()).default([]),
 });
@@ -85,17 +90,25 @@ export default function CreatePromotionForm({
       couponCode: "",
       minimumPurchase: 0,
       promotionImage: "",
-      buyQuantity: 1, // Add this
-      getQuantity: 1, // Add this
+      buyQuantity: 1,
+      getQuantity: 1,
+      xSelectionType: "specific_products",
+      xApplicableProducts: [],
+      xApplicableCategories: [],
+      ySelectionType: "same_product",
+      yApplicableProducts: [],
+      yApplicableCategories: [],
       startDate: new Date(),
       endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)),
       isActive: true,
       applicableProducts: [],
+      applicableCategories: [],
     },
   });
 
   // Get the current discount type value to conditionally render components
   const currentDiscountType = form.watch("discountType");
+  const isBuyXGetY = currentDiscountType === DiscountType.BuyXGetY;
 
   // Handle form submission
   const onSubmit = async (values: z.infer<typeof createPromotionSchema>) => {
@@ -119,8 +132,8 @@ export default function CreatePromotionForm({
         return;
       }
 
-      // Create the promotion
-      const response = await createPromotion({
+      // Prepare promotion data
+      const promotionData = {
         userId,
         storeId,
         name: values.name,
@@ -133,18 +146,46 @@ export default function CreatePromotionForm({
         startDate: values.startDate,
         endDate: values.endDate,
         isActive: values.isActive,
-        applicableProducts: values.applicableProducts || [],
-        applicableCategories: values.applicableCategories || [], // Now passing categories too
-        // Add Buy X Get Y specific fields if that discount type is selected
-        ...(values.discountType === DiscountType.BuyXGetY && {
-          buyQuantity: values.buyQuantity,
-          getQuantity: values.getQuantity,
-          yApplicableProducts: values.yApplicableProducts,
-          yApplicableCategories: values.yApplicableCategories,
-          sameProductOnly: values.ySelectionType === "same_product",
-        }),
-      });
 
+        // For Buy X Get Y discount type
+        buyQuantity: isBuyXGetY ? values.buyQuantity : undefined,
+        getQuantity: isBuyXGetY ? values.getQuantity : undefined,
+        sameProductOnly: isBuyXGetY
+          ? values.ySelectionType === "same_product"
+          : undefined,
+
+        // Set applicable products/categories based on discount type
+        ...(isBuyXGetY
+          ? {
+              // X products/categories
+              applicableProducts:
+                values.xSelectionType === "specific_products"
+                  ? values.xApplicableProducts
+                  : [],
+              applicableCategories:
+                values.xSelectionType === "categories"
+                  ? values.xApplicableCategories
+                  : [],
+
+              // Y products/categories
+              yApplicableProducts:
+                values.ySelectionType === "specific_products"
+                  ? values.yApplicableProducts
+                  : [],
+              yApplicableCategories:
+                values.ySelectionType === "categories"
+                  ? values.yApplicableCategories
+                  : [],
+            }
+          : {
+              // Standard applicableProducts/Categories for regular discounts
+              applicableProducts: values.applicableProducts,
+              applicableCategories: values.applicableCategories,
+            }),
+      };
+
+      // Create the promotion
+      const response = await createPromotion(promotionData);
       toast.dismiss(loadingToast);
 
       if (response.success) {
@@ -169,226 +210,103 @@ export default function CreatePromotionForm({
   // Determine if form can be submitted
   const canSubmit = !!storeId && !!authData?.user?.id;
 
-  // Handle product selection changes
-  const handleProductSelectionChange = (selectedIds: string[]) => {
-    // Only update if different from current value
-    if (
-      JSON.stringify(form.getValues("applicableProducts").sort()) !==
-      JSON.stringify(selectedIds.sort())
-    ) {
-      form.setValue("applicableProducts", selectedIds);
-    }
-  };
-
-  // Handle category selection changes
-  const handleCategorySelectionChange = (selectedIds: string[]) => {
-    form.setValue("applicableCategories", selectedIds);
-  };
-
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="mx-auto max-w-4xl space-y-8 py-10"
-      >
-        <Card className="shadow-custom-2xl">
-          <CardHeader className="text-xl font-semibold">
-            Create New Promotion
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Promotion Name</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Summer Sale 2025"
-                      type="text"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      <div className="grid grid-cols-1 gap-6 py-10 lg:grid-cols-4 pl-[80px] pr-4">
+        {/* Form section (scrollable) - takes 2/3 of the space */}
+        <div className="space-y-8 lg:col-span-2">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="mx-auto max-w-4xl space-y-8 py-10"
+          >
+            {/* Basic Information Section */}
+            <Card className="shadow-custom-2xl">
+              <BasicInfoSection control={form.control} />
+            </Card>
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Special discount for summer season"
-                      className="resize-none"
-                      value={field.value || ""}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                      name={field.name}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
+            {/* Discount Type Selection */}
+            <Card className="shadow-custom-2xl">
+              <DiscountTypeSection control={form.control} />
+            </Card>
 
-        <Card className="shadow-custom-2xl">
-          <CardHeader className="text-xl font-semibold">
-            Discount Details
-          </CardHeader>
-          <CardContent>
-            <DiscountDetails
-              control={form.control}
-              currency={currency}
-              storeId={storeId}
-            />
-          </CardContent>
-        </Card>
+            {/* Buy X Get Y Configuration (conditional) */}
+            {isBuyXGetY && (
+              <Card className="shadow-custom-2xl">
+                <BuyXGetYSection control={form.control} storeId={storeId} />
+              </Card>
+            )}
 
-        {/* Use our new duration picker component here */}
-        <PromotionDurationPicker disabled={isSubmitting} />
-
-        <Card className="shadow-custom-2xl">
-          <CardHeader className="text-xl font-semibold">
-            Promotion Media
-          </CardHeader>
-          <CardContent>
-            <FormField
-              control={form.control}
-              name="promotionImage"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Promotion Image</FormLabel>
-                  <FormControl>
-                    <ImageKitUploader
-                      onUploadSuccess={(url) => field.onChange(url)}
-                      initialImage={field.value}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Upload an image for the promotion (optional)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Show the main product selector only when the discount type is NOT Buy X Get Y */}
-        {currentDiscountType !== DiscountType.BuyXGetY && (
-          <Card className="shadow-custom-2xl">
-            <CardHeader className="text-xl font-semibold">
-              Product Selection
-            </CardHeader>
-            <CardContent>
-              <FormField
+            {/* Discount Details Section */}
+            <Card className="shadow-custom-2xl">
+              <DiscountDetailsSection
                 control={form.control}
-                name="applicableProducts"
-                render={({ field }) => (
-                  <FormItem>
-                    <ProductSelector
-                      storeId={storeId}
-                      selectedProductIds={field.value || []}
-                      onSelectionChange={handleProductSelectionChange}
-                      label="Select Products for This Promotion"
-                      description="Choose which products this promotion will apply to. Leave empty to apply to all products."
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
+                currency={currency}
               />
+            </Card>
 
-              {/* Add category selector */}
-              <div className="mt-6">
-                <FormField
+            {/* Standard Product Selection (conditional) */}
+            {!isBuyXGetY && (
+              <Card className="shadow-custom-2xl">
+                <ProductSelectionSection
                   control={form.control}
-                  name="applicableCategories"
-                  render={({ field }) => (
-                    <FormItem>
-                      <CategorySelector
-                        storeId={storeId}
-                        selectedCategoryIds={field.value || []}
-                        onSelectionChange={handleCategorySelectionChange}
-                        label="Select Categories for This Promotion"
-                        description="Choose which product categories this promotion will apply to. Leave empty to apply to all categories."
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  storeId={storeId}
                 />
-              </div>
+              </Card>
+            )}
 
-              <FormField
-                control={form.control}
-                name="isActive"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-2 space-y-0 pt-6">
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="cursor-pointer">
-                      Activate promotion immediately
-                    </FormLabel>
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
-        )}
+            {/* Duration Picker */}
+            <PromotionDurationPicker disabled={isSubmitting} />
 
-        {/* For Buy X Get Y, we still need the activation switch */}
-        {currentDiscountType === DiscountType.BuyXGetY && (
-          <Card className="shadow-custom-2xl">
-            <CardHeader className="text-xl font-semibold">
-              Promotion Settings
-            </CardHeader>
-            <CardContent>
-              <FormField
-                control={form.control}
-                name="isActive"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-2 space-y-0">
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="cursor-pointer">
-                      Activate promotion immediately
-                    </FormLabel>
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
-        )}
+            {/* Promotion Image */}
+            <Card className="shadow-custom-2xl">
+              <PromotionImageSection control={form.control} />
+            </Card>
 
-        <div className="flex justify-between">
-          <Button variant="outline" type="button" onClick={() => router.back()}>
-            Cancel
-          </Button>
-          <Button size="lg" type="submit" disabled={isSubmitting || !canSubmit}>
-            {isSubmitting ? "Creating..." : "Create Promotion"}
-          </Button>
+            {/* Form Actions */}
+            <div className="flex justify-between">
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => router.back()}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="lg"
+                type="submit"
+                disabled={isSubmitting || !canSubmit}
+              >
+                {isSubmitting ? "Creating..." : "Create Promotion"}
+              </Button>
+            </div>
+
+            {!canSubmit && (
+              <p className="text-center text-red-500">
+                You must be logged in and have a store selected to create a
+                promotion.
+              </p>
+            )}
+          </form>
         </div>
-
-        {!canSubmit && (
-          <p className="text-center text-red-500">
-            You must be logged in and have a store selected to create a
-            promotion.
-          </p>
-        )}
-      </form>
+        {/* Summary section (fixed) - takes 1/3 of the space */}
+        <div className="relative lg:col-span-2">
+          <div className="lg:sticky lg:top-20">
+            <Card className="shadow-custom-2xl">
+              <CardHeader className="pb-2">
+                <h3 className=" text-lg font-semibold">
+                  Promotion Summary
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Here&apos;s how your promotion will work for customers
+                </p>
+              </CardHeader>
+              <CardContent>
+                <PromotionPreview control={form.control} currency={currency} />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
     </Form>
   );
 }
