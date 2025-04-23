@@ -13,3 +13,9 @@ export enum AppNotificationType {
   ReturnStatusUpdate = "return_status_update",
   NewProduct = "new_product",
 }
+export enum DiscountType {
+  Percentage = "percentage",
+  FixedAmount = "fixed_amount",
+  FreeShipping = "free_shipping",
+  BuyXGetY = "buy_x_get_y",
+}
