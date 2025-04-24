@@ -5,7 +5,7 @@ import Pusher from "pusher";
 
 export async function cleanupStaleUserStatuses() {
   try {
-    console.log("Running cleanup of stale user statuses");
+    // console.log("Running cleanup of stale user statuses");
 
     // Find users who are marked online but haven't updated their status in 2 minutes
     // Reduced from 3 minutes to be more aggressive
