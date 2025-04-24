@@ -20,7 +20,7 @@ async function page({
   const currency = storeResponse.data.currency;
 
   return (
-    <div className="h-full w-full">
+    <div className="w-full">
       <CreatePromotionForm storeId={storeId} currency={currency ?? "TND"} />
     </div>
   );

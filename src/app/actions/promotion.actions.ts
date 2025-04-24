@@ -54,6 +54,9 @@ export const createPromotion = async ({
   isActive,
   applicableProducts,
   applicableCategories,
+  sameProductOnly, 
+  yApplicableProducts, 
+  yApplicableCategories, 
 }: {
   userId: string;
   storeId: string;
@@ -71,8 +74,12 @@ export const createPromotion = async ({
   getQuantity?: number;
   applicableProducts: string[];
   applicableCategories: string[];
+  sameProductOnly?: boolean; 
+  yApplicableProducts?: string[]; 
+  yApplicableCategories?: string[]; 
 }): Promise<ActionResponse<any>> => {
   try {
+    // Insert new promotion
     // Insert new promotion
     const [newPromotion] = await db
       .insert(AppPromotion)
@@ -90,6 +97,9 @@ export const createPromotion = async ({
         endDate: endDate,
         buyQuantity,
         getQuantity,
+        sameProductOnly, 
+        yApplicableProducts, 
+        yApplicableCategories, 
         isActive,
         applicableProducts,
         applicableCategories,
@@ -97,7 +107,6 @@ export const createPromotion = async ({
         updated_at: new Date(),
       })
       .returning();
-
     // Only send notification if the promotion is active and should start now or soon
     if (newPromotion && isActive && new Date() >= startDate) {
       try {
