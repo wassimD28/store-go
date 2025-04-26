@@ -15,17 +15,25 @@ import Link from "next/link";
 
 interface Props {
   params: Promise<{ storeId: string }> | { storeId: string };
-  searchParams?: {
-    productId?: string;
-    tab?: string;
-  };
+  searchParams?:
+    | Promise<{
+        productId?: string;
+        tab?: string;
+      }>
+    | {
+        productId?: string;
+        tab?: string;
+      };
 }
 
-async function Page({ params , searchParams}: Props) {
-   const resolvedParams = await Promise.resolve(params);
-   const { storeId } = resolvedParams;
-   const productIdToSelect = searchParams?.productId;
-   const tabToOpen = searchParams?.tab;
+async function Page({ params, searchParams }: Props) {
+  const resolvedParams = await Promise.resolve(params);
+  const { storeId } = resolvedParams;
+
+  // Resolve searchParams before accessing its properties
+  const resolvedSearchParams = await Promise.resolve(searchParams || {});
+  const productIdToSelect = resolvedSearchParams.productId;
+  const tabToOpen = resolvedSearchParams.tab;
 
   // Fetch products, categories, and subcategories
   const productsResult = await getProductsByStore(storeId);
@@ -53,7 +61,7 @@ async function Page({ params , searchParams}: Props) {
         ...product,
         image_urls: Array.isArray(product.image_urls) ? product.image_urls : [],
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        attributes: product.attributes || {} as any, // Add type assertion here
+        attributes: product.attributes || ({} as any), // Add type assertion here
         colors: Array.isArray(product.colors)
           ? (product.colors as ColorOption[])
           : [],

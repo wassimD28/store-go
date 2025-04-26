@@ -18,6 +18,7 @@ import { RadioGroup, RadioGroupItem } from "@/client/components/ui/radio-group";
 import toast from "react-hot-toast";
 import { useOnBoardingPageStore } from "../stores/onBoarding.store";
 import { Radius } from "@/lib/types/interfaces/storeGoElements.interface";
+import ImageKitUploader from "@/client/components/uploader/imageKitUploader";
 
 // Update the form schema to match our needs
 const formSchema = z.object({
@@ -27,6 +28,7 @@ const formSchema = z.object({
   buttonTextColor: z.string(),
   buttonBackgroundColor: z.string(),
   radius: z.enum(["none", "sm", "md", "lg", "full"]),
+  mainImage: z.string()
 });
 
 export default function OnBoardingForm() {
@@ -43,6 +45,7 @@ export default function OnBoardingForm() {
       buttonTextColor: button.textColor,
       buttonBackgroundColor: button.backgroundColor,
       radius: button.radius,
+      mainImage: "",
     },
   });
 
@@ -249,7 +252,23 @@ export default function OnBoardingForm() {
             </FormItem>
           )}
         />
-
+        <FormField
+          control={form.control}
+          name="mainImage"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Image</FormLabel>
+              <FormControl>
+                <ImageKitUploader
+                  onUploadSuccess={(url) => field.onChange(url)}
+                  initialImage={field.value}
+                />
+              </FormControl>
+              <FormDescription>Upload an image (optional)</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <Button type="submit">Save Changes</Button>
       </form>
     </Form>
