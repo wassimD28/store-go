@@ -240,12 +240,13 @@ export async function markAllNotificationsAsRead(
     // Get all notification IDs
     const notificationIds = storeNotifications.map((n) => n.id);
 
-    // Get existing status entries for this user
+    // Get existing status entries for this user - FIX: Use proper SQL condition for array
     const existingStatuses = await db.query.AppUserNotificationStatus.findMany({
-      where: (status, { and }) =>
+      where: (status) =>
         and(
           eq(status.appUserId, appUserId),
-          sql`${status.notificationId} IN (${notificationIds.join(",")})`,
+          // Use the SQL in operator with proper array handling
+          sql`${status.notificationId} IN ${notificationIds}`,
         ),
     });
 
@@ -266,7 +267,8 @@ export async function markAllNotificationsAsRead(
         .where(
           and(
             eq(AppUserNotificationStatus.appUserId, appUserId),
-            sql`${AppUserNotificationStatus.notificationId} IN (${notificationIds.join(",")})`,
+            // FIX: Use proper SQL condition for array
+            sql`${AppUserNotificationStatus.notificationId} IN ${notificationIds}`,
           ),
         );
     }
@@ -608,14 +610,15 @@ export async function deleteAllNotifications(
       .map((status) => status.id);
 
     if (statusesToUpdate.length > 0) {
-      await db
-        .update(AppUserNotificationStatus)
-        .set({
-          isDeleted: true,
-        })
-        .where(
-          sql`${AppUserNotificationStatus.id} IN (${statusesToUpdate.join(",")})`,
-        );
+      // FIX: Update each status individually or use proper array syntax
+      for (const statusId of statusesToUpdate) {
+        await db
+          .update(AppUserNotificationStatus)
+          .set({
+            isDeleted: true,
+          })
+          .where(eq(AppUserNotificationStatus.id, statusId));
+      }
     }
 
     // For notifications without status entries, create new ones marked as deleted
