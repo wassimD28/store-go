@@ -16,7 +16,7 @@ interface Props {
 function Preview({ params }: Props) {
   // Unwrap the params using React.use()
   const resolvedParams = use(params as Promise<{ storeId: string }>);
-  const { storeId } = resolvedParams;
+  const { storeId } = resolvedParams; // todo : use this later
 
   return (
     <div className="grid h-full w-full grid-cols-[1fr_auto_auto] gap-3 overflow-hidden px-2 text-2xl">

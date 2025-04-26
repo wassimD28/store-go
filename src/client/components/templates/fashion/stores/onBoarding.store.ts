@@ -16,8 +16,8 @@ export const useOnBoardingPageStore = create<OnBoardingPageStore>((set) => ({
   },
   button: {
     text: "Get Started",
-    textColor: "#FFFFFF",
-    backgroundColor: "#032666",
+    textColor: "#000000",
+    backgroundColor: "#FFFFFF",
     radius: "none",
   },
   updateTitle: (title) =>
