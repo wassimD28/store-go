@@ -2,8 +2,11 @@
 "use server";
 
 import { db } from "@/lib/db/db";
-import { eq, desc, and, isNull, sql, count } from "drizzle-orm";
-import { appNotificationTypeEnum, AppUserNotification } from "@/lib/db/schema";
+import { eq, and, sql } from "drizzle-orm";
+// Update imports to use new table structures
+import { appNotificationTypeEnum } from "@/lib/db/tables/tables.enum";
+import { AppNotification } from "@/lib/db/tables/customer/appNotification.table";
+import { AppUserNotificationStatus } from "@/lib/db/tables/customer/appUserNotificationStatus.table";
 import { ActionResponse } from "@/lib/types/interfaces/common.interface";
 
 export type AppNotificationType =
@@ -26,30 +29,44 @@ export async function createSingleUserNotification(
   title: string,
   content: string,
   data: Record<string, any> = {},
-): Promise<ActionResponse<typeof AppUserNotification.$inferSelect>> {
+): Promise<ActionResponse<any>> {
   try {
     // Validate inputs
     if (!storeId || !appUserId) {
       throw new Error("Store ID and App User ID are required");
     }
 
-    // Create the notification in the database
+    // Create the notification in the database (not global)
     const [newNotification] = await db
-      .insert(AppUserNotification)
+      .insert(AppNotification)
       .values({
         storeId,
-        appUserId,
         type,
         title,
         content,
         data,
-        isRead: false,
+        isGlobal: false, // This is a targeted notification
       })
       .returning();
 
+    // Create the user notification status entry
+    const [userStatus] = await db
+      .insert(AppUserNotificationStatus)
+      .values({
+        appUserId,
+        notificationId: newNotification.id,
+        isRead: false,
+        isDeleted: false,
+      })
+      .returning();
+
+    // Return combined data
     return {
       success: true,
-      data: newNotification,
+      data: {
+        ...newNotification,
+        status: userStatus,
+      },
     };
   } catch (error) {
     console.error("Error creating user notification:", error);
@@ -78,24 +95,23 @@ export async function createBroadcastNotification(
   title: string,
   content: string,
   data: Record<string, any> = {},
-): Promise<ActionResponse<typeof AppUserNotification.$inferSelect>> {
+): Promise<ActionResponse<any>> {
   try {
     // Validate inputs
     if (!storeId) {
       throw new Error("Store ID is required");
     }
 
-    // Create broadcast notification (null appUserId means for all users)
+    // Create global notification
     const [newNotification] = await db
-      .insert(AppUserNotification)
+      .insert(AppNotification)
       .values({
         storeId,
-        appUserId: null,
         type,
         title,
         content,
         data,
-        isRead: false,
+        isGlobal: true, // This is a global notification
       })
       .returning();
 
@@ -116,101 +132,74 @@ export async function createBroadcastNotification(
 }
 
 /**
- * Marks a specific notification as read
+ * Marks a specific notification as read for a specific user
  * @param notificationId - ID of the notification to mark as read
- * @param appUserId - ID of the app user to verify ownership
+ * @param appUserId - ID of the app user
  * @returns Promise with success status or error message
  */
 export async function markNotificationAsRead(
   notificationId: string,
   appUserId: string,
-): Promise<ActionResponse<typeof AppUserNotification.$inferSelect>> {
+): Promise<ActionResponse<any>> {
   try {
-    // Find the notification first to verify ownership
-    const notification = await db.query.AppUserNotification.findFirst({
-      where: (notification, { and, eq, or, isNull }) => {
-        return and(
-          eq(notification.id, notificationId),
-          // Check if the notification is for this specific user or is a broadcast
-          or(
-            eq(notification.appUserId, appUserId),
-            isNull(notification.appUserId),
-          ),
-        );
-      },
+    // Find the notification first
+    const notification = await db.query.AppNotification.findFirst({
+      where: (n) => eq(n.id, notificationId),
     });
 
     if (!notification) {
       return {
         success: false,
-        error: "Notification not found or you don't have access to it",
+        error: "Notification not found",
       };
     }
 
-    // For broadcast notifications (null appUserId), we need to create a user-specific "read" entry
-    // instead of modifying the original broadcast notification
-    if (notification.appUserId === null) {
-      // Check if a read receipt already exists for this broadcast notification
-      const existingReadReceipt = await db
-        .select()
-        .from(AppUserNotification)
-        .where(
-          and(
-            eq(AppUserNotification.appUserId, appUserId),
-            sql`data->>'originalBroadcastId' = ${notification.id}`,
-          ),
-        )
-        .limit(1);
+    // Check if a status entry already exists for this user and notification
+    const existingStatus = await db.query.AppUserNotificationStatus.findFirst({
+      where: (status, { and }) =>
+        and(
+          eq(status.appUserId, appUserId),
+          eq(status.notificationId, notificationId),
+        ),
+    });
 
-      // If a read receipt already exists, return it instead of creating a new one
-      if (existingReadReceipt.length > 0) {
-        return {
-          success: true,
-          data: existingReadReceipt[0],
-        };
-      }
-      // Create a user-specific copy of the broadcast notification marked as read
-      // Handle data merging properly to avoid spread type error
-      const notificationData = (notification.data as Record<string, any>) || {};
-      const mergedData = {
-        ...notificationData,
-        originalBroadcastId: notification.id,
-      };
-
-      const [userReadRecord] = await db
-        .insert(AppUserNotification)
-        .values({
-          storeId: notification.storeId,
-          appUserId, // Associate with specific user
-          type: notification.type,
-          title: notification.title,
-          content: notification.content,
+    if (existingStatus) {
+      // Update existing status
+      const [updatedStatus] = await db
+        .update(AppUserNotificationStatus)
+        .set({
           isRead: true,
           readAt: new Date(),
-          // Use properly merged data
-          data: mergedData,
         })
+        .where(eq(AppUserNotificationStatus.id, existingStatus.id))
         .returning();
 
       return {
         success: true,
-        data: userReadRecord,
+        data: {
+          ...notification,
+          status: updatedStatus,
+        },
       };
     } else {
-      // For user-specific notifications, update the existing record
+      // Create new status entry
       const now = new Date();
-      const [updatedNotification] = await db
-        .update(AppUserNotification)
-        .set({
+      const [newStatus] = await db
+        .insert(AppUserNotificationStatus)
+        .values({
+          appUserId,
+          notificationId,
           isRead: true,
           readAt: now,
         })
-        .where(eq(AppUserNotification.id, notificationId))
         .returning();
 
       return {
         success: true,
-        data: updatedNotification,
+        data: {
+          ...notification,
+          status: newStatus,
+        },
       };
     }
   } catch (error) {
@@ -236,114 +225,69 @@ export async function markAllNotificationsAsRead(
   appUserId: string,
 ): Promise<ActionResponse<{ count: number }>> {
   try {
-    // Get IDs of broadcasts the user has already read
-    const readBroadcastIds = await db
-      .select({
-        originalId: sql<string>`data->>'originalBroadcastId'`,
-      })
-      .from(AppUserNotification)
-      .where(
-        and(
-          eq(AppUserNotification.appUserId, appUserId),
-          eq(AppUserNotification.isRead, true),
-        ),
-      );
-
-    // Create a Set of broadcast IDs that the user has already read
-    const readBroadcastIdSet = new Set(
-      readBroadcastIds.map((item) => item.originalId).filter(Boolean),
-    );
-
-    // Find all broadcast notifications
-    const broadcastNotifications = await db.query.AppUserNotification.findMany({
-      where: (notification, { and, eq, isNull }) => {
-        return and(
-          eq(notification.storeId, storeId),
-          isNull(notification.appUserId),
-        );
-      },
+    // First get all notifications for this store
+    const storeNotifications = await db.query.AppNotification.findMany({
+      where: (n) => eq(n.storeId, storeId),
     });
 
-    // Filter to only broadcasts that haven't been read
-    const unreadBroadcasts = broadcastNotifications.filter(
-      (notification) => !readBroadcastIdSet.has(notification.id),
-    );
-
-    // Find user-specific unread notifications
-    const userSpecificNotifications =
-      await db.query.AppUserNotification.findMany({
-        where: (notification, { and, eq }) => {
-          return and(
-            eq(notification.storeId, storeId),
-            eq(notification.appUserId, appUserId),
-            eq(notification.isRead, false),
-            // Exclude "read receipt" copies
-            sql`(data->>'originalBroadcastId') IS NULL`,
-          );
-        },
-      });
-
-    // Count total notifications that will actually be updated
-    const totalToUpdate =
-      unreadBroadcasts.length + userSpecificNotifications.length;
-
-    // If nothing to update, return early
-    if (totalToUpdate === 0) {
+    if (storeNotifications.length === 0) {
       return {
         success: true,
         data: { count: 0 },
       };
     }
 
-    // Create read receipts for truly unread broadcasts
-    if (unreadBroadcasts.length > 0) {
-      const now = new Date();
+    // Get all notification IDs
+    const notificationIds = storeNotifications.map((n) => n.id);
 
-      const valuesToInsert = unreadBroadcasts.map((notification) => {
-        const notificationData =
-          (notification.data as Record<string, any>) || {};
-        const mergedData = {
-          ...notificationData,
-          originalBroadcastId: notification.id,
-        };
+    // Get existing status entries for this user
+    const existingStatuses = await db.query.AppUserNotificationStatus.findMany({
+      where: (status, { and }) =>
+        and(
+          eq(status.appUserId, appUserId),
+          sql`${status.notificationId} IN (${notificationIds.join(",")})`,
+        ),
+    });
 
-        return {
-          storeId: notification.storeId,
-          appUserId,
-          type: notification.type,
-          title: notification.title,
-          content: notification.content,
-          data: mergedData,
-          isRead: true,
-          readAt: now,
-        };
-      });
+    // Create a set of notification IDs that already have status entries
+    const existingNotificationIds = new Set(
+      existingStatuses.map((s) => s.notificationId),
+    );
 
-      await db.insert(AppUserNotification).values(valuesToInsert);
-    }
-
-    // Update user-specific notifications to read
-    if (userSpecificNotifications.length > 0) {
+    // For existing entries, update them to read
+    if (existingStatuses.length > 0) {
       const now = new Date();
       await db
-        .update(AppUserNotification)
+        .update(AppUserNotificationStatus)
         .set({
           isRead: true,
           readAt: now,
         })
         .where(
           and(
-            eq(AppUserNotification.storeId, storeId),
-            eq(AppUserNotification.appUserId, appUserId),
-            eq(AppUserNotification.isRead, false),
-            sql`(data->>'originalBroadcastId') IS NULL`,
+            eq(AppUserNotificationStatus.appUserId, appUserId),
+            sql`${AppUserNotificationStatus.notificationId} IN (${notificationIds.join(",")})`,
           ),
         );
     }
 
+    // For notifications without status entries, create new ones
+    const notificationsToCreate = storeNotifications
+      .filter((n) => !existingNotificationIds.has(n.id))
+      .map((n) => ({
+        appUserId,
+        notificationId: n.id,
+        isRead: true,
+        readAt: new Date(),
+      }));
+
+    if (notificationsToCreate.length > 0) {
+      await db.insert(AppUserNotificationStatus).values(notificationsToCreate);
+    }
+
     return {
       success: true,
-      data: { count: totalToUpdate },
+      data: { count: storeNotifications.length },
     };
   } catch (error) {
     console.error("Error marking all notifications as read:", error);
@@ -358,96 +302,150 @@ export async function markAllNotificationsAsRead(
 }
 
 /**
- * Gets all notifications for a specific user
+ * Gets only unread notifications for a specific user
  * @param storeId - ID of the store
  * @param appUserId - ID of the app user
  * @param limit - Maximum number of notifications to return (default 50)
  * @param offset - Number of notifications to skip (for pagination)
  * @returns Promise with success status and notifications array or error message
  */
-export async function getUserNotifications(
+export async function getUnreadUserNotifications(
   storeId: string,
   appUserId: string,
   limit = 50,
   offset = 0,
-): Promise<ActionResponse<Array<typeof AppUserNotification.$inferSelect>>> {
+): Promise<ActionResponse<any[]>> {
   try {
-    // Get broadcast notifications
-    const broadcastQuery = db
-      .select()
-      .from(AppUserNotification)
-      .where(
-        and(
-          eq(AppUserNotification.storeId, storeId),
-          isNull(AppUserNotification.appUserId),
-        ),
-      );
+    // Get all notifications for this store
+    const allNotifications = await db.query.AppNotification.findMany({
+      where: (n) => eq(n.storeId, storeId),
+    });
 
-    const broadcastNotifications = await broadcastQuery;
+    // Get all status entries for this user
+    const userStatuses = await db.query.AppUserNotificationStatus.findMany({
+      where: (status) => eq(status.appUserId, appUserId),
+    });
 
-    // Get user-specific read records to filter out broadcasts that have been read
-    const readBroadcastIds = await db
-      .select({
-        originalId: sql<string>`data->>'originalBroadcastId'`,
+    // Create a map of notification IDs to statuses
+    const statusMap = new Map();
+    userStatuses.forEach((status) => {
+      statusMap.set(status.notificationId, status);
+    });
+
+    // Filter and process notifications
+    const processedNotifications = allNotifications
+      .filter((notification) => {
+        const status = statusMap.get(notification.id);
+        
+        // Always exclude deleted notifications
+        if (status && status.isDeleted) {
+          return false;
+        }
+        
+        // For unread notifications: include global ones or ones with status
+        return (notification.isGlobal && (!status || !status.isRead)) || 
+               (status && !status.isRead);
       })
-      .from(AppUserNotification)
-      .where(
-        and(
-          eq(AppUserNotification.appUserId, appUserId),
-          eq(AppUserNotification.isRead, true),
-        ),
-      );
-
-    // Create a Set of broadcast IDs that have been read
-    const readBroadcastIdSet = new Set(
-      readBroadcastIds.map((item) => item.originalId).filter(Boolean), // Remove null/undefined values
-    );
-
-    // Filter out broadcast notifications that the user has already read
-    const unreadBroadcasts = broadcastNotifications.filter(
-      (notification) => !readBroadcastIdSet.has(notification.id),
-    );
-
-    // Get user-specific notifications, but exclude "read receipt" copies of broadcast notifications
-    // This is the key fix - we're adding a condition to filter out records that have an originalBroadcastId
-    const userNotifications = await db
-      .select()
-      .from(AppUserNotification)
-      .where(
-        and(
-          eq(AppUserNotification.storeId, storeId),
-          eq(AppUserNotification.appUserId, appUserId),
-          // This is the new condition to exclude "read receipt" copies of broadcasts
-          sql`(data->>'originalBroadcastId') IS NULL`,
-        ),
-      )
-      .orderBy(desc(AppUserNotification.createdAt));
-
-    // Combine and sort notifications by date
-    const allNotifications = [...unreadBroadcasts, ...userNotifications]
+      .map((notification) => {
+        const status = statusMap.get(notification.id);
+        return {
+          ...notification,
+          isRead: status ? status.isRead : false,
+          readAt: status ? status.readAt : null,
+          isDeleted: status ? status.isDeleted : false,
+        };
+      })
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .slice(offset, offset + limit);
 
     return {
       success: true,
-      data: allNotifications,
+      data: processedNotifications,
     };
   } catch (error) {
-    console.error("Error getting user notifications:", error);
+    console.error("Error getting unread user notifications:", error);
     return {
       success: false,
       error:
         error instanceof Error
           ? error.message
-          : "Failed to get user notifications",
+          : "Failed to get unread user notifications",
     };
   }
 }
 
 /**
- * Deletes a notification
+ * Gets all non-deleted notifications for a specific user, including read ones
+ * @param storeId - ID of the store
+ * @param appUserId - ID of the app user
+ * @param limit - Maximum number of notifications to return (default 50)
+ * @param offset - Number of notifications to skip (for pagination)
+ * @returns Promise with success status and notifications array or error message
+ */
+export async function getUserNotificationHistory(
+  storeId: string,
+  appUserId: string,
+  limit = 50,
+  offset = 0,
+): Promise<ActionResponse<any[]>> {
+  try {
+    // Get all notifications for this store
+    const allNotifications = await db.query.AppNotification.findMany({
+      where: (n) => eq(n.storeId, storeId),
+    });
+
+    // Get all status entries for this user
+    const userStatuses = await db.query.AppUserNotificationStatus.findMany({
+      where: (status) => eq(status.appUserId, appUserId),
+    });
+
+    // Create a map of notification IDs to statuses
+    const statusMap = new Map();
+    userStatuses.forEach((status) => {
+      statusMap.set(status.notificationId, status);
+    });
+
+    // Filter and process notifications
+    const processedNotifications = allNotifications
+      .filter((notification) => {
+        // Include notification if:
+        // 1. It's global AND doesn't have a status entry OR
+        // 2. It has a status entry that is NOT marked as deleted
+        const status = statusMap.get(notification.id);
+        return (notification.isGlobal && !status) || (status && !status.isDeleted);
+      })
+      .map((notification) => {
+        const status = statusMap.get(notification.id);
+        return {
+          ...notification,
+          isRead: status ? status.isRead : false,
+          readAt: status ? status.readAt : null,
+          isDeleted: status ? status.isDeleted : false,
+        };
+      })
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(offset, offset + limit);
+
+    return {
+      success: true,
+      data: processedNotifications,
+    };
+  } catch (error) {
+    console.error("Error getting user notification history:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to get user notification history",
+    };
+  }
+}
+
+/**
+ * Deletes a notification for a specific user
  * @param notificationId - ID of the notification to delete
- * @param appUserId - ID of the app user to verify ownership
+ * @param appUserId - ID of the app user
  * @returns Promise with success status or error message
  */
 export async function deleteNotification(
@@ -455,27 +453,43 @@ export async function deleteNotification(
   appUserId: string,
 ): Promise<ActionResponse<{ deleted: boolean }>> {
   try {
-    // Find the notification first to verify it belongs to this user
-    const notification = await db.query.AppUserNotification.findFirst({
-      where: (notification, { and, eq }) => {
-        return and(
-          eq(notification.id, notificationId),
-          eq(notification.appUserId, appUserId),
-        );
-      },
+    // Find the notification
+    const notification = await db.query.AppNotification.findFirst({
+      where: (n) => eq(n.id, notificationId),
     });
 
     if (!notification) {
       return {
         success: false,
-        error: "Notification not found or you don't have access to delete it",
+        error: "Notification not found",
       };
     }
 
-    // Delete the notification
-    await db
-      .delete(AppUserNotification)
-      .where(eq(AppUserNotification.id, notificationId));
+    // Check if a status entry already exists
+    const existingStatus = await db.query.AppUserNotificationStatus.findFirst({
+      where: (status, { and }) =>
+        and(
+          eq(status.appUserId, appUserId),
+          eq(status.notificationId, notificationId),
+        ),
+    });
+
+    if (existingStatus) {
+      // Update existing status to mark as deleted
+      await db
+        .update(AppUserNotificationStatus)
+        .set({
+          isDeleted: true,
+        })
+        .where(eq(AppUserNotificationStatus.id, existingStatus.id));
+    } else {
+      // Create new status entry marked as deleted
+      await db.insert(AppUserNotificationStatus).values({
+        appUserId,
+        notificationId,
+        isDeleted: true,
+      });
+    }
 
     return {
       success: true,
@@ -504,60 +518,38 @@ export async function getUnreadNotificationCount(
   appUserId: string,
 ): Promise<ActionResponse<{ count: number }>> {
   try {
-    // Get all broadcast notifications
-    const broadcasts = await db
-      .select({ id: AppUserNotification.id })
-      .from(AppUserNotification)
-      .where(
-        and(
-          eq(AppUserNotification.storeId, storeId),
-          isNull(AppUserNotification.appUserId),
-        ),
+    // Get all notifications for this store
+    const allNotifications = await db.query.AppNotification.findMany({
+      where: (n) => eq(n.storeId, storeId),
+    });
+
+    // Get all status entries for this user
+    const userStatuses = await db.query.AppUserNotificationStatus.findMany({
+      where: (status) => eq(status.appUserId, appUserId),
+    });
+
+    // Create a map of notification IDs to statuses
+    const statusMap = new Map();
+    userStatuses.forEach((status) => {
+      statusMap.set(status.notificationId, status);
+    });
+
+    // Count unread notifications
+    const unreadCount = allNotifications.filter((notification) => {
+      const status = statusMap.get(notification.id);
+
+      // Include if:
+      // 1. It's global AND doesn't have a status entry (never read) OR
+      // 2. It has a status entry that is not read AND not deleted
+      return (
+        (notification.isGlobal && !status) ||
+        (status && !status.isRead && !status.isDeleted)
       );
+    }).length;
 
-    // Get IDs of broadcasts the user has already read
-    const readBroadcastIds = await db
-      .select({
-        originalId: sql<string>`data->>'originalBroadcastId'`,
-      })
-      .from(AppUserNotification)
-      .where(
-        and(
-          eq(AppUserNotification.appUserId, appUserId),
-          eq(AppUserNotification.isRead, true),
-        ),
-      );
-
-    // Create a Set of broadcast IDs that the user has read
-    const readBroadcastIdSet = new Set(
-      readBroadcastIds.map((item) => item.originalId).filter(Boolean),
-    );
-
-    // Count unread broadcasts
-    const unreadBroadcastCount = broadcasts.filter(
-      (broadcast) => !readBroadcastIdSet.has(broadcast.id),
-    ).length;
-
-    // Count user-specific unread notifications, excluding "read receipt" copies
-    const userUnreadResult = await db
-      .select({ count: count() })
-      .from(AppUserNotification)
-      .where(
-        and(
-          eq(AppUserNotification.storeId, storeId),
-          eq(AppUserNotification.appUserId, appUserId),
-          eq(AppUserNotification.isRead, false),
-          // condition to exclude "read receipt" copies
-          sql`(data->>'originalBroadcastId') IS NULL`,
-        ),
-      );
-
-    const userUnreadCount = userUnreadResult[0]?.count || 0;
-
-    // Sum both counts
     return {
       success: true,
-      data: { count: unreadBroadcastCount + Number(userUnreadCount) },
+      data: { count: unreadCount },
     };
   } catch (error) {
     console.error("Error getting unread notification count:", error);
@@ -570,107 +562,6 @@ export async function getUnreadNotificationCount(
     };
   }
 }
-
-/**
- * Gets all notifications for a specific user, including read ones
- * @param storeId - ID of the store
- * @param appUserId - ID of the app user
- * @param includeRead - Whether to include read notifications
- * @param limit - Maximum number of notifications to return (default 50)
- * @param offset - Number of notifications to skip (for pagination)
- * @returns Promise with success status and notifications array or error message
- */
-export async function getAllUserNotifications(
-  storeId: string,
-  appUserId: string,
-  limit = 50,
-  offset = 0,
-): Promise<ActionResponse<Array<typeof AppUserNotification.$inferSelect>>> {
-  try {
-    // Get all broadcast notifications
-    const broadcastNotifications = await db
-      .select()
-      .from(AppUserNotification)
-      .where(
-        and(
-          eq(AppUserNotification.storeId, storeId),
-          isNull(AppUserNotification.appUserId),
-        ),
-      );
-
-    // Get user-specific read records to identify which broadcasts have been read
-    const readBroadcastEntries = await db
-      .select({
-        originalId: sql<string>`data->>'originalBroadcastId'`,
-        readAt: AppUserNotification.readAt,
-        id: AppUserNotification.id,
-      })
-      .from(AppUserNotification)
-      .where(
-        and(
-          eq(AppUserNotification.appUserId, appUserId),
-          eq(AppUserNotification.isRead, true),
-          sql`data->>'originalBroadcastId' IS NOT NULL`,
-        ),
-      );
-
-    // Create a map of broadcast IDs to their read receipts
-    const readBroadcastMap = new Map();
-    readBroadcastEntries.forEach(entry => {
-      if (entry.originalId) {
-        readBroadcastMap.set(entry.originalId, {
-          readAt: entry.readAt,
-          readReceiptId: entry.id
-        });
-      }
-    });
-
-    // Process broadcast notifications, marking them as read if needed
-    const processedBroadcasts = broadcastNotifications.map(notification => {
-      const readInfo = readBroadcastMap.get(notification.id);
-      return {
-        ...notification,
-        isRead: !!readInfo,
-        readAt: readInfo?.readAt || null,
-        readReceiptId: readInfo?.readReceiptId || null,
-      };
-    });
-
-    // Get all user-specific notifications, excluding read receipt copies
-    const userNotifications = await db
-      .select()
-      .from(AppUserNotification)
-      .where(
-        and(
-          eq(AppUserNotification.storeId, storeId),
-          eq(AppUserNotification.appUserId, appUserId),
-          // This excludes "read receipt" copies of broadcasts
-          sql`(data->>'originalBroadcastId') IS NULL`,
-        ),
-      );
-
-    // Combine and sort all notifications by date
-    const allNotifications = [...processedBroadcasts, ...userNotifications]
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .slice(offset, offset + limit);
-
-    return {
-      success: true,
-      data: allNotifications,
-    };
-  } catch (error) {
-    console.error("Error getting all user notifications:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to get user notifications",
-    };
-  }
-}
-
-
 
 /**
  * Deletes all notifications for a specific app user
@@ -688,34 +579,65 @@ export async function deleteAllNotifications(
       throw new Error("Store ID and App User ID are required");
     }
 
-    // We need to handle both user-specific notifications and read receipts for broadcast notifications
-    
-    // 1. Count how many notifications we're going to delete (for reporting back)
-    const userSpecificCount = await db
-      .select({ count: count() })
-      .from(AppUserNotification)
-      .where(
-        and(
-          eq(AppUserNotification.storeId, storeId),
-          eq(AppUserNotification.appUserId, appUserId),
-        ),
-      );
+    // Get all notifications for this store
+    const storeNotifications = await db.query.AppNotification.findMany({
+      where: (n) => eq(n.storeId, storeId),
+    });
 
-    const totalCount = userSpecificCount[0]?.count || 0;
+    if (storeNotifications.length === 0) {
+      return {
+        success: true,
+        data: { count: 0 },
+      };
+    }
 
-    // 2. Delete all user-specific notifications (including read receipts for broadcasts)
-    await db
-      .delete(AppUserNotification)
-      .where(
-        and(
-          eq(AppUserNotification.storeId, storeId),
-          eq(AppUserNotification.appUserId, appUserId),
-        ),
-      );
+    // Get existing status entries for this user
+    const existingStatuses = await db.query.AppUserNotificationStatus.findMany({
+      where: (status) => eq(status.appUserId, appUserId),
+    });
+
+    // Create a map of notification IDs to status entries
+    const statusMap = new Map();
+    existingStatuses.forEach((status) => {
+      statusMap.set(status.notificationId, status);
+    });
+
+    // For existing status entries, update them to deleted
+    const statusesToUpdate = existingStatuses
+      .filter((status) => !status.isDeleted)
+      .map((status) => status.id);
+
+    if (statusesToUpdate.length > 0) {
+      await db
+        .update(AppUserNotificationStatus)
+        .set({
+          isDeleted: true,
+        })
+        .where(
+          sql`${AppUserNotificationStatus.id} IN (${statusesToUpdate.join(",")})`,
+        );
+    }
+
+    // For notifications without status entries, create new ones marked as deleted
+    const notificationsToCreate = storeNotifications
+      .filter((n) => !statusMap.has(n.id))
+      .map((n) => ({
+        appUserId,
+        notificationId: n.id,
+        isDeleted: true,
+      }));
+
+    if (notificationsToCreate.length > 0) {
+      await db.insert(AppUserNotificationStatus).values(notificationsToCreate);
+    }
+
+    // Count total affected notifications
+    const totalAffected =
+      statusesToUpdate.length + notificationsToCreate.length;
 
     return {
       success: true,
-      data: { count: Number(totalCount) },
+      data: { count: totalAffected },
     };
   } catch (error) {
     console.error("Error deleting all notifications:", error);
