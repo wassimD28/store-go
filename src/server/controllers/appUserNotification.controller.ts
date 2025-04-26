@@ -4,10 +4,10 @@ import { z } from "zod";
 import {
   markNotificationAsRead,
   markAllNotificationsAsRead,
-  getUserNotifications,
+  getUnreadUserNotifications,
   deleteNotification,
   getUnreadNotificationCount,
-  getAllUserNotifications,
+  getUserNotificationHistory,
   deleteAllNotifications,
 } from "@/app/actions/appUsersNotification.actions";
 
@@ -44,7 +44,7 @@ export class AppUserNotificationController {
         );
       }
 
-      const result = await getUserNotifications(
+      const result = await getUnreadUserNotifications(
         storeId,
         appUserId,
         pagination.data.limit,
@@ -271,7 +271,7 @@ export class AppUserNotificationController {
     }
   }
 
-  // Add to AppUserNotificationController class
+  // Get all user notifications
   static async getAllUserNotifications(c: Context) {
     try {
       const { id: appUserId, storeId } = c.get("user");
@@ -297,7 +297,7 @@ export class AppUserNotificationController {
         );
       }
 
-      const result = await getAllUserNotifications(
+      const result = await getUserNotificationHistory(
         storeId,
         appUserId,
         pagination.data.limit,
