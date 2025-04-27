@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type PageType = "onboarding" | "login";
+export type PageType = "onboarding" | "login" | "home";
 
 interface PageSelectionStore {
   currentPage: PageType;

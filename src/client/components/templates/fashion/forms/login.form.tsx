@@ -20,6 +20,51 @@ import toast from "react-hot-toast";
 import { useLoginPageStore } from "../stores/login.store";
 import { Radius } from "@/lib/types/interfaces/storeGoElements.interface";
 
+// Define the interface for login toast data
+interface LoginToastData {
+  headerText: string;
+  headerColor: string;
+  emailPlaceholder: string;
+  passwordPlaceholder: string;
+  inputTextColor: string;
+  inputBackgroundColor: string;
+  inputRadius: string;
+  buttonText: string;
+  buttonTextColor: string;
+  buttonBackgroundColor: string;
+  buttonRadius: string;
+  showForgotPassword: boolean;
+  forgotPasswordText?: string;
+  showCreateAccount: boolean;
+  createAccountText?: string;
+}
+
+// Create a CustomToast component for login form
+const CustomToast = ({ data }: { data: LoginToastData }) => {
+  const jsonString = JSON.stringify(data, null, 2);
+  
+  return (
+    <div className="bg-black text-white p-4 rounded-lg max-w-md">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="font-bold">Login page updated</h3>
+        <button 
+          onClick={() => toast.dismiss()} 
+          className="text-white hover:text-gray-300"
+        >
+          ×
+        </button>
+      </div>
+      <div className="text-sm">
+        <pre className="whitespace-pre-wrap">{jsonString}</pre>
+      </div>
+      <div className="mt-2 flex justify-end">
+        <div className="h-2 w-2 rounded-full bg-green-500 mr-1"></div>
+        <span className="text-xs text-green-400">success</span>
+      </div>
+    </div>
+  );
+};
+
 // Update the form schema to match our needs
 const formSchema = z.object({
   headerText: z.string(),
@@ -111,7 +156,36 @@ export default function LoginForm() {
         text: values.createAccountText || "Don't have an Account? Create One",
       });
 
-      toast.success("Login page updated successfully!");
+      // Create JSON data object for the toast
+      const jsonData = {
+        "headerText": values.headerText,
+        "headerColor": values.headerColor,
+        "emailPlaceholder": values.emailPlaceholder,
+        "passwordPlaceholder": values.passwordPlaceholder,
+        "inputTextColor": values.inputTextColor,
+        "inputBackgroundColor": values.inputBackgroundColor,
+        "inputRadius": values.inputRadius,
+        "buttonText": values.buttonText,
+        "buttonTextColor": values.buttonTextColor,
+        "buttonBackgroundColor": values.buttonBackgroundColor,
+        "buttonRadius": values.buttonRadius,
+        "showForgotPassword": values.showForgotPassword,
+        "forgotPasswordText": values.forgotPasswordText || "Forgot Password?",
+        "showCreateAccount": values.showCreateAccount,
+        "createAccountText": values.createAccountText || "Don't have an Account? Create One"
+      };
+
+      console.log(jsonData);
+      
+      // Show custom toast with JSON data
+      toast.custom((t) => (
+        <div className={`${t.visible ? 'animate-enter' : 'animate-leave'}`}>
+          <CustomToast data={jsonData} />
+        </div>
+      ), { 
+        duration: 5000,
+        position: 'bottom-right'
+      });
     } catch (error) {
       console.error("Form submission error", error);
       toast.error("Failed to submit the form. Please try again.");

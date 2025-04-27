@@ -38,6 +38,46 @@ const formSchema = z.object({
   signInLinkText: z.string().optional(),
 });
 
+// Custom toast component to show JSON data
+// Define the interface for toast data
+// Define the interface for toast data
+interface ToastData {
+  header: string;
+  headerColor: string;
+  subtext?: string;
+  subtextColor?: string;
+  buttonText: string;
+  buttonTextColor: string;
+  buttonBackgroundColor: string;
+  radius: string;
+  mainImage?: string;
+}
+
+// Update the CustomToast component with proper typing
+const CustomToast = ({ data }: { data: ToastData }) => {
+  const jsonString = JSON.stringify(data, null, 2);
+  
+  return (
+    <div className="bg-black text-white p-4 rounded-lg max-w-md">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="font-bold">Onboarding page updated</h3>
+        <button 
+          onClick={() => toast.dismiss()} 
+          className="text-white hover:text-gray-300"
+        >
+          ×
+        </button>
+      </div>
+      <div className="text-sm">
+        <pre className="whitespace-pre-wrap">{jsonString}</pre>
+      </div>
+      <div className="mt-2 flex justify-end">
+        <div className="h-2 w-2 rounded-full bg-green-500 mr-1"></div>
+        <span className="text-xs text-green-400">success</span>
+      </div>
+    </div>
+  );
+};
 export default function OnBoardingForm() {
   // Access the store
   const { title, button, subtext, signIn, updateTitle, updateButton, updateSubtext, updateSignIn } = useOnBoardingPageStore();
@@ -88,8 +128,31 @@ export default function OnBoardingForm() {
         linkText: values.signInLinkText || "Sign in",
       });
 
-      console.log(values);
-      toast.success("Onboarding page updated successfully!");
+      // Create simplified JSON object similar to image 2
+  // Create simplified JSON object with all relevant fields
+const jsonData = {
+  "header": values.header,
+  "headerColor": values.headerColor,
+  "subtext": values.subtext || "",
+  "subtextColor": values.subtextColor || "#9CA3AF",
+  "buttonText": values.buttonText,
+  "buttonTextColor": values.buttonTextColor,
+  "buttonBackgroundColor": values.buttonBackgroundColor,
+  "radius": values.radius,
+  "mainImage": values.mainImage || ""
+};
+
+      console.log(jsonData);
+      
+      // Show custom toast with JSON data
+      toast.custom((t) => (
+        <div className={`${t.visible ? 'animate-enter' : 'animate-leave'}`}>
+          <CustomToast data={jsonData} />
+        </div>
+      ), { 
+        duration: 5000,
+        position: 'bottom-right'
+      });
     } catch (error) {
       console.error("Form submission error", error);
       toast.error("Failed to submit the form. Please try again.");

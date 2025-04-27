@@ -1,4 +1,3 @@
-
 "use client";
 
 import { use } from "react"; // Import the use hook
@@ -8,6 +7,7 @@ import { CurrentForm } from "@/client/components/templates/fashion/currentForm";
 import { CurrentScreen } from "@/client/components/templates/fashion/currentScreen";
 import OnBoardingScreen from "@/client/components/templates/fashion/screens/onBoarding.screen";
 import LoginScreen from "@/client/components/templates/fashion/screens/login.screen";
+import HomeScreen from "@/client/components/templates/fashion/screens/home.screen";
 
 interface Props {
   params: Promise<{ storeId: string }> | { storeId: string }; // Updated type to handle both current and future cases
@@ -34,6 +34,9 @@ function Preview({ params }: Props) {
         </PagePreview>
         <PagePreview pageType="login">
           <LoginScreen />
+        </PagePreview>
+        <PagePreview pageType="home">
+          <HomeScreen />
         </PagePreview>
       </div>
     </div>
