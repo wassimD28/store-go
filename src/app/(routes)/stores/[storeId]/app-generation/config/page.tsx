@@ -1,7 +1,7 @@
 interface Props {
   params: Promise<{ storeId: string }> | { storeId: string };
 }
-async function ConfigPage({ params }: Props) {
+async function Page({ params }: Props) {
   const resolvedParams = await Promise.resolve(params);
   const { storeId } = resolvedParams;
   return (
@@ -11,4 +11,4 @@ async function ConfigPage({ params }: Props) {
   );
 }
 
-export default ConfigPage;
+export default Page;
