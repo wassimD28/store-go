@@ -2,6 +2,7 @@
 
 import LoginForm from "./forms/login.form";
 import OnBoardingForm from "./forms/onBoarding.form";
+import HomeForm from "./forms/home.form";
 import { usePageSelectionStore } from "./stores/page-selection.store";
 
 export function CurrentForm() {
@@ -12,6 +13,8 @@ export function CurrentForm() {
       return <OnBoardingForm />;
     case "login":
       return <LoginForm />;
+    case "home":
+      return <HomeForm />;
     default:
       return <OnBoardingForm />;
   }
