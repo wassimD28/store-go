@@ -4,10 +4,10 @@ import CreatePromotionForm from "@/client/components/forms/promotion/createPromo
 async function page({
   params,
 }: {
-  params: Promise<{ storeId: string }> | { storeId: string };
+  params: Promise<{ storeId: string }>;
 }) {
   // Properly await the params object
-  const resolvedParams = await Promise.resolve(params);
+  const resolvedParams = await params;
   const storeId = resolvedParams.storeId;
 
   // Fetch store details to get the currency

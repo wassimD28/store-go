@@ -14,24 +14,19 @@ import { PlusCircle } from "lucide-react";
 import Link from "next/link";
 
 interface Props {
-  params: Promise<{ storeId: string }> | { storeId: string };
-  searchParams?:
-    | Promise<{
-        productId?: string;
-        tab?: string;
-      }>
-    | {
-        productId?: string;
-        tab?: string;
-      };
+  params: Promise<{ storeId: string }>;
+  searchParams?: Promise<{
+    productId?: string;
+    tab?: string;
+  }>;
 }
 
 async function Page({ params, searchParams }: Props) {
-  const resolvedParams = await Promise.resolve(params);
+  const resolvedParams = await params;
   const { storeId } = resolvedParams;
 
   // Resolve searchParams before accessing its properties
-  const resolvedSearchParams = await Promise.resolve(searchParams || {});
+  const resolvedSearchParams = await searchParams || {};
   const productIdToSelect = resolvedSearchParams.productId;
   const tabToOpen = resolvedSearchParams.tab;
 

@@ -3,13 +3,11 @@ import { Suspense } from "react";
 
 // Define the component props interface
 interface Props {
-  params:
-    | Promise<{ storeId: string; productId: string }>
-    | { storeId: string; productId: string };
+  params: Promise<{ storeId: string; productId: string }>;
 }
 
 export default async function EditProductPage({ params }: Props) {
-  const resolvedParams = await Promise.resolve(params);
+  const resolvedParams = await params;
   const { storeId, productId } = resolvedParams;
 
   return (

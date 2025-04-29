@@ -4,10 +4,10 @@ import { templates } from "@/lib/constants/subSidebar";
 import { ReactNode } from "react";
 interface Props {
   children: ReactNode;
-  params: Promise<{ storeId: string }> | { storeId: string };
+  params: Promise<{ storeId: string }>;
 }
 async function Layout({ children , params}: Props) {
-  const resolvedParams = await Promise.resolve(params);
+  const resolvedParams = await params;
   const storeId = resolvedParams.storeId;
   return (
     <div className="grid h-screen w-screen grid-cols-[auto_1fr] grid-rows-[auto_1fr]">

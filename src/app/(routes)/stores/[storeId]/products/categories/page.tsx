@@ -20,11 +20,11 @@ import { PlusCircle } from "lucide-react";
 import Link from "next/link";
 
 interface Props {
-  params: Promise<{ storeId: string }> | { storeId: string };
+  params: Promise<{ storeId: string }>;
 }
 
 async function Page({ params }: Props) {
-  const resolvedParams = await Promise.resolve(params);
+  const resolvedParams = await params;
   const { storeId } = resolvedParams;
 
   // Fetch both categories and subcategories

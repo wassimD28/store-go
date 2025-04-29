@@ -5,7 +5,7 @@ import { ReactNode, useCallback } from "react";
 
 interface PagePreviewProps {
   children?: ReactNode;
-  pageType: "onboarding" | "login";
+  pageType: "onboarding" | "login" | "home";
 }
 
 function PagePreview({ children, pageType }: PagePreviewProps) {

@@ -3,10 +3,10 @@ import UpdateCategoryForm from "@/client/components/forms/product/updateCategory
 async function page({
   params,
 }: {
-  params: Promise<{ storeId: string, categoryId:string }> | { storeId: string, categoryId:string };
+  params: Promise<{ storeId: string, categoryId:string }>;
 }) {
   // First, properly await the params object
-  const resolvedParams = await Promise.resolve(params);
+  const resolvedParams = await params;
   const storeId = resolvedParams.storeId;
   const categoryId = resolvedParams.categoryId;
   return (

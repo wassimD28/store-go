@@ -14,12 +14,12 @@ import { useState, useEffect } from "react";
 import { use } from "react"; // Import React.use
 
 interface Props {
-  params: { storeId: string } | Promise<{ storeId: string }>;
+  params: Promise<{ storeId: string }>;
 }
 
 function CustomersListPage({ params }: Props) {
   // TypeScript needs help understanding what will come out of use(params)
-  const resolvedParams = use(params as any) as { storeId: string };
+  const resolvedParams = use(params);
   const { storeId } = resolvedParams;
 
   const [users, setUsers] = useState<any[]>([]);

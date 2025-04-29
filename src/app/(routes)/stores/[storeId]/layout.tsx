@@ -10,10 +10,10 @@ export default async function RootLayout({
   params,
 }: {
   children: ReactNode;
-  params: Promise<{ storeId: string }> | { storeId: string };
+  params: Promise<{ storeId: string }>;
 }) {
   // First, properly await the params object
-  const resolvedParams = await Promise.resolve(params);
+  const resolvedParams = await params;
   const storeId = resolvedParams.storeId;
 
   const session = await auth.api.getSession({

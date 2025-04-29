@@ -8,10 +8,10 @@ async function Layout({
   params,
 }: {
   children: ReactNode;
-  params: Promise<{ storeId: string }> | { storeId: string };
+  params: Promise<{ storeId: string }> ;
 }) {
   // First, properly await params before accessing properties
-  const resolvedParams = await Promise.resolve(params);
+  const resolvedParams = await params;
   const storeId = resolvedParams.storeId;
 
   // Then use the resolved storeId
