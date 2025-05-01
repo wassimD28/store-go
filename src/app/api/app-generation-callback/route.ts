@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db/db";
 import { eq } from "drizzle-orm";
-import { generationJobs, stores } from "@/lib/db/schema";
+import { generationJob, stores } from "@/lib/db/schema";
 
 export async function POST(request: Request) {
   try {
@@ -12,15 +12,15 @@ export async function POST(request: Request) {
     if (!jobId || !status) {
       return NextResponse.json(
         { error: "Invalid callback data" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Get the job from the database
     const [job] = await db
       .select()
-      .from(generationJobs)
-      .where(eq(generationJobs.id, jobId));
+      .from(generationJob)
+      .where(eq(generationJob.id, jobId));
 
     if (!job) {
       return NextResponse.json({ error: "Job not found" }, { status: 404 });
@@ -28,13 +28,13 @@ export async function POST(request: Request) {
 
     // Update job status in the database
     await db
-      .update(generationJobs)
+      .update(generationJob)
       .set({
         status: status,
         completedAt: new Date(),
         downloadUrl: downloadUrl,
       })
-      .where(eq(generationJobs.id, jobId));
+      .where(eq(generationJob.id, jobId));
 
     // Also update the store record
     await db
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
         success: false,
         error: "Failed to process callback",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

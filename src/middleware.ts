@@ -1,62 +1,44 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextRequest } from "next/server";
+import { betterFetch } from "@better-fetch/fetch";
 
 // Routes that should redirect to dashboard when user is already logged in
-const redirectToDashboardRoutes = [
-  "/sign-in",
-  "/sign-up",
-  "/verified-email",
-  "/waiting-verification",
-  "/",
-];
+const authRoutes = ["/sign-in", "/sign-up", "/waiting-verification", "/"];
 
 // Routes that require authentication to access
-const protectedRoutes = ["/dashboard"];
+const protectedRoutes = ["/dashboard", "/verified-email"];
 
 export async function middleware(request: NextRequest) {
-  const path = request.nextUrl.pathname;
+  console.info("Middleware has triggered.");
+  const pathName = request.nextUrl.pathname;
+  const isInAuthRoutes = authRoutes.includes(pathName);
+  const isInProtectedRoutes = protectedRoutes.includes(pathName);
+  const { data: session } = await betterFetch("/api/auth/get-session", {
+    baseURL: request.nextUrl.origin,
+    headers: {
+      cookie: request.headers.get("cookie") || "", // Forward the cookies from the request
+    },
+  });
 
-  // Check authentication status from session token
-  const sessionToken = request.cookies.get("storeGo.session_token")?.value;
-  const isAuthenticated = Boolean(sessionToken);
-
-  // More precise matching for redirect routes - use exact matches
-  const shouldRedirectToDashboard = redirectToDashboardRoutes.includes(path);
-
-  // For protected routes, we still want to check if it starts with the path
-  // to cover nested dashboard routes
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    path.startsWith(route)
-  );
-
-  // Handle redirection to dashboard for authenticated users
-  // BUT only if they're not already on a dashboard route
-  if (
-    shouldRedirectToDashboard &&
-    isAuthenticated &&
-    !path.startsWith("/dashboard")
-  ) {
+  if (!session) {
+    // if no session and user in auth routes , let him pass
+    if (isInAuthRoutes) {
+      return NextResponse.next();
+    }
+    // if no session and user in protected routes, redirect him to sign-in
+    if (isInProtectedRoutes) {
+      return NextResponse.redirect(new URL("/sign-in", request.url));
+    }
+  }
+  // if user is logged in and in auth routes, redirect him to dashboard
+  if (isInAuthRoutes) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
-
-  // Handle protection for dashboard routes
-  if (isProtectedRoute && !isAuthenticated) {
-    const signInUrl = new URL("/sign-in", request.url);
-    signInUrl.searchParams.set("callbackUrl", path);
-    return NextResponse.redirect(signInUrl);
-  }
-
-  // Allow all other requests to proceed
   return NextResponse.next();
 }
 
+// the middleware will be applied to all routes except the ones that are excluded in the config
+// excluding the api routes, static files, and images
 export const config = {
-  matcher: [
-    "/",
-    "/dashboard/:path*",
-    "/sign-in",
-    "/sign-up",
-    "/verified-email",
-    "/waiting-verification",
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|.*\\.png$).*)"],
 };

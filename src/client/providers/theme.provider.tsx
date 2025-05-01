@@ -1,6 +1,6 @@
 "use client";
 import { useEffect } from "react";
-import { useDarkMode } from "@/client/store/useDarkMode.store";
+import { useDarkMode } from "@/client/store/darkMode.store";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { darkMode, setDarkMode } = useDarkMode();

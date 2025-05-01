@@ -1,195 +1,120 @@
 "use client";
+import { useState } from "react";
+import Link from "next/link";
+import { FadeText } from "../ui/fade-text";
+import { cn } from "@/lib/utils";
+import Image from "next/image";
+import { NavUserData, SideBarData } from "@/lib/types/interfaces/common.interface";
+import { NavUser } from "./nav-user";
+import { usePathname } from "next/navigation";
+import { useDarkMode } from "@/client/store/darkMode.store";
+import { useSidebar } from "@/client/store/sidebar.store";
 
-import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  Moon,
-  PieChart,
-  Settings2,
-  SquareTerminal,
-  Sun,
-} from "lucide-react";
+const EXPENDED_WIDTH = 200;
+const COLLAPSED_WIDTH = 60;
+const ICON_WIDTH = 24;
+interface props {
+  sideBarData: SideBarData[];
+  user: NavUserData;
+}
+function MainSideBar({ user, sideBarData  }: props) {
+  const { darkMode } = useDarkMode();
+  const { setSidebarOpen } = useSidebar()
+  const [isExpend, setIsExpend] = useState(false);
+  const pathname = usePathname(); 
+  const segments = pathname.split("/").filter(Boolean);
 
-import { NavMain } from "@/client/components/sidebar/nav-main";
-import { NavProjects } from "@/client/components/sidebar/nav-projects";
-import { NavUser } from "@/client/components/sidebar/nav-user";
-import { TeamSwitcher } from "@/client/components/sidebar/team-switcher";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarRail,
-  useSidebar,
-} from "@/client/components/ui/sidebar";
-import { authClient } from "@/lib/auth-client";
-import { ComponentProps } from "react";
-import { useDarkMode } from "@/client/store/useDarkMode.store";
-import { Button } from "../ui/button";
+  const handleOnMouseOver = () => {
+    setIsExpend(true);
+    setSidebarOpen(true)
+  }
+  const handleOnMouseLeave = () => {
+    setIsExpend(false);
+    setSidebarOpen(false)
+  }
 
-// This is sample data.
-const data = {
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
-  ],
-  navMain: [
-    {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
-};
-
-export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
-  const { data: sessionData } = authClient.useSession();
-  const { darkMode , toggleDarkMode} = useDarkMode()
-  const { isMobile } = useSidebar();
-
-  const user = {
-    name: sessionData?.user?.name ?? "",
-    email: sessionData?.user?.email ?? "",
-    avatar: sessionData?.user?.image ?? "/unknown-user.svg",
+  const isMainActive = (route: string) => {
+    const routeSegments = route.split("/").filter(Boolean);
+    // For dashboard, check first segment
+    if (routeSegments[0] === "dashboard") {
+      return (
+        segments[0] === "dashboard" &&
+        (routeSegments.length === 1 || routeSegments[1] === segments[1])
+      );
+    }
+    // For stores, match only the main "stores" sections
+    if (routeSegments[0] === "stores") {
+      return segments[0] === "stores" && segments[2] === routeSegments[2];
+    }
+    return false;
   };
-
   return (
-    <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
-      </SidebarHeader>
-      <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
-        <div className="px-2 group-data-[collapsible=icon]:hidden">
-          <Button
-            className=" border border-foreground/20"
-            variant={"ghost"}
-            onClick={() => toggleDarkMode()}
+    <div
+      className="fixed z-50 flex h-full flex-col items-center justify-between overflow-hidden border-r border-sidebar-border bg-sidebar py-6 transition-all duration-200 ease-in-out"
+      style={{
+        width: isExpend ? EXPENDED_WIDTH : COLLAPSED_WIDTH,
+      }}
+      onMouseOver={handleOnMouseOver}
+      onMouseLeave={handleOnMouseLeave}
+    >
+      <div className="flex flex-col gap-2">
+        {/* logo  */}
+        <Link href={"/dashboard"}>
+          <Image
+            className={cn(
+              "mb-4 transition-all duration-200 ease-in-out",
+              isExpend && "ml-3",
+            )}
+            src={"/icons/logo.svg"}
+            width={40}
+            height={40}
+            alt="logo"
+          />
+        </Link>
+
+        {/* sidebar content */}
+        {sideBarData.map((item, index) => (
+          <Link
+            href={item.route}
+            key={index}
+            style={{ width: isExpend ? EXPENDED_WIDTH - 8 : ICON_WIDTH + 16 }}
+            className={cn(
+              `relative flex h-10 flex-row items-center justify-center gap-2 overflow-hidden rounded-2xl transition-all duration-200 ease-in-out hover:bg-foreground/10`,
+              !isExpend && `p-0`,
+              isMainActive(item.route) && "bg-primary-gradient text-white",
+            )}
           >
-            {darkMode ? <Sun /> : <Moon />}
-          </Button>
-        </div>
-      </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={user} isMobile={isMobile} />
-      </SidebarFooter>
-      <SidebarRail />
-    </Sidebar>
+            <item.icon
+              className={cn(
+                " translate-x-2 transition-all duration-200 ease-in-out",
+                isExpend && "translate-x-5",
+              )}
+              width={ICON_WIDTH}
+              height={ICON_WIDTH}
+              color={
+                isMainActive(item.route)
+                  ? "white"
+                  : darkMode
+                    ? "white"
+                    : "black"
+              }
+            />
+            <div className="relative flex flex-1 items-center justify-start">
+              <FadeText
+                className={`absolute -left-8 -translate-y-2.5 pl-14 font-poppins text-sm font-normal`}
+                direction="left"
+                text={item.name}
+                isVisible={isExpend}
+              />
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* nav user */}
+      <NavUser user={user} isExpend={isExpend} />
+    </div>
   );
 }
+
+export default MainSideBar;

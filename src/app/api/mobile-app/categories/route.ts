@@ -1,19 +1,14 @@
 import { Hono } from "hono";
 import { handle } from "hono/vercel";
 import { CategoryController } from "@/server/controllers/category.controller";
+import { isAuthenticated } from "@/server/middleware/isAuthenticated.middleware";
 
-
-
-const app = new Hono().basePath("/api/mobile-app/categories")
+const app = new Hono()
+  .basePath("/api/mobile-app/categories")
+  // check if user is authenticated
+  .use("*", isAuthenticated)
   // Retrieve all categories
-  .get("/", CategoryController.getAllCategories)
-  // Create a new category
-  .post("/", CategoryController.createCategory);
+  .get("/", CategoryController.getAllCategories);
 
 
-
-// Export a single handler for Vercel
 export const GET = handle(app);
-export const POST = handle(app);
-export const PUT = handle(app);
-export const DELETE = handle(app);

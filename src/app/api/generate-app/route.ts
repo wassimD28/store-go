@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "@/lib/db/db";
-import { generationJobs, stores } from "@/lib/db/schema";
+import { generationJob } from "@/lib/db/schema";
 
 // Create a jobs table with Drizzle if you want to persist jobs
 // If not, you can continue using the Map as in your example
@@ -9,13 +9,13 @@ import { generationJobs, stores } from "@/lib/db/schema";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { storeName, logoUrl, userId } = body;
+    const { storeName, logoUrl } = body;
 
     // Validate inputs
     if (!storeName) {
       return NextResponse.json(
         { error: "Store name is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -23,18 +23,9 @@ export async function POST(request: Request) {
     const jobId = uuidv4();
     const storeId = uuidv4(); // In a real app, this would come from your database
 
-    // Store job information - either in memory or database
-    // If using Drizzle, you'd insert into your jobs table instead
-    // Example (assuming you have a jobs table defined with Drizzle):
-    await db.insert(stores).values({
-      id: storeId,
-      userId,
-      name: storeName,
-      logoUrl,
-      lastGeneratedAt: null,
-    });
+    
 
-    await db.insert(generationJobs).values({
+    await db.insert(generationJob).values({
       id: jobId,
       storeId,
       status: "PENDING",
@@ -64,7 +55,7 @@ export async function POST(request: Request) {
             callbackUrl,
           },
         }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -75,7 +66,7 @@ export async function POST(request: Request) {
           error: "Failed to trigger app generation",
           details: errorText,
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -91,7 +82,7 @@ export async function POST(request: Request) {
         success: false,
         error: "Failed to start app generation",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -1,24 +1,13 @@
 import { db } from "../../lib/db/db";
 import { eq } from "drizzle-orm";
-import { AppCategory } from "@/lib/db/schema";
-
-export interface CategoryCreateInput {
-  userId: string;
-  name: string;
-  description?: string;
-  imageUrl?: string;
-}
-
-export interface CategoryUpdateInput {
-  name?: string;
-  description?: string;
-  imageUrl?: string;
-}
+import { AppCategory, AppProduct } from "@/lib/db/schema";
 
 export class CategoryRepository {
-  static async findAll() {
+  static async findAll(storeId: string) {
     try {
-      return await db.query.AppCategory.findMany();
+      return await db.query.AppCategory.findMany({
+        where: eq(AppCategory.storeId, storeId),
+      });
     } catch (error) {
       console.error("Error fetching categories:", error);
       throw new Error("Failed to fetch categories");
@@ -28,7 +17,7 @@ export class CategoryRepository {
   static async findById(id: string) {
     try {
       return await db.query.AppCategory.findFirst({
-        where: eq(AppCategory.id, id)
+        where: eq(AppCategory.id, id),
       });
     } catch (error) {
       console.error(`Error fetching category with ID ${id}:`, error);
@@ -36,36 +25,31 @@ export class CategoryRepository {
     }
   }
 
-  static async create(data: CategoryCreateInput) {
+  static async findByIdWithProducts(id: string) {
     try {
-      const result = await db.insert(AppCategory).values(data).returning();
-      return result[0];
-    } catch (error) {
-      console.error("Error creating category:", error);
-      throw new Error("Failed to create category");
-    }
-  }
+      // First get the category
+      const category = await db.query.AppCategory.findFirst({
+        where: eq(AppCategory.id, id),
+      });
 
-  static async update(id: string, data: CategoryUpdateInput) {
-    try {
-      const result = await db
-        .update(AppCategory)
-        .set({ ...data, updated_at: new Date() })
-        .where(eq(AppCategory.id, id))
-        .returning();
-      return result[0];
-    } catch (error) {
-      console.error(`Error updating category with ID ${id}:`, error);
-      throw new Error(`Failed to update category with ID ${id}`);
-    }
-  }
+      if (!category) return null;
 
-  static async delete(id: string) {
-    try {
-      await db.delete(AppCategory).where(eq(AppCategory.id, id));
+      // Then get all products that belong to this category
+      const products = await db.query.AppProduct.findMany({
+        where: eq(AppProduct.categoryId, id),
+      });
+
+      // Return both the category and its products
+      return {
+        ...category,
+        products,
+      };
     } catch (error) {
-      console.error(`Error deleting category with ID ${id}:`, error);
-      throw new Error(`Failed to delete category with ID ${id}`);
+      console.error(
+        `Error fetching category with products for ID ${id}:`,
+        error,
+      );
+      throw new Error(`Failed to fetch category with products for ID ${id}`);
     }
   }
 }
