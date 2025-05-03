@@ -1,27 +1,23 @@
+import { useGlobalLayout } from "@/client/store/globalLayout.store";
 import Image from "next/image";
 
-interface PanierCardPreviewProps {
-  radius?: number;
-  cardColor?: string;
-  textColor?: string;
-}
+function PanierCardPreview() {
+  const { getActiveColors, radius } = useGlobalLayout();
+  const { cardColor, cardForegroundColor, mutedForegroundColor, mutedColor } =
+    getActiveColors();
 
-function PanierCardPreview({
-  radius = 5,
-  cardColor = "#ffffff",
-  textColor = "#000000",
-}: PanierCardPreviewProps) {
   return (
     <div
       style={{
         backgroundColor: cardColor,
-        color: textColor,
-        borderRadius: radius,
+        color: cardForegroundColor,
+        borderRadius: radius == 100 ? 15 : radius,
       }}
-      className="col-span-3 col-start-1 row-start-2 flex gap-2 h-28 w-full p-3 shadow-custom-sm"
+      className="col-span-3 col-start-1 row-start-2 flex h-28 w-full gap-2 p-3 shadow-custom-sm"
     >
       <Image
-        className="aspect-square rounded-lg"
+        style={{ borderRadius: radius == 100 ? 15 : radius }}
+        className="aspect-square"
         src="/images/panier-image-example.png"
         alt="product image"
         width={100}
@@ -30,19 +26,22 @@ function PanierCardPreview({
       <div className="flex w-full flex-col items-start justify-center px-2">
         <h2 className="truncate text-base font-semibold">Roller Rabbit</h2>
         <p
-          style={{ color: `${textColor}`, opacity: 0.5 }}
+          style={{ color: mutedForegroundColor }}
           className="text-sm font-normal"
         >
           Vado Odelle Dress
         </p>
         <div className="mt-4 flex w-full items-center justify-between">
           <h2
-            style={{ color: `${textColor}` }}
+            style={{ color: cardForegroundColor }}
             className="text-lg font-semibold"
           >
             $49.99
           </h2>
-          <div className="flex h-6 items-center gap-2 rounded-full bg-gray-200 px-3 py-3 text-base text-black">
+          <div
+            style={{ backgroundColor: mutedColor, color: mutedForegroundColor }}
+            className="flex h-6 items-center gap-2 rounded-full px-3 py-3 text-base"
+          >
             <span>-</span>
             <span>1</span>
             <span>+</span>

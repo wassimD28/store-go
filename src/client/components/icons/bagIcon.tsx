@@ -1,6 +1,7 @@
 import React from "react";
 
 interface BagIconProps {
+  style: React.CSSProperties;
   className?: string;
   color?: string;
   width?: number | string;
@@ -12,9 +13,11 @@ const BagIcon: React.FC<BagIconProps> = ({
   color = "white",
   width = 24,
   height = 24,
+  style = {},
 }) => {
   return (
     <svg
+      style={style}
       className={className}
       width={width}
       height={height}

@@ -1,34 +1,51 @@
 "use client";
 
+import { useGlobalLayout } from "@/client/store/globalLayout.store";
 import Image from "next/image";
 
-interface ProductCardPreviewProps {
-    radius?: number;
-    cardColor?: string;
-    textColor?: string;
-}
-function ProductCardPreview({
-  radius = 5,
-  cardColor = "#ffffff",
-  textColor = "#000000",
-}: ProductCardPreviewProps) {
+function ProductCardPreview() {
+  const { getActiveColors, radius } = useGlobalLayout();
+  const { cardColor, cardForegroundColor, mutedForegroundColor } =
+    getActiveColors();
+
   const productImagePath = "/images/product-image-example.png";
   const productName = "Men's Harrington Jacket";
   const productPrice = "$49.99";
-  const originalPrice = "$49.99";
+  const originalPrice = "$69.99";
+
   return (
     <div
-    style={{ backgroundColor: cardColor , color: textColor, borderRadius: radius }}
-      className="flex flex-col overflow-hidden shadow-custom-sm col-start-3 h-full"
+      style={{
+        backgroundColor: cardColor,
+        color: cardForegroundColor,
+        borderRadius: radius == 100 ? 15 : radius,
+      }}
+      className="col-start-3 flex h-full flex-col overflow-hidden shadow-custom-sm"
     >
-        <Image className="w-full h-48 object-cover" height={100} width={200} src={productImagePath} alt={productName}/>
-        <div className="flex flex-col w-full px-3 py-2">
-            <h2 className="text-base font-normal truncate">{productName}</h2>
-            <span className="flex items-center gap-2">
-                <p style={{color: textColor}} className="text-sm font-semibold">{productPrice}</p>
-                <p style={{color: textColor, opacity: 0.5}} className="text-xs font-base line-through">{originalPrice}</p>
-            </span>
-        </div>
+      <Image
+        className="h-48 w-full object-cover"
+        height={100}
+        width={200}
+        src={productImagePath}
+        alt={productName}
+      />
+      <div className="flex w-full flex-col px-3 py-2">
+        <h2 className="truncate text-base font-normal">{productName}</h2>
+        <span className="flex items-center gap-2">
+          <p
+            style={{ color: cardForegroundColor }}
+            className="text-sm font-semibold"
+          >
+            {productPrice}
+          </p>
+          <p
+            style={{ color: mutedForegroundColor }}
+            className="font-base text-xs line-through"
+          >
+            {originalPrice}
+          </p>
+        </span>
+      </div>
     </div>
   );
 }
