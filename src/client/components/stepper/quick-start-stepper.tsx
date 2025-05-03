@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import {
   Stepper,
   StepperDescription,
@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 const steps = [
   {
     step: 1,
-    title: "Theme Customization",
+    title: "Global Layout",
     description: "Set colors for light/dark modes and border radius",
   },
   {
@@ -31,9 +31,13 @@ const steps = [
 
 function QuickStartStepper() {
   const { setActiveStep, activeStep } = useQuickStartStepperStore();
- 
+
   return (
-    <Stepper value={activeStep} onValueChange={setActiveStep} orientation="vertical">
+    <Stepper
+      value={activeStep}
+      onValueChange={setActiveStep}
+      orientation="vertical"
+    >
       {steps.map(({ step, title, description }) => (
         <StepperItem
           key={step}
@@ -46,7 +50,7 @@ function QuickStartStepper() {
               <StepperTitle>{title}</StepperTitle>
               <StepperDescription
                 className={cn(
-                  "transition-opacity duration-200 text-xs",
+                  "text-xs transition-opacity duration-200",
                   "group-data-[state=active]/step:opacity-100",
                   "group-data-[state=inactive]/step:opacity-0",
                   "group-data-[state=completed]/step:opacity-0",

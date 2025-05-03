@@ -1,6 +1,6 @@
 import CurrentPreview from "@/client/components/configurationSteps/currentPreview";
 import ConfigStepperContainer from "@/client/components/configurationSteps/configStepperContainer";
-import CurrentConfigForm from "@/client/components/configurationSteps/currentForm";
+import CurrentConfigForm from "@/client/components/configurationSteps/currentConfigForm";
 
 export default async function Page({
   params,
