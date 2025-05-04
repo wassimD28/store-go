@@ -4,6 +4,7 @@ import { useBrandIdentityStore } from "@/client/store/brandIdentity.store";
 import { useSplashScreenStore } from "@/client/store/splashScreen.store";
 import { useGlobalLayout } from "@/client/store/globalLayout.store";
 import Image from "next/image";
+import { Tilt } from "../../ui/tilt";
 
 function BrandIdentityPreview() {
   const { isDarkMode, getActiveColors, radius } = useGlobalLayout();
@@ -19,14 +20,14 @@ function BrandIdentityPreview() {
   const iconUrl = isDarkMode ? darkIconUrl : lightIconUrl;
 
   return (
-    <div className="flex h-full w-full items-center justify-center">
+    <Tilt isRevese rotationFactor={8} className="flex h-full w-full items-center justify-center">
       <div
         style={{
           backgroundColor: activeColors.backgroundColor,
           color: activeColors.foregroundColor,
           borderRadius: radius == 100 ? 15: radius,
         }}
-        className="w-full max-w-md overflow-hidden shadow-lg"
+        className="w-[95%] max-w-md overflow-hidden shadow-lg"
       >
         {/* App Header */}
         <div className="flex items-center gap-4 p-6">
@@ -76,7 +77,7 @@ function BrandIdentityPreview() {
           </p>
         </div>
       </div>
-    </div>
+    </Tilt>
   );
 }
 

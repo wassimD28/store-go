@@ -1,5 +1,6 @@
 "use client";
 
+import { Tilt } from "@/client/components/ui/tilt";
 import { useGlobalLayout } from "@/client/store/globalLayout.store";
 import Image from "next/image";
 
@@ -14,7 +15,9 @@ function ProductCardPreview() {
   const originalPrice = "$69.99";
 
   return (
-    <div
+    <Tilt
+      isRevese
+      rotationFactor={10}
       style={{
         backgroundColor: cardColor,
         color: cardForegroundColor,
@@ -46,7 +49,7 @@ function ProductCardPreview() {
           </p>
         </span>
       </div>
-    </div>
+    </Tilt>
   );
 }
 

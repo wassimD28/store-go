@@ -1,5 +1,6 @@
 import { Button } from "@/client/components/ui/button";
 import { Input } from "@/client/components/ui/input";
+import { Tilt } from "@/client/components/ui/tilt";
 import { useGlobalLayout } from "@/client/store/globalLayout.store";
 
 function LoginPagePreview() {
@@ -38,7 +39,9 @@ function LoginPagePreview() {
         }}
       />
 
-      <div
+      <Tilt
+        isRevese
+        rotationFactor={10}
         style={{ backgroundColor: cardColor, borderRadius: radius == 100 ? 15 : radius }}
         className="col-span-2 col-start-1 flex w-full flex-col gap-2 rounded-lg px-3 py-4 shadow-custom-sm"
       >
@@ -77,7 +80,7 @@ function LoginPagePreview() {
         >
           Continue
         </Button>
-      </div>
+      </Tilt>
     </>
   );
 }

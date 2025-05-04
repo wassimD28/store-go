@@ -1,3 +1,4 @@
+import { Tilt } from "@/client/components/ui/tilt";
 import { useGlobalLayout } from "@/client/store/globalLayout.store";
 import Image from "next/image";
 
@@ -7,7 +8,9 @@ function PanierCardPreview() {
     getActiveColors();
 
   return (
-    <div
+    <Tilt
+    isRevese
+        rotationFactor={10}
       style={{
         backgroundColor: cardColor,
         color: cardForegroundColor,
@@ -48,7 +51,7 @@ function PanierCardPreview() {
           </div>
         </div>
       </div>
-    </div>
+    </Tilt>
   );
 }
 

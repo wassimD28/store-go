@@ -1,3 +1,4 @@
+import { Tilt } from "@/client/components/ui/tilt";
 import { useGlobalLayout } from "@/client/store/globalLayout.store";
 import Image from "next/image";
 
@@ -11,8 +12,13 @@ function ProfilePagePreview() {
     mutedForegroundColor,
   } = getActiveColors();
     return (
-      <div
-        style={{ backgroundColor: cardColor , borderRadius: radius == 100 ? 15 : radius}}
+      <Tilt
+        isRevese
+        rotationFactor={10}
+        style={{
+          backgroundColor: cardColor,
+          borderRadius: radius == 100 ? 15 : radius,
+        }}
         className="col-span-2 col-start-2 row-start-3 rounded-lg shadow-custom-md"
       >
         <div className="flex h-full w-full flex-col items-center justify-center p-3 pt-4">
@@ -58,7 +64,7 @@ function ProfilePagePreview() {
             </p>
           </div>
         </div>
-      </div>
+      </Tilt>
     );
 }
 

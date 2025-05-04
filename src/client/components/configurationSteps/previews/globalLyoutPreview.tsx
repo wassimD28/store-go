@@ -6,6 +6,7 @@ import LoginPagePreview from "./comp/loginPagePreview";
 import PanierCardPreview from "./comp/panierCardPreview";
 import ProductCardPreview from "./comp/productCardPreview";
 import ProfilePagePreview from "./comp/profilePagePreview";
+import { Tilt } from "../../ui/tilt";
 
 function GlobalLayoutPreview() {
   const { getActiveColors, radius } = useGlobalLayout();
@@ -22,7 +23,15 @@ function GlobalLayoutPreview() {
         <div className="col-span-3 col-start-1 row-start-2">
           <PanierCardPreview />
         </div>
-        <div style={{backgroundColor:activeColors.cardColor, borderRadius: radius == 100? 15 : radius}} className="row-start-3 flex justify-center rounded-lg py-4 shadow-custom-md">
+        <Tilt
+          isRevese
+          rotationFactor={10}
+          style={{
+            backgroundColor: activeColors.cardColor,
+            borderRadius: radius == 100 ? 15 : radius,
+          }}
+          className="row-start-3 flex justify-center rounded-lg py-4 shadow-custom-md"
+        >
           <BagIcon
             style={{
               backgroundColor: activeColors.primaryColor,
@@ -33,7 +42,7 @@ function GlobalLayoutPreview() {
             width={50}
             height={50}
           />
-        </div>
+        </Tilt>
         {/* profile part  */}
         <ProfilePagePreview />
       </div>
