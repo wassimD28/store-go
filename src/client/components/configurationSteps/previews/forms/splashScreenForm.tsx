@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from "react";
@@ -18,7 +17,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/client/components/ui/tabs";
-import { ThemeToggle } from "../ui/theme-toggle";
+import { ThemeToggle } from "../comp/theme-toggle";
 import ImageKitUploader from "../../../uploader/imageKitUploader";
 import { useSplashScreenStore } from "@/client/store/splashScreen.store";
 

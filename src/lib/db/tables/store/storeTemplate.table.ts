@@ -8,10 +8,12 @@ import { customStoreTemplate } from "./customStoreTemplate.table";
 export const storeTemplate = pgTable("store_template", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("userId")
-    .notNull()
-    .references(() => user.id),
+  .notNull()
+  .references(() => user.id),
+  name: text("name").notNull(),
   storeType: storeTemplateTypeEnum("store_template_type").notNull(),
   templateConfig: json("template_config").default({}),
+  images: json("images").default([]).notNull().$type<string[]>(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

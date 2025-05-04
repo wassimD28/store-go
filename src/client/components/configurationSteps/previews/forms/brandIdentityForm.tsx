@@ -11,7 +11,7 @@ import { Label } from "@/client/components/ui/label";
 import { Button } from "@/client/components/ui/button";
 import { RotateCcwIcon } from "lucide-react";
 import { Input } from "@/client/components/ui/input";
-import { ThemeToggle } from "../ui/theme-toggle";
+import { ThemeToggle } from "../comp/theme-toggle";
 import { useBrandIdentityStore } from "@/client/store/brandIdentity.store";
 import { Textarea } from "@/client/components/ui/textarea";
 
@@ -25,7 +25,6 @@ function BrandIdentityForm() {
     setAppDescription,
     resetToDefaults,
   } = useBrandIdentityStore();
-
 
   return (
     <Card className="max-h-full w-full overflow-auto">

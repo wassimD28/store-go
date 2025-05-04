@@ -25,7 +25,7 @@ import {
 } from "@/client/components/ui/select";
 import { Button } from "@/client/components/ui/button";
 import { Paintbrush, RotateCcwIcon } from "lucide-react";
-import { ThemeToggle } from "../ui/theme-toggle";
+import { ThemeToggle } from "../comp/theme-toggle";
 import {
   Tabs,
   TabsContent,
