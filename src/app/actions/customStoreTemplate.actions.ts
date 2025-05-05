@@ -11,6 +11,7 @@ interface CustomStoreTemplateData {
   id: string;
   userId: string;
   storeId: string;
+  name: string;
   storeTemplateId: string;
   customTemplateConfig: Record<string, any>;
   updatedAt: Date;
@@ -83,11 +84,13 @@ export const getCustomStoreTemplateById = async (templateId: string) => {
 export const createCustomStoreTemplate = async ({
   userId,
   storeId,
+  name,
   storeTemplateId,
   customTemplateConfig = {},
 }: {
   userId: string;
   storeId: string;
+  name: string;
   storeTemplateId: string;
   customTemplateConfig?: Record<string, any>;
 }): Promise<ActionResponse<CustomStoreTemplateData>> => {
@@ -113,6 +116,7 @@ export const createCustomStoreTemplate = async ({
       .values({
         userId,
         storeId,
+        name,
         storeTemplateId,
         customTemplateConfig,
       })

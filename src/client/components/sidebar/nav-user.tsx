@@ -145,6 +145,9 @@ export function NavUser({ user, isExpend }: NavUserProps) {
                 onSuccess: () => {
                   redirect("/sign-in");
                 },
+                onError: () => {
+                  redirect("/sign-in");
+                },
               },
             });
           }}

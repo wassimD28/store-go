@@ -11,6 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
+import { useRouter } from "next/navigation";
 
 interface TemplateDialogContentProps {
   template: {
@@ -36,6 +37,7 @@ function getStoreTypeIcon(storeType: "electronic" | "fashion" | "shoes") {
 
 function TemplateDialogContent({ template }: TemplateDialogContentProps) {
   const isTemplateInactive = template.status === "inactive";
+  const router = useRouter();
 
   return (
     <div className="flex w-full flex-col">
@@ -100,6 +102,10 @@ function TemplateDialogContent({ template }: TemplateDialogContentProps) {
             iconPlacement="right"
             disabled={false}
             icon={Settings2}
+            onClick={() => {
+              router.push(
+                `/stores/${template.id}/templates/${template.id}/customize`,
+              );}}
           >
             Customize
           </AButton>
