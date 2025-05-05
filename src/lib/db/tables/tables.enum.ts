@@ -24,6 +24,7 @@ export const discountTypeEnum = pgEnum("discount_type", [
 export const storeTemplateTypeEnum = pgEnum("store_template_type", [
   "fashion",
   "electronic",
+  "shoes"
 ]);
 
 

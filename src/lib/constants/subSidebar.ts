@@ -6,6 +6,8 @@ import ShoppingCartIcon from "@/client/components/icons/sidebar/shoppingCartIcon
 import TagIcon from "@/client/components/icons/sidebar/tagIcon";
 import { SideBarData } from "../types/interfaces/common.interface";
 import StarIcon from "@/client/components/icons/sidebar/starIcon";
+import TemplateListIcon from "@/client/components/icons/sidebar/templateListIcon";
+import CustomizeIcon from "@/client/components/icons/sidebar/customizeIcon";
 
 export const dashboard: SideBarData[] = [
   {
@@ -43,23 +45,6 @@ export const team: SideBarData[] = [
   },
 ];
 
-export const templates: SideBarData[] = [
-  {
-    name: "App Templates",
-    icon: LinkIcon,
-    route: "/dashboard/templates/apps",
-  },
-  {
-    name: "Page Templates",
-    icon: LinkIcon,
-    route: "/dashboard/templates/pages",
-  },
-  {
-    name: "Themes",
-    icon: LinkIcon,
-    route: "/dashboard/templates/themes",
-  },
-];
 
 export const settings: SideBarData[] = [
   {
@@ -80,7 +65,6 @@ export const settings: SideBarData[] = [
 ];
 
 //----- storeId Sub sidebar ----
-
 export const getProductSideBar = (storeId: string): SideBarData[] => [
   {
     name: "Product List",
@@ -106,14 +90,19 @@ export const getProductSideBar = (storeId: string): SideBarData[] => [
 
 export const getTemplatesSideBar = (storeId: string): SideBarData[] => [
   {
-    name: "Pages",
-    icon: LinkIcon,
-    route: `/stores/${storeId}/templates/pages`,
+    name: "List",
+    icon: TemplateListIcon,
+    route: `/stores/${storeId}/templates/list`,
   },
   {
-    name: "Theme",
+    name: "Customizations",
+    icon: CustomizeIcon,
+    route: `/stores/${storeId}/templates/customizations`,
+  },
+  {
+    name: "Customizations",
     icon: LinkIcon,
-    route: `/stores/${storeId}/templates/theme`,
+    route: `/stores/${storeId}/templates/customization`,
   },
 ];
 

@@ -18,13 +18,11 @@ interface StoreTemplateData {
 }
 
 /**
- * Get all store templates for a specific user
+ * Get all store templates
  */
-export const getStoreTemplates = async (userId: string) => {
+export const getStoreTemplates = async () => {
   try {
-    const templates = await db.query.storeTemplate.findMany({
-      where: eq(storeTemplate.userId, userId),
-    });
+    const templates = await db.query.storeTemplate.findMany();
     return { success: true, templates };
   } catch (error) {
     console.error("Error fetching store templates:", error);

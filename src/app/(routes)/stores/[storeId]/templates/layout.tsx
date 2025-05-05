@@ -1,6 +1,6 @@
 import StoreHeader from "@/client/components/headers/storeHeader";
 import SubNavBar from "@/client/components/sidebar/sub-sideBar";
-import { templates } from "@/lib/constants/subSidebar";
+import { getTemplatesSideBar } from "@/lib/constants/subSidebar";
 import { ReactNode } from "react";
 interface Props {
   children: ReactNode;
@@ -16,7 +16,7 @@ async function Layout({ children , params}: Props) {
       <StoreHeader storeId={storeId} />
 
       {/* Sidebar in the first column */}
-      <SubNavBar title="templates" data={templates} />
+      <SubNavBar title="templates" data={getTemplatesSideBar(storeId)} />
 
       {/* Main content in the second column */}
       <main className="h-full w-full overflow-auto">{children}</main>

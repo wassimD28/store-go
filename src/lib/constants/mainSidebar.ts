@@ -23,7 +23,7 @@ export const getStoreSideBarData = (storeId: string): SideBarData[] => [
   {
     name: "Templates",
     icon: DriverIcon,
-    route: `/stores/${storeId}/templates`,
+    route: `/stores/${storeId}/templates/list`,
   },
   {
     name: "Promotions",
