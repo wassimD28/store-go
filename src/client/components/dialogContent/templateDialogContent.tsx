@@ -114,7 +114,7 @@ function TemplateDialogContent({ template }: TemplateDialogContentProps) {
             icon={Settings2}
             onClick={() => {
               router.push(
-                `/stores/${store.id}/templates/customize?templateId=${template.id}`,
+                `/stores/${store.id}/templates/customize?templateId=${template.id}&type=${template.storeType}`,
               );
             }}
           >

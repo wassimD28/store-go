@@ -10,15 +10,17 @@ import { useBrandIdentityStore } from "@/client/store/brandIdentity.store";
 import { useGlobalLayout } from "@/client/store/globalLayout.store";
 import { useSplashScreenStore } from "@/client/store/splashScreen.store";
 import { useRouter } from "next/navigation";
-import { useStoreContext } from "@/client/providers/store.provider";
+import { StoreConfig } from "@/lib/types/interfaces/storeConfig.interface";
 
 interface ConfigStepperContainerProps {
   storeId: string;
   templateId: string;
+  type: "fashion" | "shoes" | "electronic";
 }
 function ConfigStepperContainer({
   storeId,
   templateId: storeTemplateId,
+  type,
 }: ConfigStepperContainerProps) {
   const { nextStep, prevStep, activeStep,setActiveStep } = useQuickStartStepperStore();
   // store generation data
@@ -31,7 +33,6 @@ function ConfigStepperContainer({
     lightIconUrl,
   } = useSplashScreenStore();
   const { data } = authClient.useSession();
-  const {store} = useStoreContext()
   const router = useRouter();
   const isFirstStep = activeStep === 1;
   const isLastStep = activeStep === 3; // Assuming 3 is the last step
@@ -103,33 +104,48 @@ function ConfigStepperContainer({
         });
         return;
       }
+      const storeConfig : StoreConfig = {
+        metadata: {
+          storeId,
+          storeName: appName,
+          description: appDescription,
+          apiEndpoint: "",
+          callbackUrl: "",
+          templateName: `${appName}`,
+          storeSlogan: appSlogan,
+          templateType: type,
+        },
+        app: {
+          name: appName,
+          bundleId: `com.${appName}.app`,
+          version: {
+            name: "1.0.0",
+            code: 1,
+          },
+          supportedLocales: ["en"],
+        },
+        design: {
+          radius,
+          lightTheme: {
+            ...lightColors,
+          },
+          darkTheme: {
+            ...darkColors,
+          },
+        },
+        splashScreen: {
+          lightIconUrl,
+          darkIconUrl,
+          lightBackgroundColor,
+          darkBackgroundColor,
+        },
+      }
       const result = await createCustomStoreTemplate({
         storeId,
         storeTemplateId,
-        name: `${appName}-${new Date().getTime()}`,
+        name: appName,
         userId: data.session.userId,
-        customTemplateConfig: {
-          appName,
-          appDescription,
-          appSlogan,
-          styles: {
-            radius,
-            lightTheme: {
-              ...getLightColors(),
-            },
-            darkTheme: {
-              ...getDarkColors(),
-            },
-            splashScreen: {
-              lightIconUrl,
-              darkIconUrl,
-              lightBackgroundColor,
-              darkBackgroundColor,
-            },
-          },
-          storeId,
-          storeTemplateId,
-        },
+        customTemplateConfig: storeConfig,
       });
       // Check if the operation was successful
       if (!result.success) {

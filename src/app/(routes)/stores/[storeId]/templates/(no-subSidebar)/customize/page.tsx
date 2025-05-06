@@ -9,15 +9,16 @@ export default async function Page({
   params: Promise<{ storeId: string  }>;
   searchParams: Promise<{
     templateId: string;
+    type: "fashion" | "shoes" | "electronic";
   }>;
 }) {
   const { storeId } = await params;
-  const { templateId } = await searchParams;
+  const { templateId, type } = await searchParams;
  
   return (
     <div className="flex-center h-full p-3 text-2xl">
       <div className="grid h-full w-full grid-cols-[20%_1fr_1fr] gap-4">
-        <ConfigStepperContainer storeId={storeId} templateId={templateId}/>
+        <ConfigStepperContainer storeId={storeId} templateId={templateId} type={type}/>
         <CurrentConfigForm />
         <CurrentPreview />
       </div>
