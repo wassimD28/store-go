@@ -4,6 +4,8 @@ import MainSideBar from "@/client/components/sidebar/app-sidebar";
 import { ReactNode } from "react";
 import { getStoreSideBarData } from "@/lib/constants/mainSidebar";
 import { PusherProvider } from "@/client/providers/pusher.provider";
+import { StoreProvider } from "@/client/providers/store.provider";
+import { getStoreById } from "@/app/actions/store.actions";
 
 export default async function RootLayout({
   children,
@@ -27,14 +29,20 @@ export default async function RootLayout({
     avatar: session?.user.image ?? "",
   };
 
-  // Now use the correctly resolved storeId
+  // Fetch the store data server-side to pass as initial data
+  const storeResult = await getStoreById(storeId);
+  const initialStore = storeResult.success ? storeResult.data : null;
+
+  // Get sidebar data
   const sideBarData = getStoreSideBarData(storeId);
 
   return (
     <div className="relative h-svh w-svw">
       <PusherProvider storeId={storeId}>
-        <MainSideBar user={user} sideBarData={sideBarData} />
-        {children}
+        <StoreProvider storeId={storeId} initialStore={initialStore}>
+          <MainSideBar user={user} sideBarData={sideBarData} />
+          {children}
+        </StoreProvider>
       </PusherProvider>
     </div>
   );

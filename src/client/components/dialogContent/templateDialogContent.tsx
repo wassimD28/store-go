@@ -12,6 +12,7 @@ import {
   TooltipTrigger,
 } from "../ui/tooltip";
 import { useRouter } from "next/navigation";
+import { useStoreContext } from "@/client/providers/store.provider";
 
 interface TemplateDialogContentProps {
   template: {
@@ -38,6 +39,12 @@ function getStoreTypeIcon(storeType: "electronic" | "fashion" | "shoes") {
 function TemplateDialogContent({ template }: TemplateDialogContentProps) {
   const isTemplateInactive = template.status === "inactive";
   const router = useRouter();
+  const { store , isLoading} = useStoreContext();
+
+  // Handle loading or missing store data
+  if (isLoading || !store) {
+    return <div className="p-4">Loading store data...</div>;
+  }
 
   return (
     <div className="flex w-full flex-col">
@@ -91,7 +98,10 @@ function TemplateDialogContent({ template }: TemplateDialogContentProps) {
                 Customize
               </AButton>
             </TooltipTrigger>
-            <TooltipContent side="top" className="font-medium bg-orange-500/10 text-orange-500 border border-orange-500 backdrop-blur-sm">
+            <TooltipContent
+              side="top"
+              className="border border-orange-500 bg-orange-500/10 font-medium text-orange-500 backdrop-blur-sm"
+            >
               Template must be active to customize
             </TooltipContent>
           </Tooltip>
@@ -104,8 +114,9 @@ function TemplateDialogContent({ template }: TemplateDialogContentProps) {
             icon={Settings2}
             onClick={() => {
               router.push(
-                `/stores/${template.id}/templates/${template.id}/customize`,
-              );}}
+                `/stores/${store.id}/templates/customize?templateId=${template.id}`,
+              );
+            }}
           >
             Customize
           </AButton>

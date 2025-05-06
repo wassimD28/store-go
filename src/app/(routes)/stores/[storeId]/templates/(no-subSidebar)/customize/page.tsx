@@ -4,14 +4,20 @@ import CurrentConfigForm from "@/client/components/configurationSteps/currentCon
 
 export default async function Page({
   params,
+  searchParams,
 }: {
-  params: Promise<{ storeId: string }>;
+  params: Promise<{ storeId: string  }>;
+  searchParams: Promise<{
+    templateId: string;
+  }>;
 }) {
   const { storeId } = await params;
+  const { templateId } = await searchParams;
+ 
   return (
     <div className="flex-center h-full p-3 text-2xl">
       <div className="grid h-full w-full grid-cols-[20%_1fr_1fr] gap-4">
-        <ConfigStepperContainer/>
+        <ConfigStepperContainer storeId={storeId} templateId={templateId}/>
         <CurrentConfigForm />
         <CurrentPreview />
       </div>

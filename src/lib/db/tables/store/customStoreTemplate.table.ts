@@ -14,7 +14,7 @@ export const customStoreTemplate = pgTable("custom_store_template", {
     .references(() => stores.id),
   storeTemplateId: uuid("storeTemplateId")
     .notNull()
-    .references(() => stores.id),
+    .references(() => storeTemplate.id),
   name: varchar("name").notNull(),
   customTemplateConfig: json("template_config").default({}),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

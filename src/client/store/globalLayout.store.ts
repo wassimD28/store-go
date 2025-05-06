@@ -63,6 +63,32 @@ interface GlobalLayoutStore {
     inputForegroundColor: string;
     borderColor: string;
   };
+  getDarkColors: () => {
+    backgroundColor: string;
+    foregroundColor: string;
+    cardColor: string;
+    cardForegroundColor: string;
+    primaryColor: string;
+    primaryForegroundColor: string;
+    mutedColor: string;
+    mutedForegroundColor: string;
+    inputColor: string;
+    inputForegroundColor: string;
+    borderColor: string;
+  };
+  getLightColors: () => {
+    backgroundColor: string;
+    foregroundColor: string;
+    cardColor: string;
+    cardForegroundColor: string;
+    primaryColor: string;
+    primaryForegroundColor: string;
+    mutedColor: string;
+    mutedForegroundColor: string;
+    inputColor: string;
+    inputForegroundColor: string;
+    borderColor: string;
+  };
 }
 
 // Default values for light theme colors
@@ -153,36 +179,42 @@ export const useGlobalLayout = create<GlobalLayoutStore>((set, get) => ({
 
   resetToDefaults: () => set({ ...defaultValues }),
 
+  getDarkColors: () => {
+    const state = get();
+    return {
+      backgroundColor: state.darkBackgroundColor,
+      foregroundColor: state.darkForegroundColor,
+      cardColor: state.darkCardColor,
+      cardForegroundColor: state.darkCardForegroundColor,
+      primaryColor: state.darkPrimaryColor,
+      primaryForegroundColor: state.darkPrimaryForegroundColor,
+      mutedColor: state.darkMutedColor,
+      mutedForegroundColor: state.darkMutedForegroundColor,
+      inputColor: state.darkInputColor,
+      inputForegroundColor: state.darkInputForegroundColor,
+      borderColor: state.darkBorderColor,
+    };
+  },
+
+  getLightColors: () => {
+    const state = get();
+    return {
+      backgroundColor: state.backgroundColor,
+      foregroundColor: state.foregroundColor,
+      cardColor: state.cardColor,
+      cardForegroundColor: state.cardForegroundColor,
+      primaryColor: state.primaryColor,
+      primaryForegroundColor: state.primaryForegroundColor,
+      mutedColor: state.mutedColor,
+      mutedForegroundColor: state.mutedForegroundColor,
+      inputColor: state.inputColor,
+      inputForegroundColor: state.inputForegroundColor,
+      borderColor: state.borderColor,
+    };
+  },
+
   getActiveColors: () => {
     const state = get();
-    if (state.isDarkMode) {
-      return {
-        backgroundColor: state.darkBackgroundColor,
-        foregroundColor: state.darkForegroundColor,
-        cardColor: state.darkCardColor,
-        cardForegroundColor: state.darkCardForegroundColor,
-        primaryColor: state.darkPrimaryColor,
-        primaryForegroundColor: state.darkPrimaryForegroundColor,
-        mutedColor: state.darkMutedColor,
-        mutedForegroundColor: state.darkMutedForegroundColor,
-        inputColor: state.darkInputColor,
-        inputForegroundColor: state.darkInputForegroundColor,
-        borderColor: state.darkBorderColor,
-      };
-    } else {
-      return {
-        backgroundColor: state.backgroundColor,
-        foregroundColor: state.foregroundColor,
-        cardColor: state.cardColor,
-        cardForegroundColor: state.cardForegroundColor,
-        primaryColor: state.primaryColor,
-        primaryForegroundColor: state.primaryForegroundColor,
-        mutedColor: state.mutedColor,
-        mutedForegroundColor: state.mutedForegroundColor,
-        inputColor: state.inputColor,
-        inputForegroundColor: state.inputForegroundColor,
-        borderColor: state.borderColor,
-      };
-    }
+    return state.isDarkMode ? get().getDarkColors() : get().getLightColors();
   },
 }));

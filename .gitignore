@@ -34,6 +34,7 @@ yarn-error.log*
 .env*
 !.env.example
 notes.todo
+json-examples.json
 # vercel
 .vercel
 

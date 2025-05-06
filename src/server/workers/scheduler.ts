@@ -4,7 +4,7 @@ import cron from "node-cron";
 export function startWorkers() {
   // Run every minute
   cron.schedule("* * * * *", async () => {
-    console.log("Running stale user status cleanup worker");
+    //console.log("Running stale user status cleanup worker");
     try {
       await cleanupStaleUserStatuses();
     } catch (error) {

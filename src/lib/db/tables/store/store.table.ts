@@ -15,7 +15,7 @@ export const stores = pgTable("stores", {
   name: varchar("name", { length: 100 }).notNull(),
   logoUrl: varchar("logo_url", { length: 500 }),
   appUrl: varchar("app_url", { length: 500 }),
-  currency: varchar("currency", { length: 3 }).default("TND"),
+  currency: varchar("currency", { length: 3 }).default("TND").notNull(),
   lastGeneratedAt: timestamp("last_generated_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

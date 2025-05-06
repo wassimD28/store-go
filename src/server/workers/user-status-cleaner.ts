@@ -22,9 +22,9 @@ export async function cleanupStaleUserStatuses() {
         and(eq(AppUser.is_online, true), lt(AppUser.last_seen, twoMinutesAgo)),
       );
 
-    console.log(`Found ${staleUsers.length} stale users to mark as offline`);
-
-    if (staleUsers.length > 0) {
+      
+      if (staleUsers.length > 0) {
+      console.log(`Found ${staleUsers.length} stale users to mark as offline`);
       // Initialize Pusher
       const pusher = new Pusher({
         appId: process.env.PUSHER_APP_ID!,
