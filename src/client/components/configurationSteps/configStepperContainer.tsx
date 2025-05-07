@@ -10,7 +10,7 @@ import { useBrandIdentityStore } from "@/client/store/brandIdentity.store";
 import { useGlobalLayout } from "@/client/store/globalLayout.store";
 import { useSplashScreenStore } from "@/client/store/splashScreen.store";
 import { useRouter } from "next/navigation";
-import { StoreConfig } from "@/lib/types/interfaces/storeConfig.interface";
+import { QuickBuildConfig } from "@/lib/types/interfaces/quickBuildConfig.interface";
 
 interface ConfigStepperContainerProps {
   storeId: string;
@@ -104,38 +104,18 @@ function ConfigStepperContainer({
         });
         return;
       }
-      const storeConfig : StoreConfig = {
-        metadata: {
-          storeId,
-          storeName: appName,
-          description: appDescription,
-          apiEndpoint: "",
-          callbackUrl: "",
-          templateName: `${appName}`,
-          storeSlogan: appSlogan,
-          templateType: type,
-        },
-        app: {
-          name: appName,
-          bundleId: `com.${appName}.app`,
-          version: {
-            name: "1.0.0",
-            code: 1,
-          },
-          supportedLocales: ["en"],
-        },
-        design: {
-          radius,
-          lightTheme: {
-            ...lightColors,
-          },
-          darkTheme: {
-            ...darkColors,
-          },
-        },
+      const storeConfig : QuickBuildConfig = {
+        storeId,
+        appName,
+        appDescription,
+        appSlogan,
+        type,
+        radius,
+        lightColors,
+        darkColors,
+        lightIconUrl,
+        darkIconUrl,
         splashScreen: {
-          lightIconUrl,
-          darkIconUrl,
           lightBackgroundColor,
           darkBackgroundColor,
         },

@@ -35,6 +35,7 @@ yarn-error.log*
 !.env.example
 notes.todo
 json-examples.json
+/excalidraw
 # vercel
 .vercel
 
