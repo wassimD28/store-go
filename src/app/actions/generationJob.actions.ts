@@ -67,6 +67,12 @@ export const triggerAppGeneration = async (
       };
     }
 
+    // Get the callback URL from environment variables, ensuring it's not undefined
+    const appUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    if (!appUrl) {
+      throw new Error("appUrl environment variable is not defined");
+    }
+
     // Make sure the template isn't already being built
     if (template.isBuilding) {
       return {
@@ -96,11 +102,13 @@ export const triggerAppGeneration = async (
       })
       .returning();
 
+    const callbackUrl = `${appUrl}/api/generation-callback`;
+
     // Trigger the GitHub Actions workflow
     await triggerGitHubWorkflow({
       jobId: newJob.id,
       storeId: template.storeId,
-      callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/generation-callback`,
+      callbackUrl,
       config: template.customTemplateConfig,
     });
 
@@ -157,6 +165,10 @@ const triggerGitHubWorkflow = async ({
   if (!owner || !repo || !workflowId || !token) {
     throw new Error("Missing GitHub configuration environment variables");
   }
+
+  // Log details for debugging
+  console.log(`Triggering GitHub workflow with jobId: ${jobId}`);
+  console.log(`Using callback URL: ${callbackUrl}`);
 
   const response = await fetch(
     `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowId}/dispatches`,

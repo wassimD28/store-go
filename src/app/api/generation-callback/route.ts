@@ -1,3 +1,5 @@
+
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Hono } from "hono";
 import { handle } from "hono/vercel";
@@ -36,7 +38,7 @@ const pusherServer = (() => {
 })();
 
 // Create a Hono app for the generation callback
-const app = new Hono().basePath("/api/mobile-app/generation-callback");
+const app = new Hono().basePath("/api/generation-callback");
 
 // Endpoint to receive build status updates from GitHub Actions
 app.post("/", async (c) => {
