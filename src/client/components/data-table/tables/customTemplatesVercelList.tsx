@@ -33,7 +33,6 @@ import {
 
 import {
   PlusCircle,
-  Settings,
   Search,
   MoreVertical,
   Clock,
@@ -48,7 +47,8 @@ import {
 } from "lucide-react";
 import { formatDate, formatDistanceToNow } from "@/lib/utils";
 import { AButton } from "../../ui/animated-button";
-import CustomizeIcon from "../../icons/sidebar/customizeIcon";
+import toast from "react-hot-toast";
+import { triggerAppGeneration } from "@/app/actions/generationJob.actions";
 
 // Interface for the custom store template data
 interface CustomStoreTemplate {
@@ -72,7 +72,9 @@ interface CustomStoreTemplatesProps {
   storeId: string;
 }
 
-export function VercelStyleTemplates({ storeId }: CustomStoreTemplatesProps) {
+export function CustomTemplatesVercelList({
+  storeId,
+}: CustomStoreTemplatesProps) {
   const router = useRouter();
   const [templates, setTemplates] = useState<CustomStoreTemplate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -194,7 +196,7 @@ export function VercelStyleTemplates({ storeId }: CustomStoreTemplatesProps) {
         </div>
 
         <Card className="flex h-[90%] w-full flex-col items-center justify-normal border-2 border-dashed bg-muted/5">
-          <CardContent className="flex w-full flex-col items-center justify-center h-full pb-0 text-center">
+          <CardContent className="flex h-full w-full flex-col items-center justify-center pb-0 text-center">
             <div className="mb-4 rounded-full bg-primary/10 p-6">
               <Paintbrush className="h-12 w-12 text-primary" />
             </div>
@@ -205,7 +207,14 @@ export function VercelStyleTemplates({ storeId }: CustomStoreTemplatesProps) {
               store&apos;s look and feel.
             </CardDescription>
             <Link className="mt-4" href={`/stores/${storeId}/templates/select`}>
-              <AButton variant="outline" size="lg" effect={"expandIcon"} icon={Settings2} iconPlacement="right" className="w-full">
+              <AButton
+                variant="outline"
+                size="lg"
+                effect={"expandIcon"}
+                icon={Settings2}
+                iconPlacement="right"
+                className="w-full"
+              >
                 Customize Template
               </AButton>
             </Link>
@@ -268,7 +277,42 @@ function TemplateGroup({
   // Take the first template to get information about the base template
   const firstTemplate = templates[0];
   const baseTemplateType = firstTemplate.baseTemplate?.storeType || "Unknown";
+  // function that handle build button click
+  const handleBuildButtonClick = async (
+    templateId: string,
+    e: React.MouseEvent,
+  ) => {
+    // Stop event propagation to prevent row click
+    e.stopPropagation();
 
+    try {
+      // Show loading toast
+      toast.loading("Building template...", {
+        id: "build-template-" + templateId,
+      });
+
+      // Trigger app generation
+      const result = await triggerAppGeneration(templateId);
+
+      // Handle success/error
+      if (!result.success) {
+        toast.error(result.error || "Failed to build template", {
+          id: "build-template-" + templateId,
+        });
+        return;
+      }
+
+      // Show success toast
+      toast.success("Template build started successfully", {
+        id: "build-template-" + templateId,
+      });
+    } catch (error) {
+      toast.error("Error building template", {
+        id: "build-template-" + templateId,
+      });
+      console.error("Error building template:", error);
+    }
+  };
   return (
     <Card className="w-full overflow-hidden border">
       {/* Project header */}
@@ -364,17 +408,17 @@ function TemplateGroup({
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      title="more actions"
-                      onClick={(e) => e.stopPropagation()}
-                    >
+                    <Button variant="ghost" size="icon" title="more actions">
                       <EllipsisVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleBuildButtonClick(template.id, e);
+                      }}
+                    >
                       <PlayCircle className="mr-2 h-4 w-4" />
                       Build
                     </DropdownMenuItem>

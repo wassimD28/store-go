@@ -1,4 +1,4 @@
-import { VercelStyleTemplates } from "@/client/components/data-table/tables/vercel-style-templates";
+import { CustomTemplatesVercelList } from "@/client/components/data-table/tables/customTemplatesVercelList";
 
 interface Props {
   params: Promise<{ storeId: string }>;
@@ -10,7 +10,7 @@ async function Page({ params }: Props) {
 
   return (
     <div className="h-full w-full p-6">
-      <VercelStyleTemplates storeId={storeId} />
+      <CustomTemplatesVercelList storeId={storeId} />
     </div>
   );
 }

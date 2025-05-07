@@ -104,8 +104,9 @@ function ConfigStepperContainer({
         });
         return;
       }
-      const storeConfig : QuickBuildConfig = {
+      const storeConfig: QuickBuildConfig = {
         buildType: "quick_build",
+        baseUrl: `${process.env.NEXT_PUBLIC_BASE_URL}`,
         storeId,
         appName,
         appDescription,
@@ -120,7 +121,7 @@ function ConfigStepperContainer({
           lightBackgroundColor,
           darkBackgroundColor,
         },
-      }
+      };
       const result = await createCustomStoreTemplate({
         storeId,
         storeTemplateId,
