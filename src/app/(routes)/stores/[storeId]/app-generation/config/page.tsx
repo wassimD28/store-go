@@ -11,7 +11,7 @@ export default async function Page({
   return (
     <div className="flex-center h-full p-3 text-2xl">
       <div className="grid h-full w-full grid-cols-[20%_1fr_1fr] gap-4">
-        <ConfigStepperContainer/>
+        <ConfigStepperContainer storeId={storeId} type="fashion" templateId="for-test-purposes" />
         <CurrentConfigForm />
         <CurrentPreview />
       </div>

@@ -184,6 +184,8 @@ export default function ImageKitUploader({
           <div className="relative h-40 w-40 overflow-hidden rounded-md border border-border">
             <IKImage
               path={filePath || ""}
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
               transformation={[{ width: "160", height: "160", quality: 80 }]}
               loading="lazy"
               className="h-full w-full object-cover"
@@ -219,7 +221,7 @@ export default function ImageKitUploader({
             ) : (
               <>
                 <ImagePlusIcon size={32} className="text-muted-foreground" />
-                <span className="mt-2 text-sm text-muted-foreground text-center">
+                <span className="mt-2 text-center text-sm text-muted-foreground">
                   {isDragging ? "Drop image here" : "Click or drag to upload"}
                 </span>
               </>

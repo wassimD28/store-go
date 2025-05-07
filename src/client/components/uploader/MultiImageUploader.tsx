@@ -205,6 +205,8 @@ function MultiImageUploader({
             >
               <IKImage
                 path={image.filePath}
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
                 transformation={[{ width: "96", height: "96", quality: 80 }]}
                 loading="lazy"
                 className="h-full w-full object-cover"
