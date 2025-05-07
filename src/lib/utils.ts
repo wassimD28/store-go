@@ -315,3 +315,43 @@ export function formatPromotionDuration(startDate: Date, endDate: Date): string 
   // Just days
   return `${totalDays} day${totalDays !== 1 ? 's' : ''}`;
 }
+
+
+export function formatDistanceToNow(date: Date, options?: { addSuffix?: boolean }): string {
+  // Implement a simple function to return time ago format like "2h ago", "3d ago", etc.
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - new Date(date).getTime()) / 1000);
+  
+  const minute = 60;
+  const hour = minute * 60;
+  const day = hour * 24;
+  const week = day * 7;
+  const month = day * 30;
+  const year = day * 365;
+  
+  let result: string;
+  
+  if (diffInSeconds < minute) {
+    result = 'just now';
+  } else if (diffInSeconds < hour) {
+    const minutes = Math.floor(diffInSeconds / minute);
+    result = `${minutes}m`;
+  } else if (diffInSeconds < day) {
+    const hours = Math.floor(diffInSeconds / hour);
+    result = `${hours}h`;
+  } else if (diffInSeconds < week) {
+    const days = Math.floor(diffInSeconds / day);
+    result = `${days}d`;
+  } else if (diffInSeconds < month) {
+    const weeks = Math.floor(diffInSeconds / week);
+    result = `${weeks}w`;
+  } else if (diffInSeconds < year) {
+    const months = Math.floor(diffInSeconds / month);
+    result = `${months}mo`;
+  } else {
+    const years = Math.floor(diffInSeconds / year);
+    result = `${years}y`;
+  }
+  
+  return options?.addSuffix ? `${result} ago` : result;
+}

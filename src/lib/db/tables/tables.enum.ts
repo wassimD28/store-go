@@ -6,6 +6,14 @@ export const productStatusEnum = pgEnum("product_status", [
   "out_of_stock",
   "archived",
 ]);
+
+export const generationJobStatusEnum = pgEnum("generation_job_status", [
+  "PENDING",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "FAILED",
+]);
+
 export const AgeRangeEnum = pgEnum("age_range_enum", [
   "13-18",
   "19-25",
@@ -24,10 +32,8 @@ export const discountTypeEnum = pgEnum("discount_type", [
 export const storeTemplateTypeEnum = pgEnum("store_template_type", [
   "fashion",
   "electronic",
-  "shoes"
+  "shoes",
 ]);
-
-
 
 // For store owner notifications
 export const storeNotificationTypeEnum = pgEnum("store_notification_type", [
@@ -64,8 +70,6 @@ export const appNotificationTypeEnum = pgEnum("app_user_notification_type", [
   "return_status_update",
   "new_product",
 ]);
-
-
 
 export const targetGenderEnum = pgEnum("target_gender", [
   "male",

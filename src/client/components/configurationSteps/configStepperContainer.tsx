@@ -105,6 +105,7 @@ function ConfigStepperContainer({
         return;
       }
       const storeConfig : QuickBuildConfig = {
+        buildType: "quick_build",
         storeId,
         appName,
         appDescription,
@@ -124,6 +125,7 @@ function ConfigStepperContainer({
         storeId,
         storeTemplateId,
         name: appName,
+        builtType: "quick_build",
         userId: data.session.userId,
         customTemplateConfig: storeConfig,
       });

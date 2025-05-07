@@ -92,7 +92,7 @@ export const getTemplatesSideBar = (storeId: string): SideBarData[] => [
   {
     name: "List",
     icon: TemplateListIcon,
-    route: `/stores/${storeId}/templates/list`,
+    route: `/stores/${storeId}/templates/select`,
   },
   {
     name: "Customizations",

@@ -86,11 +86,13 @@ export const createCustomStoreTemplate = async ({
   storeId,
   name,
   storeTemplateId,
+  builtType,
   customTemplateConfig = {},
 }: {
   userId: string;
   storeId: string;
   name: string;
+  builtType: "quick_build" | "advanced_build";
   storeTemplateId: string;
   customTemplateConfig?: Record<string, any>;
 }): Promise<ActionResponse<CustomStoreTemplateData>> => {
@@ -116,6 +118,7 @@ export const createCustomStoreTemplate = async ({
       .values({
         userId,
         storeId,
+        builtType,
         name,
         storeTemplateId,
         customTemplateConfig,

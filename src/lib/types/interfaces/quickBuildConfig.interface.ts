@@ -1,4 +1,5 @@
 export interface QuickBuildConfig {
+  buildType: "quick_build"
   storeId: string;
   appName: string;
   appDescription: string;
