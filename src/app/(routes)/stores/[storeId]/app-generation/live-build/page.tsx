@@ -7,10 +7,14 @@ import {
 import { BuildProgress } from "@/client/components/live-build/build-progress";
 import { LogViewer } from "@/client/components/live-build/log-viewer";
 import Pusher from "pusher-js";
+import { AButton } from "@/client/components/ui/animated-button";
+import { Download } from "lucide-react";
+import { cn, formatStatus } from "@/lib/utils";
+import { Badge } from "@/client/components/ui/badge";
 
 interface BuildLog {
   message: string;
-  status: string;
+  status: "PENDING" | "COMPLETED" | "IN_PROGRESS" | "FAILED";
   timestamp: string;
   progress: number;
   downloadUrl?: string;
@@ -24,7 +28,7 @@ export default function LiveBuildPage({params}: { params : Promise<{storeId: str
   const [currentJob, setCurrentJob] = useState<any>(null);
   const [buildLogs, setBuildLogs] = useState<BuildLog[]>([]);
   const [progress, setProgress] = useState(0);
-  const [buildStatus, setBuildStatus] = useState<string>("PENDING");
+  const [buildStatus, setBuildStatus] = useState<BuildLog["status"]>("PENDING");
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -154,25 +158,29 @@ export default function LiveBuildPage({params}: { params : Promise<{storeId: str
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">App Build Progress</h1>
         <div className="flex items-center gap-3">
-          <span
-            className={`rounded-full px-3 py-1 text-sm font-medium ${
-              buildStatus === "COMPLETED"
-                ? "bg-green-100 text-green-800"
-                : buildStatus === "FAILED"
-                  ? "bg-red-100 text-red-800"
-                  : "bg-blue-100 text-blue-800"
-            }`}
+          <Badge
+            className={cn(
+              "rounded-full px-3 py-1 text-xs font-medium uppercase cursor-pointer",
+              // Apply conditional styling based on status
+              buildStatus === "COMPLETED" && "bg-green-500/5 text-green-500 border-green-500 hover:bg-green-500/10",
+              buildStatus === "FAILED" && "bg-red-500/5 text-red-500 border-red-500 hover:bg-red-500/10",
+              buildStatus == "PENDING" && "bg-yellow-500/5 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10",
+              buildStatus == "IN_PROGRESS" && "bg-blue-500/5 text-blue-500 border-blue-500 hover:bg-blue-500/10"
+            )}
           >
-            {buildStatus}
-          </span>
+            {formatStatus(buildStatus)}
+          </Badge>
 
           {downloadUrl && (
-            <a
-              href={downloadUrl}
-              className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
-              download
-            >
-              Download APK
+            <a href={downloadUrl} download>
+              <AButton
+                effect={"expandIcon"}
+                className="bg-primary/10 text-primary/90 hover:bg-primary/20 hover:text-primary"
+                icon={Download}
+                iconPlacement="right"
+              >
+                Download Apk
+              </AButton>
             </a>
           )}
         </div>

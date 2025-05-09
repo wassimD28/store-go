@@ -4,7 +4,7 @@ import React from "react";
 
 interface BuildProgressProps {
   progress: number;
-  status: string;
+  status: "PENDING" | "COMPLETED" | "IN_PROGRESS" | "FAILED";
 }
 
 export function BuildProgress({ progress, status }: BuildProgressProps) {
@@ -44,10 +44,10 @@ export function BuildProgress({ progress, status }: BuildProgressProps) {
 
       {/* Progress percentage and status */}
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-700">
+        <span className="text-sm font-medium text-foreground/50">
           {formattedProgress}% Complete
         </span>
-        <span className="text-sm font-medium text-gray-700">
+        <span className="text-sm font-medium text-foreground/50">
           {status === "PENDING"
             ? "Waiting to start..."
             : status === "IN_PROGRESS"
@@ -59,23 +59,19 @@ export function BuildProgress({ progress, status }: BuildProgressProps) {
       </div>
 
       {/* Build stage indicators */}
-      <div className="flex justify-between pt-4">
+      <div className="flex justify-between items-center pt-4">
         {buildStages.map((stage, index) => (
           <div
             key={index}
             className="flex flex-col items-center"
-            style={{
-              left: `${stage.percent}%`,
-              transform: "translateX(-50%)",
-            }}
           >
             <div
-              className={`mb-2 flex h-5 w-5 items-center justify-center rounded-full ${stage.complete ? getColorClasses() : "bg-gray-200"}`}
+              className={`mb-2 flex h-5 w-5 items-center justify-center rounded-full ${stage.complete ? getColorClasses() : "bg-foreground/50"}`}
             >
               {stage.complete && (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-3 w-3 text-white"
+                  className="h-3 w-3 text-background"
                   viewBox="0 0 20 20"
                   fill="currentColor"
                 >
@@ -87,7 +83,7 @@ export function BuildProgress({ progress, status }: BuildProgressProps) {
                 </svg>
               )}
             </div>
-            <span className="text-xs text-gray-600">{stage.label}</span>
+            <span className="text-xs text-foreground/50">{stage.label}</span>
           </div>
         ))}
       </div>
