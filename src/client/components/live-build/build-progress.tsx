@@ -1,6 +1,13 @@
 "use client";
 
 import React from "react";
+import {
+  Stepper,
+  StepperIndicator,
+  StepperItem,
+  StepperSeparator,
+  StepperTitle,
+} from "@/client/components/ui/stepper";
 
 interface BuildProgressProps {
   progress: number;
@@ -23,14 +30,57 @@ export function BuildProgress({ progress, status }: BuildProgressProps) {
     }
   };
 
+  // Calculate the current active step based on progress
+  const getActiveStep = () => {
+    if (progress >= 100) return 5;
+    if (progress >= 80) return 4;
+    if (progress >= 60) return 3;
+    if (progress >= 30) return 2;
+    if (progress >= 10) return 1;
+    return 0;
+  };
+
   // Define key stages in the build process
   const buildStages = [
-    { label: "Configuration", percent: 10, complete: progress >= 10 },
-    { label: "Template Scanning", percent: 30, complete: progress >= 30 },
-    { label: "Code Generation", percent: 60, complete: progress >= 60 },
-    { label: "APK Building", percent: 90, complete: progress >= 90 },
-    { label: "Upload & Complete", percent: 100, complete: progress >= 100 },
+    {
+      step: 0,
+      title: "Configuration",
+      description: "Setting up build environment",
+      completed: progress >= 10,
+    },
+    {
+      step: 1,
+      title: "Template Scanning",
+      description: "Processing template files",
+      completed: progress >= 30,
+    },
+    {
+      step: 2,
+      title: "Code Generation",
+      description: "Creating application code",
+      completed: progress >= 60,
+    },
+    {
+      step: 3,
+      title: "App Assets",
+      description: "Icons & splash screen",
+      completed: progress >= 78,
+    },
+    {
+      step: 4,
+      title: "APK Building",
+      description: "Compiling and packaging",
+      completed: progress >= 90,
+    },
+    {
+      step: 5,
+      title: "Upload & Complete",
+      description: "Publishing and finalizing",
+      completed: progress >= 100,
+    },
   ];
+
+  const activeStep = getActiveStep();
 
   return (
     <div className="w-full space-y-4">
@@ -58,35 +108,34 @@ export function BuildProgress({ progress, status }: BuildProgressProps) {
         </span>
       </div>
 
-      {/* Build stage indicators */}
-      <div className="flex justify-between items-center pt-4">
+      {/* Build stage indicators using Stepper component */}
+      <Stepper value={activeStep} className="mt-6 w-full justify-between">
         {buildStages.map((stage, index) => (
-          <div
+          <StepperItem
             key={index}
-            className="flex flex-col items-center"
+            step={stage.step}
+            completed={stage.completed}
+            disabled={status === "FAILED" && !stage.completed}
+            loading={
+              status === "IN_PROGRESS" &&
+              activeStep === stage.step &&
+              progress < 100
+            }
           >
-            <div
-              className={`mb-2 flex h-5 w-5 items-center justify-center rounded-full ${stage.complete ? getColorClasses() : "bg-foreground/50"}`}
-            >
-              {stage.complete && (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-3 w-3 text-background"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              )}
+            <div className="flex flex-col items-center justify-center gap-2">
+              <StepperIndicator className="z-10" />
+
+              <StepperTitle className="text-foreground/50">
+                {stage.title}
+              </StepperTitle>
             </div>
-            <span className="text-xs text-foreground/50">{stage.label}</span>
-          </div>
+
+            {index < buildStages.length - 1 && (
+              <StepperSeparator className="mx-4 flex-1" />
+            )}
+          </StepperItem>
         ))}
-      </div>
+      </Stepper>
     </div>
   );
 }

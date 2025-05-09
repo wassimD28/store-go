@@ -2,16 +2,7 @@
 
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  ArrowUpDown,
-  Loader2,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, ArrowUpDown } from "lucide-react";
 
 import {
   Table,
@@ -35,7 +26,7 @@ import { GenerationJobsEmptyState } from "../empty-states/generation-jobs-empty-
 // Types based on your database schema
 type GenerationJob = {
   id: string;
-  status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
+  status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
   createdAt: Date;
   completedAt: Date | null;
   downloadUrl: string | null;
@@ -78,13 +69,12 @@ export function GenerationJobsTable({
             Pending
           </Badge>
         );
-      case "PROCESSING":
+      case "IN_PROGRESS":
         return (
           <Badge
             variant="outline"
             className="flex-center border-blue-500 bg-blue-500/5 text-blue-500"
           >
-  
             Processing
           </Badge>
         );
@@ -94,7 +84,6 @@ export function GenerationJobsTable({
             variant="outline"
             className="flex-center border-green-500 bg-green-500/5 text-green-700"
           >
-
             Completed
           </Badge>
         );
@@ -128,7 +117,9 @@ export function GenerationJobsTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[220px] truncate pl-6">Template</TableHead>
+              <TableHead className="w-[220px] truncate pl-6">
+                Template
+              </TableHead>
               <TableHead>Base Template</TableHead>
               <TableHead className="w-[120px]">Status</TableHead>
               <TableHead
@@ -141,7 +132,7 @@ export function GenerationJobsTable({
                 </div>
               </TableHead>
               <TableHead className="w-[180px]">Completed</TableHead>
-              <TableHead className="w-[80px] text-center "></TableHead>
+              <TableHead className="w-[80px] text-center"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
