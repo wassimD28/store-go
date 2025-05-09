@@ -4,16 +4,9 @@ import { useState, useEffect } from "react";
 import { RefreshCcw, Plus } from "lucide-react";
 import { GenerationJobsTable } from "../tables/generationJobs.table";
 import { Button } from "@/client/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/client/components/ui/card";
 import { getStoreGenerationJobs } from "@/app/actions/generationJob.actions";
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 7;
 
 export default function GenerationJobsTableContainer({
   storeId,
