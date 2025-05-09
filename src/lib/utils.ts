@@ -355,3 +355,19 @@ export function formatDistanceToNow(date: Date, options?: { addSuffix?: boolean 
   
   return options?.addSuffix ? `${result} ago` : result;
 }
+
+/**
+ * Converts status codes from uppercase with underscores to lowercase with spaces
+ * 
+ * @param {string} status - The status code in uppercase with underscores (e.g., "IN_PROGRESS")
+ * @returns {string} The formatted status in lowercase with spaces (e.g., "in progress")
+ */
+export function formatStatus(status: string) {
+  // Return early if status is not a string or is empty
+  if (typeof status !== 'string' || status.trim() === '') {
+    return '';
+  }
+  
+  // Convert to lowercase and replace underscores with spaces
+  return status.toLowerCase().replace(/_/g, ' ');
+}

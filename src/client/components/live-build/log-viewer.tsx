@@ -29,7 +29,7 @@ export function LogViewer({ logs }: LogViewerProps) {
     try {
       const date = new Date(timestamp);
       return date.toLocaleTimeString();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       return "Unknown time";
     }
@@ -104,7 +104,7 @@ export function LogViewer({ logs }: LogViewerProps) {
   return (
     <div
       ref={logContainerRef}
-      className="flex-1 overflow-y-auto rounded-md border border-gray-200 bg-gray-50 p-4"
+      className="flex-1 overflow-y-auto rounded-md border border-primary/50 bg-primary/5 p-4"
     >
       {logs.length === 0 ? (
         <div className="py-8 text-center text-gray-500">
@@ -115,14 +115,14 @@ export function LogViewer({ logs }: LogViewerProps) {
           {logs.map((log, index) => (
             <div
               key={index}
-              className="flex items-start space-x-3 border-b border-gray-100 py-2 last:border-0"
+              className="flex items-start space-x-3 border-b border-primary/50 py-2 last:border-0"
             >
               <div className="flex-shrink-0 pt-1">
                 {getStatusIcon(log.status)}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-foreground">
                     {log.message}
                   </p>
                   <span className="text-xs text-gray-500">
@@ -130,20 +130,9 @@ export function LogViewer({ logs }: LogViewerProps) {
                   </span>
                 </div>
                 {log.progress !== undefined && (
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1 text-xs text-foreground/40">
                     Progress: {log.progress}%
                   </p>
-                )}
-                {log.downloadUrl && (
-                  <div className="mt-2">
-                    <a
-                      href={log.downloadUrl}
-                      className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
-                      download
-                    >
-                      Download APK
-                    </a>
-                  </div>
                 )}
               </div>
             </div>
