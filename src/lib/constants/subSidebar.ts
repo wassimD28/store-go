@@ -8,6 +8,8 @@ import { SideBarData } from "../types/interfaces/common.interface";
 import StarIcon from "@/client/components/icons/sidebar/starIcon";
 import TemplateListIcon from "@/client/components/icons/sidebar/templateListIcon";
 import CustomizeIcon from "@/client/components/icons/sidebar/customizeIcon";
+import HeartBeatIcon from "@/client/components/icons/sidebar/heartBeatIcon";
+import GenerationJobsIcon from "@/client/components/icons/sidebar/generationJobsIcon";
 
 export const dashboard: SideBarData[] = [
   {
@@ -149,29 +151,19 @@ export const getOrdersSideBar = (storeId: string): SideBarData[] => [
 
 export const getAppGenerationSideBar = (storeId: string): SideBarData[] => [
   {
-    name: "Configuration",
-    icon: SettingIcon,
-    route: `/stores/${storeId}/app-generation/config`,
+    name: "Generation Jobs",
+    icon: GenerationJobsIcon,
+    route: `/stores/${storeId}/app-generation/generation-jobs`,
+  },
+  {
+    name: "Live build",
+    icon: HeartBeatIcon,
+    route: `/stores/${storeId}/app-generation/live-build`,
   },
   {
     name: "Preview",
     icon: SettingIcon,
     route: `/stores/${storeId}/app-generation/preview`,
-  },
-  {
-    name: "Build",
-    icon: SettingIcon,
-    route: `/stores/${storeId}/app-generation/build`,
-  },
-  {
-    name: "History",
-    icon: SettingIcon,
-    route: `/stores/${storeId}/app-generation/history`,
-  },
-  {
-    name: "Downloads",
-    icon: SettingIcon,
-    route: `/stores/${storeId}/app-generation/downloads`,
   },
 ];
 

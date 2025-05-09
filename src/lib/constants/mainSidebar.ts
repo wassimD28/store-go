@@ -43,7 +43,7 @@ export const getStoreSideBarData = (storeId: string): SideBarData[] => [
   {
     name: "Generation",
     icon: LinkIcon,
-    route: `/stores/${storeId}/app-generation/config`,
+    route: `/stores/${storeId}/app-generation/generation-jobs`,
   },
   {
     name: "Analytics",
