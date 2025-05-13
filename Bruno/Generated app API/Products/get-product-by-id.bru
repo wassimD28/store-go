@@ -1,0 +1,167 @@
+meta {
+  name: get-product-by-id
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{PROD_BASE_URL}}/api/mobile-app/products/{{PRODUCT_ID}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Get Product by ID Endpoint
+  
+  This endpoint retrieves a specific product by its ID from a store in the StoreGo multi-tenant e-commerce platform. It returns detailed information about the product including its attributes, images, price, and inventory status.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - The user must be associated with the store that owns the product
+  
+  ## Request Parameters
+  
+  | Parameter  | Type   | Required | Description                       |
+  |------------|--------|----------|-----------------------------------|
+  | productId  | string | Yes      | UUID of the product to retrieve (path parameter) |
+  
+  ## Path Parameter Setup
+  
+  - The product ID is specified as part of the URL path: `/api/mobile-app/products/:id`
+  - Ensure the product ID is in the UUID format
+  - You can set the `PRODUCT_ID` environment variable for testing, or replace it directly in the URL
+  
+  ## Security Checks
+  
+  - Validates that the product ID is in a valid format
+  - Verifies the product exists in the database
+  - Confirms the product belongs to the authenticated user's store
+  - Returns 403 Forbidden if the user attempts to access a product from another store
+  
+  ## Response
+  
+  ### Success (200 OK)
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "946d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+      "userId": "user_xxxxxxxxxxxx",
+      "storeId": "store_xxxxxxxxxxxx",
+      "categoryId": "846d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+      "subcategoryId": "746d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+      "name": "Smartphone X",
+      "description": "Latest smartphone with advanced features",
+      "price": 799.99,
+      "attributes": { "color": "black", "storage": "128GB" },
+      "colors": ["black", "silver", "gold"],
+      "size": ["standard"],
+      "image_urls": ["https://example.com/images/smartphone-x.jpg"],
+      "stock_quantity": 50,
+      "status": "active",
+      "targetGender": "unisex",
+      "unitsSold": 120,
+      "created_at": "2023-10-15T10:00:00.000Z",
+      "updated_at": "2023-10-15T10:00:00.000Z",
+      "category": {
+        "id": "846d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+        "name": "Electronics",
+        "description": "Electronic devices and accessories"
+      },
+      "subcategory": {
+        "id": "746d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+        "name": "Smartphones",
+        "description": "Mobile phones and accessories"
+      },
+      "reviews": [
+        {
+          "id": "c46d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+          "rating": 4.5,
+          "comment": "Great product, excellent features!"
+        }
+      ],
+      "related_products": [
+        {
+          "id": "d46d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+          "name": "Smartphone Case",
+          "price": 29.99,
+          "image_url": "https://example.com/images/smartphone-case.jpg"
+        }
+      ]
+    }
+  }
+  ```
+  
+  ### Error Responses
+  - 400 Bad Request: Invalid product ID format
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid product ID"
+    }
+    ```
+  - 401 Unauthorized: Missing or invalid authentication token
+    ```json
+    {
+      "status": "error",
+      "message": "Authentication required"
+    }
+    ```
+  - 403 Forbidden: User doesn't have access to the requested product
+    ```json
+    {
+      "status": "error", 
+      "message": "Unauthorized access to this product"
+    }
+    ```
+  - 404 Not Found: Product doesn't exist
+    ```json
+    {
+      "status": "error",
+      "message": "Product not found"
+    }
+    ```
+  - 500 Internal Server Error: Server side error
+    ```json
+    {
+      "status": "error",
+      "message": "Failed to fetch product"
+    }
+    ```
+  
+  ## Implementation Notes
+  
+  - The endpoint uses a repository pattern to isolate database access
+  - Product data includes related entities like category and subcategory
+  - Related products are fetched based on category similarity
+  - Reviews are included when available for the product
+  
+  ## Related Endpoints
+  - GET `/api/mobile-app/products` - Get all products
+  - GET `/api/mobile-app/products/category/:categoryId` - Get products by category
+  - GET `/api/mobile-app/reviews/product/:productId` - Get product reviews
+  - POST `/api/mobile-app/products/cart/:productId` - Add product to cart
+  - POST `/api/mobile-app/products/wishlist/:productId` - Add product to wishlist
+}

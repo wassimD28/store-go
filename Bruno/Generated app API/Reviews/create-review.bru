@@ -1,0 +1,116 @@
+meta {
+  name: create-review
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{PROD_BASE_URL}}/api/mobile-app/reviews/product/{{PRODUCT_ID}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+body:json {
+  "rating": 5,
+  "content": "This product exceeded my expectations! The quality is excellent and it arrived quickly."
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Create Review Endpoint
+  
+  This endpoint allows authenticated users to submit new reviews for products they have purchased or used. Reviews consist of a numerical rating and optional text content that provides feedback about the product.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - The user must be registered in the system to create a review
+  
+  ## Request Parameters
+  
+  | Parameter | Location | Required | Description |
+  |-----------|----------|----------|-------------|
+  | productId | Path     | Yes      | The UUID of the product being reviewed |
+  
+  ## Request Body
+  
+  The request body must be a JSON object with the following structure:
+  
+  ```json
+  {
+    "rating": 5,
+    "content": "This is an amazing product! Highly recommended."
+  }
+  ```
+  
+  | Field   | Type   | Required | Description |
+  |---------|--------|----------|-------------|
+  | rating  | number | Yes      | Rating score between 1 and 5 |
+  | content | string | No       | Text content of the review |
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Review created successfully",
+    "data": {
+      "id": "uuid",
+      "appUserId": "uuid",
+      "productId": "uuid",
+      "storeId": "uuid",
+      "rating": 5,
+      "content": "This is an amazing product! Highly recommended.",
+      "created_at": "2023-01-01T00:00:00.000Z",
+      "updated_at": "2023-01-01T00:00:00.000Z"
+    }
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid product ID | `{ "status": "error", "message": "Invalid product ID" }` |
+  | 400 | Invalid review data | `{ "status": "error", "message": "Invalid review data", "errors": {...} }` |
+  | 400 | Duplicate review | `{ "status": "error", "message": "You have already reviewed this product" }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 404 | Product not found | `{ "status": "error", "message": "Product not found" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to create review" }` |
+  
+  ## Notes
+  
+  - A user can only create one review per product
+  - The rating must be an integer between 1 and 5
+  - The review content is optional but recommended
+  - The system automatically associates the review with the authenticated user
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/reviews/product/:productId` - Get all reviews for a product
+  - `GET /api/mobile-app/reviews/:reviewId` - Get a specific review
+  - `PUT /api/mobile-app/reviews/:reviewId` - Update a review
+  - `DELETE /api/mobile-app/reviews/:reviewId` - Delete a review
+}

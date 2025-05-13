@@ -1,0 +1,127 @@
+meta {
+  name: get-featured-products
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{PROD_BASE_URL}}/api/mobile-app/products/featured
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Get Featured Products Endpoint
+  
+  This endpoint retrieves featured products from a store in the StoreGo multi-tenant e-commerce platform. Featured products are typically those that are most popular or have been specially selected for promotion.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - The user must be associated with the store
+  
+  ## Request Parameters
+  
+  No request parameters are required in the URL or body. The storeId is automatically extracted from the authenticated user's context.
+  
+  ## Selection Criteria
+  
+  Featured products are selected based on:
+  
+  - Highest number of units sold (popularity)
+  - Manual selection by store administrators (featured flag)
+  - Recent high-performing products
+  
+  ## Response
+  
+  ### Success (200 OK)
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "946d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+        "userId": "user_xxxxxxxxxxxx",
+        "storeId": "store_xxxxxxxxxxxx",
+        "categoryId": "846d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+        "name": "Smartphone X",
+        "description": "Latest smartphone with advanced features",
+        "price": 799.99,
+        "image_urls": ["https://example.com/images/smartphone-x.jpg"],
+        "unitsSold": 120,
+        "created_at": "2023-10-15T10:00:00.000Z",
+        "updated_at": "2023-10-15T10:00:00.000Z"
+      },
+      {
+        "id": "a46d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+        "userId": "user_xxxxxxxxxxxx",
+        "storeId": "store_xxxxxxxxxxxx",
+        "categoryId": "846d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+        "name": "Wireless Headphones",
+        "description": "Premium noise-cancelling headphones",
+        "price": 199.99,
+        "image_urls": ["https://example.com/images/headphones.jpg"],
+        "unitsSold": 75,
+        "created_at": "2023-10-15T11:30:00.000Z",
+        "updated_at": "2023-10-15T11:30:00.000Z"
+      }
+    ]
+  }
+  ```
+  
+  ### Error Responses
+  - 401 Unauthorized: Missing or invalid authentication token
+    ```json
+    {
+      "status": "error",
+      "message": "Authentication required"
+    }
+    ```
+  - 403 Forbidden: User not associated with any store
+    ```json
+    {
+      "status": "error", 
+      "message": "User not associated with a store"
+    }
+    ```
+  - 500 Internal Server Error: Server side error
+    ```json
+    {
+      "status": "error",
+      "message": "Failed to fetch featured products"
+    }
+    ```
+  
+  ## Implementation Notes
+  
+  - Products are sorted by units sold in descending order
+  - The endpoint returns a curated list with only the most relevant product details
+  - Performance is optimized to ensure quick loading in the mobile app's featured section
+  - The response includes product images suitable for featured product carousels
+  
+  ## Related Endpoints
+  - GET `/api/mobile-app/products` - Get all products
+  - GET `/api/mobile-app/products/new` - Get newly added products
+  - GET `/api/mobile-app/products/:id` - Get detailed information about a specific product
+}

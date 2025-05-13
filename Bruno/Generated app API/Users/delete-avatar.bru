@@ -1,0 +1,78 @@
+meta {
+  name: delete-avatar
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{PROD_BASE_URL}}/api/mobile-app/users/{{USER_ID}}/avatar
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Delete User Avatar Endpoint
+  
+  This endpoint allows users to remove their profile picture (avatar) from their account. After deletion, the user's profile will revert to a default avatar image.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - Users can only delete avatars from their own profile unless they have admin privileges
+  
+  ## Request Parameters
+  
+  | Parameter | Location | Required | Description |
+  |-----------|----------|----------|-------------|
+  | userId    | Path     | Yes      | The UUID of the user to delete the avatar for |
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Avatar deleted successfully"
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid user ID | `{ "status": "error", "message": "Invalid user ID" }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 403 | Forbidden | `{ "status": "error", "message": "You don't have permission to delete this user's avatar" }` |
+  | 404 | User not found | `{ "status": "error", "message": "User not found" }` |
+  | 404 | Avatar not found | `{ "status": "error", "message": "No avatar found for this user" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to delete avatar" }` |
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/users/:userId` - Get user profile
+  - `PUT /api/mobile-app/users/:userId` - Update user profile
+  - `POST /api/mobile-app/users/:userId/avatar` - Upload user avatar
+  - `POST /api/mobile-app/users/status` - Update user status
+}

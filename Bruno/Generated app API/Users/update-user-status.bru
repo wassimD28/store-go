@@ -1,0 +1,100 @@
+meta {
+  name: update-user-status
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{PROD_BASE_URL}}/api/mobile-app/users/status
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+body:json {
+  "isOnline": true,
+  "lastSeen": "2023-05-12T14:30:00.000Z"
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Update User Status Endpoint
+  
+  This endpoint allows users to update their online status in the system. The status information is used to show whether a user is currently active or when they were last seen in the application. This information can be useful for real-time features such as messaging.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - The endpoint automatically identifies the user from the authentication token
+  
+  ## Request Body
+  
+  The request body must be a JSON object with the following fields:
+  
+  ```json
+  {
+    "isOnline": true,
+    "lastSeen": "2023-05-12T14:30:00.000Z"
+  }
+  ```
+  
+  | Field     | Type    | Required | Description |
+  |-----------|---------|----------|-------------|
+  | isOnline  | boolean | Yes      | Indicates whether the user is currently online |
+  | lastSeen  | string  | No       | ISO 8601 timestamp of when the user was last active (defaults to current time if not provided) |
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "success": true,
+    "message": "Status updated successfully"
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid request body | `{ "success": false, "error": "Invalid request data" }` |
+  | 401 | Unauthorized | `{ "success": false, "error": "Unauthorized" }` |
+  | 404 | User not found | `{ "success": false, "error": "AppUser not found" }` |
+  | 500 | Server error | `{ "success": false, "error": "Failed to update user status" }` |
+  
+  ## Real-time Updates
+  
+  When a user's status is updated, the system also triggers a real-time notification via Pusher on the `store-{storeId}` channel with the event name `user-status-changed`. This allows applications to update the user's status in real-time without polling the API.
+  
+  The real-time notification includes:
+  - userId: The ID of the user whose status changed
+  - isOnline: The new online status
+  - lastSeen: The timestamp of when the user was last seen
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/users/:userId` - Get user profile
+  - `PUT /api/mobile-app/users/:userId` - Update user profile
+  - `POST /api/mobile-app/users/:userId/avatar` - Upload user avatar
+  - `DELETE /api/mobile-app/users/:userId/avatar` - Delete user avatar
+}

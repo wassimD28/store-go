@@ -1,0 +1,93 @@
+meta {
+  name: get-all-subcategories
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{PROD_BASE_URL}}/api/mobile-app/subcategories
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Get All Subcategories Endpoint
+  
+  This endpoint retrieves all product subcategories associated with a specific store in the StoreGo multi-tenant e-commerce platform. Subcategories help provide a more refined categorization of products, allowing for a detailed navigation structure.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - The authenticated user must have access to the specified store
+  
+  ## Request Parameters
+  
+  No parameters required for this endpoint.
+  
+  ## Response Format
+  
+  The response includes an array of subcategory objects with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "subcategory-uuid",
+        "name": "Women's Tops",
+        "storeId": "store-uuid",
+        "categoryId": "category-uuid", 
+        "image_url": "https://example.com/image.jpg",
+        "created_at": "2023-05-15T10:30:00Z",
+        "updated_at": "2023-05-15T10:30:00Z"
+      },
+      // ... more subcategories
+    ]
+  }
+  ```
+  
+  ## Response Fields
+  
+  | Field        | Type      | Description                                      |
+  |--------------|-----------|--------------------------------------------------|
+  | id           | UUID      | Unique identifier for the subcategory            |
+  | name         | String    | Name of the subcategory                          |
+  | storeId      | UUID      | ID of the store this subcategory belongs to      |
+  | categoryId   | UUID      | ID of the parent category                        |
+  | image_url    | String    | URL to the subcategory image (optional)          |
+  | created_at   | Timestamp | When the subcategory was created                 |
+  | updated_at   | Timestamp | When the subcategory was last updated            |
+  
+  ## Error Responses
+  
+  | Status Code | Description                                               |
+  |-------------|-----------------------------------------------------------|
+  | 401         | Unauthorized - Authentication token is missing or invalid |
+  | 500         | Internal server error - Failed to fetch subcategories     |
+  
+  ## Related Endpoints
+  
+  - GET `/api/mobile-app/subcategories/category/:categoryId` - Get subcategories by category ID
+  - GET `/api/mobile-app/subcategories/products/:subcategoryId` - Get a subcategory with its products
+}

@@ -1,0 +1,90 @@
+meta {
+  name: get-user-by-id
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{PROD_BASE_URL}}/api/mobile-app/users/{{USER_ID}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Get User By ID Endpoint
+  
+  This endpoint retrieves detailed information about a specific user by their ID. Users can only access their own profile information unless they have administrative privileges.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - Users can only access their own profile unless they have admin privileges
+  
+  ## Request Parameters
+  
+  | Parameter | Location | Required | Description |
+  |-----------|----------|----------|-------------|
+  | userId    | Path     | Yes      | The UUID of the user to retrieve |
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "message": "User retrieved successfully",
+    "data": {
+      "id": "uuid",
+      "storeId": "uuid",
+      "name": "John Doe",
+      "email": "john.doe@example.com",
+      "image": "https://example.com/profile.jpg",
+      "gender": "male",
+      "age_range": "26-35",
+      "is_online": true,
+      "last_seen": "2023-01-01T00:00:00.000Z",
+      "created_at": "2023-01-01T00:00:00.000Z",
+      "updated_at": "2023-01-01T00:00:00.000Z"
+    }
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid user ID format | `{ "status": "error", "message": "Invalid user ID format" }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 403 | Forbidden | `{ "status": "error", "message": "You don't have permission to access this user's information" }` |
+  | 404 | User not found | `{ "status": "error", "message": "User with ID [id] not found" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to retrieve user information" }` |
+  
+  ## Related Endpoints
+  
+  - `PUT /api/mobile-app/users/:userId` - Update user profile
+  - `POST /api/mobile-app/users/:userId/avatar` - Upload user avatar
+  - `DELETE /api/mobile-app/users/:userId/avatar` - Delete user avatar
+  - `POST /api/mobile-app/users/status` - Update user status
+}

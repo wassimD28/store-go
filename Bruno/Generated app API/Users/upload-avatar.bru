@@ -1,0 +1,106 @@
+meta {
+  name: upload-avatar
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{PROD_BASE_URL}}/api/mobile-app/users/{{USER_ID}}/avatar
+  body: form-data
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+body:form-data {
+  avatar: @file(avatar.jpg);
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Upload User Avatar Endpoint
+  
+  This endpoint allows users to upload a profile picture (avatar) to their account. The uploaded image will be stored in the system and associated with the user's profile.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - Users can only upload avatars to their own profile unless they have admin privileges
+  
+  ## Request Parameters
+  
+  | Parameter | Location | Required | Description |
+  |-----------|----------|----------|-------------|
+  | userId    | Path     | Yes      | The UUID of the user to update the avatar for |
+  
+  ## Request Body
+  
+  The request must use `multipart/form-data` format with the following field:
+  
+  | Field  | Type | Required | Description |
+  |--------|------|----------|-------------|
+  | avatar | File | Yes      | The image file to upload as avatar |
+  
+  ## Supported File Types
+  
+  - JPEG/JPG
+  - PNG
+  - GIF
+  - WebP
+  
+  ## Maximum File Size
+  
+  - 5 MB
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Avatar uploaded successfully",
+    "data": {
+      "avatarUrl": "https://example.com/uploads/avatars/user-123.jpg"
+    }
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid user ID | `{ "status": "error", "message": "Invalid user ID" }` |
+  | 400 | Missing file | `{ "status": "error", "message": "No avatar file provided" }` |
+  | 400 | Invalid file type | `{ "status": "error", "message": "Invalid file type, supported types: jpg, jpeg, png, gif, webp" }` |
+  | 400 | File too large | `{ "status": "error", "message": "File size exceeds the 5MB limit" }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 403 | Forbidden | `{ "status": "error", "message": "You don't have permission to update this user's avatar" }` |
+  | 404 | User not found | `{ "status": "error", "message": "User not found" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to upload avatar" }` |
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/users/:userId` - Get user profile
+  - `PUT /api/mobile-app/users/:userId` - Update user profile
+  - `DELETE /api/mobile-app/users/:userId/avatar` - Delete user avatar
+  - `POST /api/mobile-app/users/status` - Update user status
+}

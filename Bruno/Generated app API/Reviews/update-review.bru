@@ -1,0 +1,119 @@
+meta {
+  name: update-review
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{PROD_BASE_URL}}/api/mobile-app/reviews/{{REVIEW_ID}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+body:json {
+  "rating": 4,
+  "content": "After using this product for a while, I'm updating my review. Still very good but has a few minor issues."
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Update Review Endpoint
+  
+  This endpoint allows users to modify their existing reviews. Users can update the rating and/or content of a review they previously submitted for a product.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - Only the original author of the review can update it
+  
+  ## Request Parameters
+  
+  | Parameter | Location | Required | Description |
+  |-----------|----------|----------|-------------|
+  | reviewId  | Path     | Yes      | The UUID of the review to update |
+  
+  ## Request Body
+  
+  The request body must be a JSON object with at least one of the following fields:
+  
+  ```json
+  {
+    "rating": 4,
+    "content": "Updated review content after using the product more."
+  }
+  ```
+  
+  | Field   | Type   | Required | Description |
+  |---------|--------|----------|-------------|
+  | rating  | number | No*      | Updated rating score between 1 and 5 |
+  | content | string | No*      | Updated text content of the review |
+  
+  *At least one field must be provided.
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Review updated successfully",
+    "data": {
+      "id": "uuid",
+      "appUserId": "uuid",
+      "productId": "uuid",
+      "storeId": "uuid",
+      "rating": 4,
+      "content": "Updated review content after using the product more.",
+      "created_at": "2023-01-01T00:00:00.000Z",
+      "updated_at": "2023-01-02T00:00:00.000Z"
+    }
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid review ID | `{ "status": "error", "message": "Invalid review ID" }` |
+  | 400 | Invalid review data | `{ "status": "error", "message": "Invalid review data", "errors": {...} }` |
+  | 400 | No fields to update | `{ "status": "error", "message": "At least one field must be provided for update" }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 403 | Not the author | `{ "status": "error", "message": "You are not authorized to update this review" }` |
+  | 404 | Review not found | `{ "status": "error", "message": "Review not found" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to update review" }` |
+  
+  ## Notes
+  
+  - Only the user who created the review can update it
+  - The rating must be an integer between 1 and 5
+  - At least one field (rating or content) must be provided for the update
+  - The updated_at timestamp will be automatically updated
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/reviews/product/:productId` - Get all reviews for a product
+  - `GET /api/mobile-app/reviews/:reviewId` - Get a specific review
+  - `POST /api/mobile-app/reviews/product/:productId` - Create a new review
+  - `DELETE /api/mobile-app/reviews/:reviewId` - Delete a review
+}

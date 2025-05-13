@@ -1,0 +1,166 @@
+meta {
+  name: get-all-products
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{PROD_BASE_URL}}/api/mobile-app/products
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Get All Products Endpoint
+  
+  This endpoint retrieves all products associated with a specific store in the StoreGo multi-tenant e-commerce platform. Products are the core entities for any e-commerce application.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - The user must be associated with the store
+  
+  ## Request Parameters
+  
+  No request parameters are required in the URL or body. The storeId is automatically extracted from the authenticated user's context.
+  
+  ## Query Parameters (Optional)
+  
+  | Parameter | Type    | Description                                          |
+  |-----------|---------|------------------------------------------------------|
+  | featured  | boolean | When set to "true", returns products sorted by popularity |
+  | sort      | string  | Set to "newest" to get products sorted by creation date |
+  
+  ## Filtering & Security
+  
+  - Products are automatically filtered based on the authenticated user's store ID
+  - Only products belonging to the user's store are returned
+  - Store isolation is enforced through database queries
+  
+  ## Response
+  
+  ### Success (200 OK)
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "946d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+        "userId": "user_xxxxxxxxxxxx",
+        "storeId": "store_xxxxxxxxxxxx",
+        "categoryId": "846d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+        "subcategoryId": "746d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+        "name": "Smartphone X",
+        "description": "Latest smartphone with advanced features",
+        "price": 799.99,
+        "attributes": { "color": "black", "storage": "128GB" },
+        "colors": ["black", "silver", "gold"],
+        "size": ["standard"],
+        "image_urls": ["https://example.com/images/smartphone-x.jpg"],
+        "stock_quantity": 50,
+        "status": "active",
+        "targetGender": "unisex",
+        "unitsSold": 120,
+        "created_at": "2023-10-15T10:00:00.000Z",
+        "updated_at": "2023-10-15T10:00:00.000Z"
+      },
+      {
+        "id": "a46d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+        "userId": "user_xxxxxxxxxxxx",
+        "storeId": "store_xxxxxxxxxxxx",
+        "categoryId": "846d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+        "subcategoryId": "746d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+        "name": "Wireless Headphones",
+        "description": "Premium noise-cancelling headphones",
+        "price": 199.99,
+        "attributes": { "color": "black", "connectivity": "bluetooth" },
+        "colors": ["black", "white"],
+        "size": ["standard"],
+        "image_urls": ["https://example.com/images/headphones.jpg"],
+        "stock_quantity": 30,
+        "status": "active",
+        "targetGender": "unisex",
+        "unitsSold": 75,
+        "created_at": "2023-10-15T11:30:00.000Z",
+        "updated_at": "2023-10-15T11:30:00.000Z"
+      }
+    ]
+  }
+  ```
+  
+  ### Error Responses
+  - 401 Unauthorized: Missing or invalid authentication token
+    ```json
+    {
+      "status": "error",
+      "message": "Authentication required"
+    }
+    ```
+  - 403 Forbidden: User not associated with any store
+    ```json
+    {
+      "status": "error", 
+      "message": "User not associated with a store"
+    }
+    ```
+  - 500 Internal Server Error: Server side error
+    ```json
+    {
+      "status": "error",
+      "message": "Failed to fetch products"
+    }
+    ```
+  
+  ## Data Model
+  
+  Products contain the following fields:
+  
+  | Field          | Type       | Description                                    |
+  |----------------|------------|------------------------------------------------|
+  | id             | UUID       | Unique identifier for the product              |
+  | userId         | String     | ID of the user who created the product         |
+  | storeId        | UUID       | ID of the store the product belongs to         |
+  | categoryId     | UUID       | ID of the category the product belongs to      |
+  | subcategoryId  | UUID       | ID of the subcategory (optional)               |
+  | name           | String     | Name of the product                            |
+  | description    | String     | Detailed description of the product            |
+  | price          | Number     | Price of the product                           |
+  | attributes     | JSON       | Custom attributes as key-value pairs           |
+  | colors         | Array      | Available color options                        |
+  | size           | Array      | Available size options                         |
+  | image_urls     | Array      | URLs to product images                         |
+  | stock_quantity | Number     | Current inventory level                        |
+  | status         | String     | Product status (active, inactive, etc.)        |
+  | targetGender   | String     | Target demographic (male, female, unisex)      |
+  | unitsSold      | Number     | Count of units sold                            |
+  | created_at     | Timestamp  | When the product was created                   |
+  | updated_at     | Timestamp  | When the product was last updated              |
+  
+  ## Related Endpoints
+  - GET `/api/mobile-app/products/:id` - Get a specific product by ID
+  - GET `/api/mobile-app/products/category/:categoryId` - Get products by category
+  - GET `/api/mobile-app/products/new` - Get newly added products
+  - GET `/api/mobile-app/products/featured` - Get featured products
+  - GET `/api/mobile-app/products/search` - Search for products
+}

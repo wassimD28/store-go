@@ -1,0 +1,133 @@
+meta {
+  name: get-subcategory-with-products
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{PROD_BASE_URL}}/api/mobile-app/subcategories/products/{{SUBCATEGORY_ID}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Get Subcategory with Products Endpoint
+  
+  This endpoint retrieves a specific subcategory by its ID along with all products that belong to that subcategory. It provides a convenient way to display subcategory details and its associated products in a single API call, which is useful for product listing pages.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - The authenticated user must have access to the specified store
+  
+  ## URL Parameters
+  
+  | Parameter     | Description                                   | Required |
+  |---------------|-----------------------------------------------|----------|
+  | subcategoryId | UUID of the subcategory to fetch with products| Yes      |
+  
+  ## Response Format
+  
+  The response includes the subcategory details along with an array of product objects:
+  
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "subcategory-uuid",
+      "name": "Women's Tops",
+      "storeId": "store-uuid",
+      "categoryId": "category-uuid",
+      "image_url": "https://example.com/subcategory-image.jpg",
+      "created_at": "2023-05-15T10:30:00Z",
+      "updated_at": "2023-05-15T10:30:00Z",
+      "products": [
+        {
+          "id": "product-uuid",
+          "name": "Summer T-Shirt",
+          "description": "Comfortable cotton t-shirt for summer",
+          "price": "24.99",
+          "image_urls": ["https://example.com/image1.jpg", "https://example.com/image2.jpg"],
+          "stock_quantity": 100,
+          "status": "active",
+          "attributes": {},
+          "categoryId": "category-uuid",
+          "subcategoryId": "subcategory-uuid",
+          "created_at": "2023-06-01T14:30:00Z",
+          "updated_at": "2023-06-10T09:15:00Z"
+        },
+        // ... more products
+      ]
+    }
+  }
+  ```
+  
+  ## Response Fields
+  
+  ### Subcategory Fields
+  
+  | Field        | Type      | Description                                      |
+  |--------------|-----------|--------------------------------------------------|
+  | id           | UUID      | Unique identifier for the subcategory            |
+  | name         | String    | Name of the subcategory                          |
+  | storeId      | UUID      | ID of the store this subcategory belongs to      |
+  | categoryId   | UUID      | ID of the parent category                        |
+  | image_url    | String    | URL to the subcategory image (optional)          |
+  | created_at   | Timestamp | When the subcategory was created                 |
+  | updated_at   | Timestamp | When the subcategory was last updated            |
+  | products     | Array     | Array of product objects belonging to this subcategory |
+  
+  ### Product Fields
+  
+  | Field          | Type      | Description                                    |
+  |----------------|-----------|------------------------------------------------|
+  | id             | UUID      | Unique identifier for the product              |
+  | name           | String    | Name of the product                            |
+  | description    | String    | Detailed description of the product            |
+  | price          | String    | Product price as a string                      |
+  | image_urls     | Array     | Array of product image URLs                    |
+  | stock_quantity | Number    | Available quantity in stock                    |
+  | status         | String    | Product status (active, inactive, etc.)        |
+  | attributes     | Object    | Additional product attributes                  |
+  | categoryId     | UUID      | ID of the category this product belongs to     |
+  | subcategoryId  | UUID      | ID of the subcategory (matches request)        |
+  | created_at     | Timestamp | When the product was created                   |
+  | updated_at     | Timestamp | When the product was last updated              |
+  
+  ## Error Responses
+  
+  | Status Code | Description                                                      |
+  |-------------|------------------------------------------------------------------|
+  | 400         | Bad request - Invalid subcategory ID format                      |
+  | 401         | Unauthorized - Authentication token is missing or invalid        |
+  | 403         | Forbidden - User does not have access to this subcategory        |
+  | 404         | Not found - Subcategory not found                                |
+  | 500         | Internal server error - Failed to fetch subcategory with products|
+  
+  ## Related Endpoints
+  
+  - GET `/api/mobile-app/subcategories` - Get all subcategories
+  - GET `/api/mobile-app/subcategories/category/:categoryId` - Get subcategories for a specific category
+  - GET `/api/mobile-app/products/:id` - Get details for a specific product
+}

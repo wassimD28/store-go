@@ -1,0 +1,124 @@
+meta {
+  name: update-user
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{PROD_BASE_URL}}/api/mobile-app/users/{{USER_ID}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+body:json {
+  "name": "Updated Name",
+  "gender": "female",
+  "age_range": "26-35",
+  "image": "https://example.com/updated-profile.jpg"
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Update User Profile Endpoint
+  
+  This endpoint allows users to update their profile information. Users can modify various aspects of their profile such as name, profile picture, gender, and age range.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - Users can only update their own profile unless they have admin privileges
+  
+  ## Request Parameters
+  
+  | Parameter | Location | Required | Description |
+  |-----------|----------|----------|-------------|
+  | userId    | Path     | Yes      | The UUID of the user to update |
+  
+  ## Request Body
+  
+  The request body must be a JSON object with at least one of the following fields:
+  
+  ```json
+  {
+    "name": "Updated Name",
+    "email": "updated.email@example.com",
+    "image": "https://example.com/profile.jpg",
+    "gender": "female",
+    "age_range": "26-35"
+  }
+  ```
+  
+  | Field      | Type   | Required | Description |
+  |------------|--------|----------|-------------|
+  | name       | string | No*      | User's display name |
+  | email      | string | No*      | User's email (must be a valid email format) |
+  | image      | string | No*      | URL to user's profile picture |
+  | gender     | string | No*      | User's gender |
+  | age_range  | string | No*      | User's age range (must be one of: "13-18", "19-25", "26-35", "36-45", "46-60", "60+") |
+  
+  *At least one field must be provided.
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "message": "User updated successfully",
+    "data": {
+      "id": "uuid",
+      "storeId": "uuid",
+      "name": "Updated Name",
+      "email": "john.doe@example.com",
+      "image": "https://example.com/updated-profile.jpg",
+      "gender": "female",
+      "age_range": "26-35",
+      "is_online": true,
+      "last_seen": "2023-01-01T00:00:00.000Z",
+      "created_at": "2023-01-01T00:00:00.000Z",
+      "updated_at": "2023-01-02T00:00:00.000Z"
+    }
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid user ID format | `{ "status": "error", "message": "Invalid user ID format" }` |
+  | 400 | Missing request body | `{ "status": "error", "message": "Missing or invalid request body" }` |
+  | 400 | Invalid user data | `{ "status": "error", "message": "Invalid user data", "errors": {...} }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 403 | Forbidden | `{ "status": "error", "message": "You don't have permission to update this user" }` |
+  | 404 | User not found | `{ "status": "error", "message": "User with ID [id] not found" }` |
+  | 409 | Email conflict | `{ "status": "error", "message": "Email already in use by another account" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to update user information" }` |
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/users/:userId` - Get user profile
+  - `POST /api/mobile-app/users/:userId/avatar` - Upload user avatar
+  - `DELETE /api/mobile-app/users/:userId/avatar` - Delete user avatar
+  - `POST /api/mobile-app/users/status` - Update user status
+}

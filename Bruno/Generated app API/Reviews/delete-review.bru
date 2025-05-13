@@ -1,0 +1,83 @@
+meta {
+  name: delete-review
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{PROD_BASE_URL}}/api/mobile-app/reviews/{{REVIEW_ID}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Delete Review Endpoint
+  
+  This endpoint allows users to remove a review they previously submitted. Once deleted, the review will no longer appear on the product page and will be permanently removed from the system.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - Only the original author of the review can delete it
+  
+  ## Request Parameters
+  
+  | Parameter | Location | Required | Description |
+  |-----------|----------|----------|-------------|
+  | reviewId  | Path     | Yes      | The UUID of the review to delete |
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Review deleted successfully"
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid review ID | `{ "status": "error", "message": "Invalid review ID" }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 403 | Not the author | `{ "status": "error", "message": "You are not authorized to delete this review" }` |
+  | 404 | Review not found | `{ "status": "error", "message": "Review not found" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to delete review" }` |
+  
+  ## Notes
+  
+  - Only the user who created the review can delete it
+  - Once deleted, a review cannot be recovered
+  - After deletion, the user can create a new review for the same product if desired
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/reviews/product/:productId` - Get all reviews for a product
+  - `GET /api/mobile-app/reviews/:reviewId` - Get a specific review
+  - `POST /api/mobile-app/reviews/product/:productId` - Create a new review
+  - `PUT /api/mobile-app/reviews/:reviewId` - Update a review
+}

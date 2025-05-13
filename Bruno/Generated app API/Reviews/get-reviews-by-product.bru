@@ -1,0 +1,91 @@
+meta {
+  name: get-reviews-by-product
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{PROD_BASE_URL}}/api/mobile-app/reviews/product/{{PRODUCT_ID}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Get Reviews by Product ID Endpoint
+  
+  This endpoint retrieves all reviews associated with a specific product in the StoreGo multi-tenant e-commerce platform. Reviews provide valuable feedback from customers about products and help potential buyers make informed purchasing decisions.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - The user must be associated with a store that has access to the specified product
+  
+  ## Request Parameters
+  
+  | Parameter | Location | Required | Description |
+  |-----------|----------|----------|-------------|
+  | productId | Path     | Yes      | The UUID of the product for which to retrieve reviews |
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "uuid",
+        "appUserId": "uuid",
+        "productId": "uuid",
+        "storeId": "uuid",
+        "rating": 5,
+        "content": "This product is amazing!",
+        "created_at": "2023-01-01T00:00:00.000Z",
+        "updated_at": "2023-01-01T00:00:00.000Z",
+        "appUser": {
+          "id": "uuid",
+          "name": "John Doe"
+        }
+      },
+      // More reviews...
+    ]
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid product ID | `{ "status": "error", "message": "Invalid product ID" }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to fetch reviews" }` |
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/reviews/:reviewId` - Get a specific review by ID
+  - `POST /api/mobile-app/reviews/product/:productId` - Create a new review for a product
+  - `PUT /api/mobile-app/reviews/:reviewId` - Update an existing review
+  - `DELETE /api/mobile-app/reviews/:reviewId` - Delete a review
+}
