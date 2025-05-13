@@ -1,23 +1,22 @@
 meta {
-  name: upload-avatar
-  type: http
-  seq: 3
+name: upload-avatar
+type: http
+seq: 3
 }
 
 post {
-  url: {{PROD_BASE_URL}}/api/mobile-app/users/{{USER_ID}}/avatar
-  body: form-data
-  auth: bearer
+url: {{PROD_BASE_URL}}/api/mobile-app/users/{{USER_ID}}/avatar
+body: multipartForm
+auth: bearer
 }
 
 auth:bearer {
-  token: {{ACCESS_TOKEN}}
+token: {{ACCESS_TOKEN}}
 }
 
-body:form-data {
-  avatar: @file(avatar.jpg);
+body:multipart-form {
+avatar: @file(avatar.jpg)
 }
-
 script:pre-request {
   // Get the access token from environment variables
   const accessToken = bru.getEnvVar("ACCESS_TOKEN");

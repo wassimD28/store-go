@@ -1,0 +1,132 @@
+meta {
+  name: add-payment-method
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{PROD_BASE_URL}}/api/mobile-app/payments/methods
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+body:json {
+  {
+    "type": "credit_card",
+    "isDefault": true,
+    "paymentToken": "tok_visa",
+    "cardholderName": "John Doe"
+  }
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Add Payment Method Endpoint
+  
+  This endpoint allows users to add a new payment method to their profile. The payment details are tokenized through a payment processor for security.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  
+  ## Request Body
+  
+  The request body must be a JSON object with the following structure for credit cards:
+  
+  ```json
+  {
+    "type": "credit_card",
+    "isDefault": true,
+    "paymentToken": "tok_visa",
+    "cardholderName": "John Doe"
+  }
+  ```
+  
+  For PayPal:
+  
+  ```json
+  {
+    "type": "paypal",
+    "isDefault": false,
+    "paymentToken": "paypal-token",
+    "email": "john.doe@example.com"
+  }
+  ```
+  
+  | Field         | Type    | Required | Description |
+  |---------------|---------|----------|-------------|
+  | type          | string  | Yes      | Payment method type ("credit_card", "paypal", etc.) |
+  | isDefault     | boolean | No       | Whether this is the default payment method (defaults to false) |
+  | paymentToken  | string  | Yes      | Secure token from payment processor (e.g., Stripe token) |
+  | cardholderName| string  | Yes for credit cards | Name on the card |
+  | email         | string  | Yes for PayPal | Email associated with PayPal account |
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Payment method added successfully",
+    "data": {
+      "id": "payment-method-uuid",
+      "userId": "user-uuid",
+      "type": "credit_card",
+      "isDefault": true,
+      "details": {
+        "brand": "visa",
+        "last4": "4242",
+        "expiryMonth": 12,
+        "expiryYear": 2025,
+        "cardholderName": "John Doe"
+      },
+      "created_at": "2023-05-15T10:30:00Z",
+      "updated_at": "2023-05-15T10:30:00Z"
+    }
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid request data | `{ "status": "error", "message": "Invalid request data", "errors": [...] }` |
+  | 400 | Invalid payment token | `{ "status": "error", "message": "Invalid payment token" }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 422 | Payment processor error | `{ "status": "error", "message": "Payment processor error", "details": "..." }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to add payment method" }` |
+  
+  ## Security Implementation
+  
+  - The API expects a tokenized payment method from a secure client-side integration
+  - Sensitive card data never hits our servers directly
+  - Only public tokens from the payment processor are handled by this endpoint
+  - Actual payment details are stored securely by the payment processor
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/payments/methods` - Get all user payment methods
+  - `DELETE /api/mobile-app/payments/methods/:methodId` - Delete a payment method
+  - `PUT /api/mobile-app/payments/methods/:methodId/default` - Set a payment method as default
+}

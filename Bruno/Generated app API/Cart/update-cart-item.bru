@@ -1,0 +1,129 @@
+meta {
+  name: update-cart-item
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{PROD_BASE_URL}}/api/mobile-app/cart/{{CART_ITEM_ID}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+body:json {
+  {
+    "quantity": 3,
+    "selectedColor": "silver",
+    "selectedSize": "large"
+  }
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Update Cart Item Endpoint
+  
+  This endpoint allows users to modify an existing item in their shopping cart, such as changing the quantity or product variants.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - Users can only update items in their own cart
+  
+  ## Request Parameters
+  
+  | Parameter  | Location | Required | Description |
+  |------------|----------|----------|-------------|
+  | cartItemId | Path     | Yes      | The UUID of the cart item to update |
+  
+  ## Request Body
+  
+  The request body must be a JSON object with at least one of the following fields:
+  
+  ```json
+  {
+    "quantity": 3,
+    "selectedColor": "silver",
+    "selectedSize": "large"
+  }
+  ```
+  
+  | Field        | Type   | Required | Description |
+  |--------------|--------|----------|-------------|
+  | quantity     | number | No*      | New quantity for the item (min: 1) |
+  | selectedColor| string | No*      | New color selection for the item |
+  | selectedSize | string | No*      | New size selection for the item |
+  
+  *At least one field must be provided.
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Cart item updated successfully",
+    "data": {
+      "item": {
+        "id": "cart-item-uuid",
+        "userId": "user-uuid",
+        "productId": "product-uuid",
+        "quantity": 3,
+        "selectedColor": "silver",
+        "selectedSize": "large",
+        "created_at": "2023-05-15T10:30:00Z",
+        "updated_at": "2023-05-15T11:45:00Z",
+        "product": {
+          "id": "product-uuid",
+          "name": "Smartphone X",
+          "price": 799.99,
+          "image_urls": ["https://example.com/images/smartphone-x.jpg"]
+        }
+      },
+      "cartSummary": {
+        "totalItems": 5,
+        "subtotal": 2599.97
+      }
+    }
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid cart item ID | `{ "status": "error", "message": "Invalid cart item ID" }` |
+  | 400 | Invalid request body | `{ "status": "error", "message": "Invalid request data", "errors": [...] }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 403 | Not the owner | `{ "status": "error", "message": "You don't have permission to update this cart item" }` |
+  | 404 | Cart item not found | `{ "status": "error", "message": "Cart item not found" }` |
+  | 409 | Insufficient stock | `{ "status": "error", "message": "Insufficient stock. Only 2 items available." }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to update cart item" }` |
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/cart` - Get all items in the user's cart
+  - `POST /api/mobile-app/products/cart/:productId` - Add an item to cart
+  - `DELETE /api/mobile-app/cart/:cartItemId` - Remove item from cart
+  - `DELETE /api/mobile-app/cart` - Clear entire cart
+}

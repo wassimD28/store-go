@@ -1,0 +1,81 @@
+meta {
+  name: unregister-device-token
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{PROD_BASE_URL}}/api/mobile-app/notifications/devices/{{DEVICE_TOKEN}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Unregister Device Token Endpoint
+  
+  This endpoint unregisters a device token for push notifications. This should be called when a user logs out or uninstalls the app to avoid sending notifications to inactive devices.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - Users can only unregister their own device tokens
+  
+  ## Path Parameters
+  
+  | Parameter   | Type   | Required | Description                                    |
+  |-------------|--------|----------|------------------------------------------------|
+  | deviceToken | String | Yes      | Push notification token to unregister          |
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Device unregistered successfully"
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid device token | `{ "status": "error", "message": "Invalid device token format" }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 403 | Forbidden | `{ "status": "error", "message": "You don't have permission to unregister this device" }` |
+  | 404 | Not found | `{ "status": "error", "message": "Device token not found" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to unregister device" }` |
+  
+  ## Implementation Notes
+  
+  - This endpoint should be called when users log out or when the app is uninstalled
+  - Keeping the device token database clean improves notification delivery efficiency
+  - Reduces unnecessary notification attempts to inactive devices
+  
+  ## Related Endpoints
+  
+  - `POST /api/mobile-app/notifications/devices` - Register a device token
+  - `GET /api/mobile-app/notifications` - Get all user notifications
+}

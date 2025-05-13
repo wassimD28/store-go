@@ -1,0 +1,83 @@
+meta {
+  name: remove-cart-item
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{PROD_BASE_URL}}/api/mobile-app/cart/{{CART_ITEM_ID}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Remove Cart Item Endpoint
+  
+  This endpoint removes a specific item from the user's shopping cart.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - Users can only remove items from their own cart
+  
+  ## Request Parameters
+  
+  | Parameter  | Location | Required | Description |
+  |------------|----------|----------|-------------|
+  | cartItemId | Path     | Yes      | The UUID of the cart item to remove |
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Item removed from cart",
+    "data": {
+      "cartSummary": {
+        "totalItems": 2,
+        "subtotal": 399.98
+      }
+    }
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid cart item ID | `{ "status": "error", "message": "Invalid cart item ID" }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 403 | Not the owner | `{ "status": "error", "message": "You don't have permission to remove this cart item" }` |
+  | 404 | Cart item not found | `{ "status": "error", "message": "Cart item not found" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to remove cart item" }` |
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/cart` - Get all items in the user's cart
+  - `POST /api/mobile-app/products/cart/:productId` - Add an item to cart
+  - `PUT /api/mobile-app/cart/:cartItemId` - Update cart item quantity
+  - `DELETE /api/mobile-app/cart` - Clear entire cart
+}

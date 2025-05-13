@@ -1,0 +1,77 @@
+meta {
+  name: delete-notification
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{PROD_BASE_URL}}/api/mobile-app/notifications/{{NOTIFICATION_ID}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Delete Notification Endpoint
+  
+  This endpoint deletes a specific notification from the user's notification list. Once deleted, the notification cannot be recovered.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - Users can only delete their own notifications
+  
+  ## Path Parameters
+  
+  | Parameter      | Type   | Required | Description                             |
+  |----------------|--------|----------|-----------------------------------------|
+  | notificationId | UUID   | Yes      | The unique identifier of the notification |
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Notification deleted successfully"
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid notification ID | `{ "status": "error", "message": "Invalid notification ID format" }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 403 | Forbidden | `{ "status": "error", "message": "You don't have permission to delete this notification" }` |
+  | 404 | Not found | `{ "status": "error", "message": "Notification not found" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to delete notification" }` |
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/notifications` - Get all user notifications
+  - `GET /api/mobile-app/notifications/:id` - Get a specific notification
+  - `PUT /api/mobile-app/notifications/:id/read` - Mark a notification as read
+  - `PUT /api/mobile-app/notifications/read-all` - Mark all notifications as read
+}

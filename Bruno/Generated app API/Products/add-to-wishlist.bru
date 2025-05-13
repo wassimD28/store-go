@@ -1,0 +1,94 @@
+meta {
+  name: add-to-wishlist
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{PROD_BASE_URL}}/api/mobile-app/products/wishlist/{{PRODUCT_ID}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Add Product to Wishlist Endpoint
+  
+  This endpoint allows users to add a product to their wishlist. The wishlist is a collection of products that the user is interested in but not ready to purchase yet.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - The user must have a valid account in the system
+  
+  ## Request Parameters
+  
+  | Parameter  | Location | Required | Description                            |
+  |------------|----------|----------|----------------------------------------|
+  | productId  | Path     | Yes      | UUID of the product to add to wishlist |
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Product added to wishlist successfully",
+    "data": {
+      "id": "wishlist-item-uuid",
+      "userId": "user-uuid",
+      "productId": "product-uuid",
+      "created_at": "2023-05-15T10:30:00Z",
+      "product": {
+        "id": "product-uuid",
+        "name": "Smartphone X",
+        "price": 799.99,
+        "image_url": "https://example.com/images/smartphone-x.jpg"
+      }
+    }
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid product ID | `{ "status": "error", "message": "Invalid product ID" }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 404 | Product not found | `{ "status": "error", "message": "Product not found" }` |
+  | 409 | Already in wishlist | `{ "status": "error", "message": "Product already in wishlist" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to add product to wishlist" }` |
+  
+  ## Implementation Notes
+  
+  - If the product is already in the user's wishlist, a 409 Conflict error is returned
+  - The response includes basic information about the product for UI display
+  - Wishlist items don't have a quantity as they are simply saved products
+  - Wishlist data persists across user sessions
+  
+  ## Related Endpoints
+  - GET `/api/mobile-app/wishlist` - Get all items in the user's wishlist
+  - DELETE `/api/mobile-app/wishlist/:wishlistItemId` - Remove item from wishlist
+  - POST `/api/mobile-app/products/cart/{{PRODUCT_ID}}` - Add product to cart
+}

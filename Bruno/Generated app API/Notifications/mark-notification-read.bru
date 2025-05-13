@@ -1,0 +1,82 @@
+meta {
+  name: mark-notification-read
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{PROD_BASE_URL}}/api/mobile-app/notifications/{{NOTIFICATION_ID}}/read
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Mark Notification as Read Endpoint
+  
+  This endpoint marks a specific notification as read. This is useful for keeping track of which notifications the user has seen and updating the UI accordingly.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - Users can only mark their own notifications as read
+  
+  ## Path Parameters
+  
+  | Parameter      | Type   | Required | Description                             |
+  |----------------|--------|----------|-----------------------------------------|
+  | notificationId | UUID   | Yes      | The unique identifier of the notification |
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Notification marked as read",
+    "data": {
+      "id": "notification-uuid",
+      "isRead": true,
+      "updated_at": "2023-05-15T11:45:00Z"
+    }
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid notification ID | `{ "status": "error", "message": "Invalid notification ID format" }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 403 | Forbidden | `{ "status": "error", "message": "You don't have permission to modify this notification" }` |
+  | 404 | Not found | `{ "status": "error", "message": "Notification not found" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to update notification" }` |
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/notifications` - Get all user notifications
+  - `GET /api/mobile-app/notifications/:id` - Get a specific notification
+  - `PUT /api/mobile-app/notifications/read-all` - Mark all notifications as read
+  - `DELETE /api/mobile-app/notifications/:id` - Delete a notification
+}

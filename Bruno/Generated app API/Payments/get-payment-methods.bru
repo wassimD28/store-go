@@ -1,0 +1,100 @@
+meta {
+  name: get-payment-methods
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{PROD_BASE_URL}}/api/mobile-app/payments/methods
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Get Payment Methods Endpoint
+  
+  This endpoint retrieves all saved payment methods for the authenticated user. These can be used during checkout to streamline the payment process.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - Payment methods are specific to the authenticated user
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "payment-method-uuid",
+        "userId": "user-uuid",
+        "type": "credit_card",
+        "isDefault": true,
+        "details": {
+          "brand": "visa",
+          "last4": "4242",
+          "expiryMonth": 12,
+          "expiryYear": 2025,
+          "cardholderName": "John Doe"
+        },
+        "created_at": "2023-02-15T10:30:00Z",
+        "updated_at": "2023-02-15T10:30:00Z"
+      },
+      {
+        "id": "payment-method-uuid-2",
+        "userId": "user-uuid",
+        "type": "paypal",
+        "isDefault": false,
+        "details": {
+          "email": "john.doe@example.com"
+        },
+        "created_at": "2023-03-10T14:45:00Z",
+        "updated_at": "2023-03-10T14:45:00Z"
+      }
+    ]
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to fetch payment methods" }` |
+  
+  ## Security Considerations
+  
+  - Credit card details are tokenized using the payment processor
+  - Only limited information (like last 4 digits) is sent to the client
+  - Full card details are never stored on our servers
+  
+  ## Related Endpoints
+  
+  - `POST /api/mobile-app/payments/methods` - Add a new payment method
+  - `DELETE /api/mobile-app/payments/methods/:methodId` - Delete a payment method
+  - `PUT /api/mobile-app/payments/methods/:methodId/default` - Set a payment method as default
+}

@@ -1,0 +1,95 @@
+meta {
+  name: get-wishlist
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{PROD_BASE_URL}}/api/mobile-app/wishlist
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Get Wishlist Items Endpoint
+  
+  This endpoint retrieves all items in the authenticated user's wishlist. The wishlist contains products that the user has saved for future reference or potential purchase.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - The wishlist is specific to the authenticated user
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "wishlist-item-uuid",
+        "userId": "user-uuid",
+        "productId": "product-uuid",
+        "created_at": "2023-05-15T10:30:00Z",
+        "product": {
+          "id": "product-uuid",
+          "name": "Smartphone X",
+          "price": 799.99,
+          "image_urls": ["https://example.com/images/smartphone-x.jpg"],
+          "stock_quantity": 50,
+          "status": "active"
+        }
+      },
+      {
+        "id": "wishlist-item-uuid-2",
+        "userId": "user-uuid",
+        "productId": "product-uuid-2",
+        "created_at": "2023-05-15T11:30:00Z",
+        "product": {
+          "id": "product-uuid-2",
+          "name": "Wireless Headphones",
+          "price": 199.99,
+          "image_urls": ["https://example.com/images/headphones.jpg"],
+          "stock_quantity": 30,
+          "status": "active"
+        }
+      }
+    ]
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to fetch wishlist" }` |
+  
+  ## Related Endpoints
+  
+  - `POST /api/mobile-app/products/wishlist/:productId` - Add product to wishlist
+  - `DELETE /api/mobile-app/wishlist/:wishlistItemId` - Remove item from wishlist
+}

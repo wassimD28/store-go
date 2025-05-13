@@ -1,0 +1,110 @@
+meta {
+  name: register-device-token
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{PROD_BASE_URL}}/api/mobile-app/notifications/devices
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+body:json {
+  {
+    "deviceToken": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxx]",
+    "deviceType": "ios",
+    "deviceName": "iPhone 13 Pro"
+  }
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Register Device Token Endpoint
+  
+  This endpoint registers a device token for push notifications. The token is associated with the authenticated user and is used to send push notifications to their device.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - Each user can register multiple device tokens
+  
+  ## Request Body
+  
+  ```json
+  {
+    "deviceToken": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxx]",
+    "deviceType": "ios",
+    "deviceName": "iPhone 13 Pro"
+  }
+  ```
+  
+  ## Request Fields
+  
+  | Field       | Type   | Required | Description                                    |
+  |-------------|--------|----------|------------------------------------------------|
+  | deviceToken | String | Yes      | Push notification token provided by the device |
+  | deviceType  | String | Yes      | Type of device (ios, android, web)             |
+  | deviceName  | String | No       | Human-readable name of the device              |
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Device registered successfully for notifications",
+    "data": {
+      "id": "device-uuid",
+      "userId": "user-uuid",
+      "deviceToken": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxx]",
+      "deviceType": "ios",
+      "deviceName": "iPhone 13 Pro",
+      "created_at": "2023-05-15T10:00:00Z",
+      "updated_at": "2023-05-15T10:00:00Z"
+    }
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid request body | `{ "status": "error", "message": "Invalid request data", "errors": [...] }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 409 | Conflict | `{ "status": "error", "message": "Device token already registered" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to register device" }` |
+  
+  ## Implementation Notes
+  
+  - If the same device token is registered again by the same user, the record is updated
+  - If the same device token is registered by a different user, the old record is replaced
+  - Device tokens are used by the notification service to send targeted push notifications
+  - Users can have multiple device tokens for different devices
+  
+  ## Related Endpoints
+  
+  - `DELETE /api/mobile-app/notifications/devices/:deviceToken` - Unregister a device token
+  - `GET /api/mobile-app/notifications` - Get all user notifications
+}

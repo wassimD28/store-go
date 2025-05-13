@@ -1,0 +1,174 @@
+meta {
+  name: get-order-details
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{PROD_BASE_URL}}/api/mobile-app/orders/{{ORDER_ID}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Get Order Details Endpoint
+  
+  This endpoint retrieves detailed information about a specific order placed by the user. It includes comprehensive details about the order, items, shipping, payment, and tracking information.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - Users can only access their own order details
+  
+  ## Request Parameters
+  
+  | Parameter | Location | Required | Description |
+  |-----------|----------|----------|-------------|
+  | orderId   | Path     | Yes      | The UUID of the order to retrieve |
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "order-uuid",
+      "orderNumber": "ORD-12345",
+      "userId": "user-uuid",
+      "storeId": "store-uuid",
+      "subtotal": 999.97,
+      "tax": 100.00,
+      "shippingCost": 15.00,
+      "discount": 0,
+      "totalAmount": 1114.97,
+      "status": "delivered",
+      "paymentStatus": "paid",
+      "shippingAddress": {
+        "firstName": "John",
+        "lastName": "Doe",
+        "street": "123 Main Street",
+        "city": "New York",
+        "state": "NY",
+        "zipCode": "10001",
+        "country": "USA",
+        "phone": "+1234567890"
+      },
+      "billingAddress": {
+        "firstName": "John",
+        "lastName": "Doe",
+        "street": "123 Main Street",
+        "city": "New York",
+        "state": "NY",
+        "zipCode": "10001",
+        "country": "USA",
+        "phone": "+1234567890"
+      },
+      "paymentMethod": "credit_card",
+      "paymentDetails": {
+        "transactionId": "txn_123456789",
+        "provider": "stripe",
+        "last4": "4242",
+        "expiryDate": "05/25"
+      },
+      "shippingMethod": "standard",
+      "trackingNumber": "TRK123456789",
+      "trackingUrl": "https://shipping.com/track/TRK123456789",
+      "estimatedDeliveryDate": "2023-05-03T00:00:00Z",
+      "notes": "Please leave at front door",
+      "created_at": "2023-05-01T14:30:00Z",
+      "updated_at": "2023-05-03T10:15:00Z",
+      "items": [
+        {
+          "id": "order-item-uuid",
+          "productId": "product-uuid",
+          "productName": "Smartphone X",
+          "quantity": 1,
+          "unitPrice": 799.99,
+          "totalPrice": 799.99,
+          "discountAmount": 0,
+          "selectedColor": "black",
+          "selectedSize": null,
+          "imageUrl": "https://example.com/images/smartphone-x.jpg"
+        },
+        {
+          "id": "order-item-uuid-2",
+          "productId": "product-uuid-2",
+          "productName": "Wireless Headphones",
+          "quantity": 1,
+          "unitPrice": 199.99,
+          "totalPrice": 199.99,
+          "discountAmount": 0,
+          "selectedColor": "white",
+          "selectedSize": null,
+          "imageUrl": "https://example.com/images/headphones.jpg"
+        }
+      ],
+      "timeline": [
+        {
+          "status": "placed",
+          "timestamp": "2023-05-01T14:30:00Z",
+          "description": "Order placed successfully"
+        },
+        {
+          "status": "payment_confirmed",
+          "timestamp": "2023-05-01T14:35:00Z",
+          "description": "Payment confirmed"
+        },
+        {
+          "status": "processing",
+          "timestamp": "2023-05-02T09:00:00Z",
+          "description": "Order is being processed"
+        },
+        {
+          "status": "shipped",
+          "timestamp": "2023-05-02T15:20:00Z",
+          "description": "Order has been shipped"
+        },
+        {
+          "status": "delivered",
+          "timestamp": "2023-05-03T10:15:00Z",
+          "description": "Order has been delivered"
+        }
+      ]
+    }
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid order ID | `{ "status": "error", "message": "Invalid order ID" }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 403 | Not order owner | `{ "status": "error", "message": "You don't have permission to view this order" }` |
+  | 404 | Order not found | `{ "status": "error", "message": "Order not found" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to fetch order details" }` |
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/orders` - Get all user orders
+  - `PUT /api/mobile-app/orders/:orderId/cancel` - Cancel an order
+}

@@ -1,0 +1,128 @@
+meta {
+  name: get-new-products
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{PROD_BASE_URL}}/api/mobile-app/products/new
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Get New Products Endpoint
+  
+  This endpoint retrieves the newest products added to a store in the StoreGo multi-tenant e-commerce platform. It's useful for displaying "New Arrivals" or "What's New" sections in e-commerce applications.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - The user must be associated with the store
+  
+  ## Query Parameters (Optional)
+  
+  | Parameter | Type   | Required | Description                        |
+  |-----------|--------|----------|------------------------------------|
+  | limit     | number | No       | Number of products to return (default: 10) |
+  | days      | number | No       | Only include products added in the last X days (default: 30) |
+  
+  ## Response
+  
+  ### Success (200 OK)
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "946d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+        "userId": "user_xxxxxxxxxxxx",
+        "storeId": "store_xxxxxxxxxxxx",
+        "categoryId": "846d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+        "name": "Smartphone X",
+        "description": "Latest smartphone with advanced features",
+        "price": 799.99,
+        "image_urls": ["https://example.com/images/smartphone-x.jpg"],
+        "created_at": "2023-10-15T10:00:00.000Z",
+        "updated_at": "2023-10-15T10:00:00.000Z",
+        "category": {
+          "name": "Electronics"
+        }
+      },
+      {
+        "id": "a46d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+        "userId": "user_xxxxxxxxxxxx",
+        "storeId": "store_xxxxxxxxxxxx",
+        "categoryId": "846d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+        "name": "Wireless Headphones",
+        "description": "Premium noise-cancelling headphones",
+        "price": 199.99,
+        "image_urls": ["https://example.com/images/headphones.jpg"],
+        "created_at": "2023-10-15T11:30:00.000Z",
+        "updated_at": "2023-10-15T11:30:00.000Z",
+        "category": {
+          "name": "Electronics"
+        }
+      }
+    ]
+  }
+  ```
+  
+  ### Error Responses
+  - 401 Unauthorized: Missing or invalid authentication token
+    ```json
+    {
+      "status": "error",
+      "message": "Authentication required"
+    }
+    ```
+  - 403 Forbidden: User not associated with any store
+    ```json
+    {
+      "status": "error", 
+      "message": "User not associated with a store"
+    }
+    ```
+  - 500 Internal Server Error: Server side error
+    ```json
+    {
+      "status": "error",
+      "message": "Failed to fetch new products"
+    }
+    ```
+  
+  ## Implementation Notes
+  
+  - Products are sorted by creation date in descending order (newest first)
+  - Only products from the authenticated user's store are returned
+  - By default, only products created in the last 30 days are included
+  - The response includes basic category information for each product
+  - The endpoint is optimized for performance to quickly load new arrivals sections
+  
+  ## Related Endpoints
+  - GET `/api/mobile-app/products` - Get all products
+  - GET `/api/mobile-app/products/featured` - Get featured products
+  - GET `/api/mobile-app/products/:id` - Get a specific product
+  - GET `/api/mobile-app/products/category/:categoryId` - Get products by category
+}

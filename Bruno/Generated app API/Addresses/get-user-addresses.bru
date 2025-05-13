@@ -1,0 +1,103 @@
+meta {
+  name: get-user-addresses
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{PROD_BASE_URL}}/api/mobile-app/addresses
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Get User Addresses Endpoint
+  
+  This endpoint retrieves all saved addresses for the authenticated user. These addresses can be used for shipping and billing purposes during checkout.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - Addresses are specific to the authenticated user
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "address-uuid",
+        "userId": "user-uuid",
+        "type": "shipping",
+        "isDefault": true,
+        "firstName": "John",
+        "lastName": "Doe",
+        "street": "123 Main Street",
+        "apartment": "Apt 4B",
+        "city": "New York",
+        "state": "NY",
+        "zipCode": "10001",
+        "country": "USA",
+        "phone": "+1234567890",
+        "created_at": "2023-01-15T10:30:00Z",
+        "updated_at": "2023-01-15T10:30:00Z"
+      },
+      {
+        "id": "address-uuid-2",
+        "userId": "user-uuid",
+        "type": "billing",
+        "isDefault": true,
+        "firstName": "John",
+        "lastName": "Doe",
+        "street": "456 Business Ave",
+        "apartment": "Suite 100",
+        "city": "New York",
+        "state": "NY",
+        "zipCode": "10002",
+        "country": "USA",
+        "phone": "+1234567890",
+        "created_at": "2023-01-20T14:45:00Z",
+        "updated_at": "2023-01-20T14:45:00Z"
+      }
+    ]
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to fetch addresses" }` |
+  
+  ## Related Endpoints
+  
+  - `POST /api/mobile-app/addresses` - Add a new address
+  - `PUT /api/mobile-app/addresses/:addressId` - Update an existing address
+  - `DELETE /api/mobile-app/addresses/:addressId` - Delete an address
+  - `PUT /api/mobile-app/addresses/:addressId/default` - Set an address as default
+}

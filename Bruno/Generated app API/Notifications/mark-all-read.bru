@@ -1,0 +1,79 @@
+meta {
+  name: mark-all-read
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{PROD_BASE_URL}}/api/mobile-app/notifications/read-all
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Mark All Notifications as Read Endpoint
+  
+  This endpoint marks all of a user's unread notifications as read. This is useful for clearing notification badges or implementing a "Mark all as read" feature in the mobile app.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - The operation only affects notifications belonging to the authenticated user
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "message": "All notifications marked as read",
+    "data": {
+      "count": 12,
+      "updated_at": "2023-05-15T14:30:00Z"
+    }
+  }
+  ```
+  
+  ## Response Fields
+  
+  | Field      | Type      | Description                                    |
+  |------------|-----------|------------------------------------------------|
+  | count      | Number    | Number of notifications that were marked as read |
+  | updated_at | Timestamp | Timestamp of when the update was performed     |
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to update notifications" }` |
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/notifications` - Get all user notifications
+  - `GET /api/mobile-app/notifications/:id` - Get a specific notification
+  - `PUT /api/mobile-app/notifications/:id/read` - Mark a specific notification as read
+  - `DELETE /api/mobile-app/notifications/:id` - Delete a notification
+}

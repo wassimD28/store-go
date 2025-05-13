@@ -1,0 +1,126 @@
+meta {
+  name: add-to-cart
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{PROD_BASE_URL}}/api/mobile-app/products/cart/{{PRODUCT_ID}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+body:json {
+  {
+    "quantity": 1,
+    "selectedColor": "black",
+    "selectedSize": "medium"
+  }
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Add Product to Cart Endpoint
+  
+  This endpoint allows users to add a product to their shopping cart. It supports specifying the quantity and any product variants such as color and size.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - The user must have a valid account in the system
+  
+  ## Request Parameters
+  
+  | Parameter  | Location | Required | Description                       |
+  |------------|----------|----------|-----------------------------------|
+  | productId  | Path     | Yes      | UUID of the product to add to cart |
+  
+  ## Request Body
+  
+  The request body must be a JSON object with the following structure:
+  
+  ```json
+  {
+    "quantity": 1,
+    "selectedColor": "black",
+    "selectedSize": "medium"
+  }
+  ```
+  
+  | Field        | Type   | Required | Description                              |
+  |--------------|--------|----------|------------------------------------------|
+  | quantity     | number | Yes      | Number of items to add (min: 1)          |
+  | selectedColor| string | No       | Selected product color variant           |
+  | selectedSize | string | No       | Selected product size variant            |
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Product added to cart successfully",
+    "data": {
+      "cartItem": {
+        "id": "cart-item-uuid",
+        "userId": "user-uuid",
+        "productId": "product-uuid",
+        "quantity": 1,
+        "selectedColor": "black",
+        "selectedSize": "medium",
+        "created_at": "2023-05-15T10:30:00Z",
+        "updated_at": "2023-05-15T10:30:00Z"
+      },
+      "cartSummary": {
+        "totalItems": 3,
+        "subtotal": 849.97
+      }
+    }
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid product ID | `{ "status": "error", "message": "Invalid product ID" }` |
+  | 400 | Invalid request body | `{ "status": "error", "message": "Invalid request data", "errors": [...] }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 404 | Product not found | `{ "status": "error", "message": "Product not found" }` |
+  | 409 | Insufficient stock | `{ "status": "error", "message": "Insufficient stock. Only 5 items available." }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to add product to cart" }` |
+  
+  ## Implementation Notes
+  
+  - The system checks if there is sufficient stock before adding to cart
+  - If the product is already in the user's cart, the quantity is updated
+  - The response includes both the added cart item and a summary of the entire cart
+  - Color and size are optional and depend on the product's available variants
+  
+  ## Related Endpoints
+  - GET `/api/mobile-app/cart` - Get all items in the user's cart
+  - PUT `/api/mobile-app/cart/:cartItemId` - Update cart item (change quantity)
+  - DELETE `/api/mobile-app/cart/:cartItemId` - Remove item from cart
+  - POST `/api/mobile-app/cart/checkout` - Proceed to checkout
+}

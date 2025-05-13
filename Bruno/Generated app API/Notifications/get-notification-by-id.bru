@@ -1,0 +1,118 @@
+meta {
+  name: get-notification-by-id
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{PROD_BASE_URL}}/api/mobile-app/notifications/{{NOTIFICATION_ID}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Get Notification By ID Endpoint
+  
+  This endpoint retrieves a specific notification by its unique identifier. It provides detailed information about a single notification and automatically marks it as read when accessed.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - Users can only access their own notifications
+  
+  ## Path Parameters
+  
+  | Parameter      | Type   | Required | Description                             |
+  |----------------|--------|----------|-----------------------------------------|
+  | notificationId | UUID   | Yes      | The unique identifier of the notification |
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "notification-uuid",
+      "userId": "user-uuid",
+      "storeId": "store-uuid",
+      "title": "Order Shipped",
+      "message": "Your order #1234 has been shipped and is on its way! Your tracking number is TRK123456789. The estimated delivery date is May 20, 2023. Please contact our customer support if you have any questions about your shipment.",
+      "type": "order_update",
+      "referenceId": "order-uuid",
+      "isRead": true,
+      "imageUrl": "https://example.com/notification-image.jpg",
+      "actionUrl": "app://orders/order-uuid",
+      "created_at": "2023-05-15T10:30:00Z",
+      "updated_at": "2023-05-15T10:30:00Z",
+      "relatedData": {
+        "orderNumber": "ORD-12345",
+        "orderStatus": "shipped",
+        "trackingNumber": "TRK123456789"
+      }
+    }
+  }
+  ```
+  
+  ## Response Fields
+  
+  | Field        | Type      | Description                                      |
+  |--------------|-----------|--------------------------------------------------|
+  | id           | UUID      | Unique identifier for the notification           |
+  | userId       | UUID      | ID of the user this notification belongs to      |
+  | storeId      | UUID      | ID of the store associated with this notification|
+  | title        | String    | Brief title describing the notification          |
+  | message      | String    | Detailed notification message                    |
+  | type         | String    | Type of notification (order_update, promotion, etc.) |
+  | referenceId  | UUID/null | Optional ID referencing related entity (order, product, etc.) |
+  | isRead       | Boolean   | Whether the notification has been read           |
+  | imageUrl     | String    | Optional URL to an image for the notification    |
+  | actionUrl    | String    | Optional deep link URL for in-app navigation     |
+  | created_at   | Timestamp | When the notification was created                |
+  | updated_at   | Timestamp | When the notification was last updated           |
+  | relatedData  | Object    | Optional additional data related to the notification |
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid notification ID | `{ "status": "error", "message": "Invalid notification ID format" }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 403 | Forbidden | `{ "status": "error", "message": "You don't have permission to access this notification" }` |
+  | 404 | Not found | `{ "status": "error", "message": "Notification not found" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to retrieve notification" }` |
+  
+  ## Side Effects
+  
+  - Accessing this endpoint automatically marks the notification as read
+  - The `updated_at` timestamp is updated when the notification is marked as read
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/notifications` - Get all user notifications
+  - `PUT /api/mobile-app/notifications/:id/read` - Mark a notification as read
+  - `PUT /api/mobile-app/notifications/read-all` - Mark all notifications as read
+  - `DELETE /api/mobile-app/notifications/:id` - Delete a notification
+}

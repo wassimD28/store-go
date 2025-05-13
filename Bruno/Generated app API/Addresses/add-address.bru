@@ -1,0 +1,140 @@
+meta {
+  name: add-address
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{PROD_BASE_URL}}/api/mobile-app/addresses
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+body:json {
+  {
+    "type": "shipping",
+    "isDefault": true,
+    "firstName": "John",
+    "lastName": "Doe",
+    "street": "123 Main Street",
+    "apartment": "Apt 4B",
+    "city": "New York",
+    "state": "NY",
+    "zipCode": "10001",
+    "country": "USA",
+    "phone": "+1234567890"
+  }
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Add User Address Endpoint
+  
+  This endpoint allows users to add a new shipping or billing address to their profile.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  
+  ## Request Body
+  
+  The request body must be a JSON object with the following structure:
+  
+  ```json
+  {
+    "type": "shipping",
+    "isDefault": true,
+    "firstName": "John",
+    "lastName": "Doe",
+    "street": "123 Main Street",
+    "apartment": "Apt 4B",
+    "city": "New York",
+    "state": "NY",
+    "zipCode": "10001",
+    "country": "USA",
+    "phone": "+1234567890"
+  }
+  ```
+  
+  | Field     | Type    | Required | Description |
+  |-----------|---------|----------|-------------|
+  | type      | string  | Yes      | Address type ("shipping" or "billing") |
+  | isDefault | boolean | No       | Whether this address is the default for its type (defaults to false) |
+  | firstName | string  | Yes      | First name of the recipient |
+  | lastName  | string  | Yes      | Last name of the recipient |
+  | street    | string  | Yes      | Street address |
+  | apartment | string  | No       | Apartment/suite/unit number |
+  | city      | string  | Yes      | City |
+  | state     | string  | Yes      | State/province/region |
+  | zipCode   | string  | Yes      | ZIP/postal code |
+  | country   | string  | Yes      | Country |
+  | phone     | string  | Yes      | Contact phone number |
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Address added successfully",
+    "data": {
+      "id": "address-uuid",
+      "userId": "user-uuid",
+      "type": "shipping",
+      "isDefault": true,
+      "firstName": "John",
+      "lastName": "Doe",
+      "street": "123 Main Street",
+      "apartment": "Apt 4B",
+      "city": "New York",
+      "state": "NY",
+      "zipCode": "10001",
+      "country": "USA",
+      "phone": "+1234567890",
+      "created_at": "2023-05-15T10:30:00Z",
+      "updated_at": "2023-05-15T10:30:00Z"
+    }
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid request data | `{ "status": "error", "message": "Invalid request data", "errors": [...] }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to add address" }` |
+  
+  ## Default Address Behavior
+  
+  - If `isDefault` is set to true, any existing default address of the same type will be automatically un-set
+  - If this is the first address of this type, it will be set as default regardless of the `isDefault` parameter
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/addresses` - Get all user addresses
+  - `PUT /api/mobile-app/addresses/:addressId` - Update an existing address
+  - `DELETE /api/mobile-app/addresses/:addressId` - Delete an address
+  - `PUT /api/mobile-app/addresses/:addressId/default` - Set an address as default
+}

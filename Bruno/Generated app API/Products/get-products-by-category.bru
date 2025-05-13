@@ -1,0 +1,159 @@
+meta {
+  name: get-products-by-category
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{PROD_BASE_URL}}/api/mobile-app/products/category/{{CATEGORY_ID}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Get Products by Category Endpoint
+  
+  This endpoint retrieves all products that belong to a specific category in a store. It's useful for displaying product listings filtered by category in an e-commerce application.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - The user must be associated with the store that owns the products
+  
+  ## Request Parameters
+  
+  | Parameter  | Type   | Required | Description                              |
+  |------------|--------|----------|------------------------------------------|
+  | categoryId | string | Yes      | UUID of the category to filter products by |
+  
+  ## Query Parameters (Optional)
+  
+  | Parameter | Type   | Required | Description                                    |
+  |-----------|--------|----------|------------------------------------------------|
+  | sort      | string | No       | Sort order: "price_asc", "price_desc", "newest", "popularity" |
+  | limit     | number | No       | Number of results to return (default: 20)      |
+  | page      | number | No       | Page number for pagination (default: 1)        |
+  
+  ## Response
+  
+  ### Success (200 OK)
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "products": [
+        {
+          "id": "946d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+          "name": "Smartphone X",
+          "description": "Latest smartphone with advanced features",
+          "price": 799.99,
+          "image_urls": ["https://example.com/images/smartphone-x.jpg"],
+          "categoryId": "846d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+          "subcategoryId": "746d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+          "stock_quantity": 50,
+          "colors": ["black", "silver", "gold"],
+          "status": "active",
+          "created_at": "2023-10-15T10:00:00.000Z",
+          "updated_at": "2023-10-15T10:00:00.000Z"
+        },
+        {
+          "id": "a46d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+          "name": "Wireless Headphones",
+          "description": "Premium noise-cancelling headphones",
+          "price": 199.99,
+          "image_urls": ["https://example.com/images/headphones.jpg"],
+          "categoryId": "846d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+          "subcategoryId": "746d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+          "stock_quantity": 30,
+          "colors": ["black", "white"],
+          "status": "active",
+          "created_at": "2023-10-15T11:30:00.000Z",
+          "updated_at": "2023-10-15T11:30:00.000Z"
+        }
+      ],
+      "pagination": {
+        "total": 12,
+        "page": 1,
+        "limit": 20,
+        "pages": 1
+      },
+      "category": {
+        "id": "846d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+        "name": "Electronics",
+        "description": "Electronic devices and accessories"
+      }
+    }
+  }
+  ```
+  
+  ### Error Responses
+  - 400 Bad Request: Invalid category ID format
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid category ID"
+    }
+    ```
+  - 401 Unauthorized: Missing or invalid authentication token
+    ```json
+    {
+      "status": "error",
+      "message": "Authentication required"
+    }
+    ```
+  - 403 Forbidden: User doesn't have access to the requested store
+    ```json
+    {
+      "status": "error", 
+      "message": "Unauthorized access to this store's products"
+    }
+    ```
+  - 404 Not Found: Category doesn't exist
+    ```json
+    {
+      "status": "error",
+      "message": "Category not found"
+    }
+    ```
+  - 500 Internal Server Error: Server side error
+    ```json
+    {
+      "status": "error",
+      "message": "Failed to fetch products"
+    }
+    ```
+  
+  ## Implementation Notes
+  
+  - Products are filtered by the specified category ID
+  - Only products belonging to the authenticated user's store are returned
+  - Results are paginated to improve performance
+  - The category details are included in the response
+  
+  ## Related Endpoints
+  - GET `/api/mobile-app/products` - Get all products
+  - GET `/api/mobile-app/products/:id` - Get a specific product
+  - GET `/api/mobile-app/categories/products/:categoryId` - Alternative way to get a category with its products
+  - GET `/api/mobile-app/products/search` - Search for products
+}

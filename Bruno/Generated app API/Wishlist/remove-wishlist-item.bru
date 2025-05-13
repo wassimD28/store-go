@@ -1,0 +1,75 @@
+meta {
+  name: remove-wishlist-item
+  type: http
+  seq: 2
+}
+
+delete {
+  url: {{PROD_BASE_URL}}/api/mobile-app/wishlist/{{WISHLIST_ITEM_ID}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Remove Wishlist Item Endpoint
+  
+  This endpoint removes a specific item from the user's wishlist.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - Users can only remove items from their own wishlist
+  
+  ## Request Parameters
+  
+  | Parameter    | Location | Required | Description |
+  |--------------|----------|----------|-------------|
+  | wishlistItemId | Path   | Yes      | The UUID of the wishlist item to remove |
+  
+  ## Response Format
+  
+  The endpoint returns a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Item removed from wishlist"
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid wishlist item ID | `{ "status": "error", "message": "Invalid wishlist item ID" }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 403 | Not the owner | `{ "status": "error", "message": "You don't have permission to remove this wishlist item" }` |
+  | 404 | Wishlist item not found | `{ "status": "error", "message": "Wishlist item not found" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to remove wishlist item" }` |
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/wishlist` - Get all items in the user's wishlist
+  - `POST /api/mobile-app/products/wishlist/:productId` - Add product to wishlist
+}
