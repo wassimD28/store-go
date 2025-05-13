@@ -18,6 +18,26 @@ body:json {
   }
 }
 
+script:post-response {
+    // Only proceed if we got a 200 OK back
+    if (res.status === 200) {
+      // Parse the JSON body
+      const data = res.getBody();
+  
+      // Check if the request was successful
+      if (data.success) {
+        // Extract the authentication URL
+        const authUrl = data.authUrl;
+        
+        // Store the auth URL as an environment variable for convenience
+        bru.setEnvVar("OAUTH_AUTH_URL", authUrl);
+        
+        console.log("✅ OAuth authentication URL has been stored in OAUTH_AUTH_URL environment variable.");
+        console.log("Authentication URL: " + authUrl);
+      }
+    }
+}
+
 docs {
   # OAuth Initiation Endpoint
 

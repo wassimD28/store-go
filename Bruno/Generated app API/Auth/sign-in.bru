@@ -18,28 +18,51 @@ body:json {
   }
 }
 
+script:post-response {
+    // Only proceed if we got a 200 OK back
+    if (res.status === 200) {
+      // Parse the JSON body
+      const data = res.getBody();
+  
+      // You can also check a "success" flag if your API returns one:
+      if (data.success) {
+        // Extract tokens and user ID
+        const accessToken  = data.session.accessToken;
+        const refreshToken = data.session.refreshToken;
+        const userId       = data.session.userId;
+  
+        // Persist them into Bruno’s environment variables
+        bru.setEnvVar("ACCESS_TOKEN",  accessToken);
+        bru.setEnvVar("REFRESH_TOKEN", refreshToken);
+        bru.setEnvVar("USER_ID",       userId);
+  
+        console.log("✅ Tokens and user ID saved to environment variables.");
+      }
+    }
+}
+
 docs {
   # Sign-In Authentication Endpoint
-
+  
   This endpoint authenticates a user with their email and password for a specific store in the StoreGo multi-tenant e-commerce platform. It verifies that the user belongs to the specified store and returns a JWT-based session token.
-
+  
   ## Authentication Process
-
+  
   1. The system validates the email and password against Supabase authentication
   2. It verifies that the user belongs to the specific store ID provided in the request
   3. The database context is set for row-level security based on the store ID
   4. A session with JWT tokens is created when authentication is successful
-
+  
   ## Request Parameters
-
+  
   | Parameter | Type   | Required | Description                                 |
   |-----------|--------|----------|---------------------------------------------|
   | storeId   | string | Yes      | Unique identifier of the store (UUID format)|
   | email     | string | Yes      | User's email address                        |
   | password  | string | Yes      | User's password (min 8 chars)               |
-
+  
   ## How to Obtain Store ID
-
+  
   1. Go to [Store-Go](https://store-go.vercel.app) and create an account
   2. Create a new store from your dashboard
   3. Click to enter the store you created
@@ -47,22 +70,22 @@ docs {
      `https://store-go.vercel.app/stores/<store_id>`
   5. Copy the `<store_id>` from the URL path
   6. Add this ID to your environment variables as `STORE_ID`
-
+  
   ## Base URL Selection
-
+  
   - For development: Use `{{DEV_BASE_URL}}` (http://localhost:3000)
   - For production: Use `{{PROD_BASE_URL}}` (https://store-go.vercel.app)
-
+  
   ## Security Implementation
-
+  
   - JWT-based authentication with Supabase Auth integration
   - Store-specific user validation ensures tenant data isolation
   - Access tokens expire after a configurable period (default: 1 hour)
   - Refresh tokens can be used to obtain new access tokens
   - Row-level security is enforced in the database based on store context
-
+  
   ## Response
-
+  
   ### Success (200 OK)
   ```json
   {
@@ -76,7 +99,7 @@ docs {
     }
   }
   ```
-
+  
   ### Error Responses
   - 400 Bad Request: Invalid request format or missing required fields
     ```json
@@ -113,7 +136,7 @@ docs {
       "error": "An unexpected error occurred during authentication"
     }
     ```
-
+  
   ## Related Endpoints
   - POST `/api/mobile-app/auth/sign-up` - Register new user account
   - POST `/api/mobile-app/auth/refresh` - Refresh authentication tokens

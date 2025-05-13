@@ -12,6 +12,23 @@ post {
     token: {{ACCESS_TOKEN}}
 }
 
+script:post-response {
+    // Only proceed if we got a 200 OK back
+    if (res.status === 200) {
+      // Parse the JSON body
+      const data = res.getBody();
+  
+      // Check if the request was successful
+      if (data.success) {
+        // Clear all auth-related environment variables
+        bru.setEnvVar("ACCESS_TOKEN",  "");
+        bru.setEnvVar("REFRESH_TOKEN", "");
+        bru.setEnvVar("USER_ID",       "");
+  
+        console.log("✅ Tokens and user ID cleared from environment variables.");
+      }
+    }
+}
 
 docs {
   # Sign-Out Endpoint

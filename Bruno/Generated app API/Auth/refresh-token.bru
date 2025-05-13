@@ -12,37 +12,60 @@ post {
 
 body:json {
   {
-      "refreshToken": "your-refresh-token-here"
+      "refreshToken": "{{REFRESH_TOKEN}}"
   }
+}
+
+script:post-response {
+    // Only proceed if we got a 200 OK back
+    if (res.status === 200) {
+      // Parse the JSON body
+      const data = res.getBody();
+  
+      // Check if the request was successful
+      if (data.success) {
+        // Extract tokens and user ID
+        const accessToken  = data.session.accessToken;
+        const refreshToken = data.session.refreshToken;
+        const userId       = data.session.userId;
+  
+        // Persist them into Bruno's environment variables
+        bru.setEnvVar("ACCESS_TOKEN",  accessToken);
+        bru.setEnvVar("REFRESH_TOKEN", refreshToken);
+        bru.setEnvVar("USER_ID",       userId);
+  
+        console.log("✅ Tokens and user ID saved to environment variables.");
+      }
+    }
 }
 
 docs {
   # Token Refresh Endpoint
-
+  
   This endpoint refreshes expired access tokens using a valid refresh token. It's essential for maintaining a user's authenticated session without requiring them to log in again.
-
+  
   ## Refresh Process
-
+  
   1. The system validates the provided refresh token
   2. It uses Supabase's built-in token refresh mechanism to generate new tokens
   3. The session is updated with the new tokens and expiration time
   4. The user's authentication is extended without requiring re-login
-
+  
   ## Request Parameters
-
+  
   | Parameter    | Type   | Required | Description                          |
   |--------------|--------|----------|--------------------------------------|
   | refreshToken | string | Yes      | The refresh token from previous auth |
-
+  
   ## Security Considerations
-
+  
   - Refresh tokens have a longer lifespan than access tokens
   - If a refresh token is compromised, use the sign-out endpoint to invalidate all sessions
   - Each refresh operation generates a new refresh token
   - The system maintains a record of valid refresh tokens
-
+  
   ## Response
-
+  
   ### Success (200 OK)
   ```json
   {
@@ -55,7 +78,7 @@ docs {
     }
   }
   ```
-
+  
   ### Error Responses
   - 400 Bad Request: Missing refresh token
     ```json
@@ -78,7 +101,7 @@ docs {
       "error": "An unexpected error occurred during token refresh"
     }
     ```
-
+  
   ## Related Endpoints
   - POST `/api/mobile-app/auth/sign-in` - Authenticate user and get initial tokens
   - POST `/api/mobile-app/auth/sign-up` - Register new user account
