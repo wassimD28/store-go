@@ -1,0 +1,86 @@
+meta {
+  name: refresh-token
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{PROD_BASE_URL}}/api/mobile-app/auth/refresh
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+      "refreshToken": "your-refresh-token-here"
+  }
+}
+
+docs {
+  # Token Refresh Endpoint
+
+  This endpoint refreshes expired access tokens using a valid refresh token. It's essential for maintaining a user's authenticated session without requiring them to log in again.
+
+  ## Refresh Process
+
+  1. The system validates the provided refresh token
+  2. It uses Supabase's built-in token refresh mechanism to generate new tokens
+  3. The session is updated with the new tokens and expiration time
+  4. The user's authentication is extended without requiring re-login
+
+  ## Request Parameters
+
+  | Parameter    | Type   | Required | Description                          |
+  |--------------|--------|----------|--------------------------------------|
+  | refreshToken | string | Yes      | The refresh token from previous auth |
+
+  ## Security Considerations
+
+  - Refresh tokens have a longer lifespan than access tokens
+  - If a refresh token is compromised, use the sign-out endpoint to invalidate all sessions
+  - Each refresh operation generates a new refresh token
+  - The system maintains a record of valid refresh tokens
+
+  ## Response
+
+  ### Success (200 OK)
+  ```json
+  {
+    "success": true,
+    "session": {
+      "accessToken": "eyJhbGc...truncated...",
+      "refreshToken": "new-refresh-token-value",
+      "userId": "846d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+      "expiresAt": "2025-05-13T13:10:12.000Z"
+    }
+  }
+  ```
+
+  ### Error Responses
+  - 400 Bad Request: Missing refresh token
+    ```json
+    {
+      "success": false,
+      "error": "Refresh token is required"
+    }
+    ```
+  - 401 Unauthorized: Invalid or expired refresh token
+    ```json
+    {
+      "success": false,
+      "error": "Invalid refresh token"
+    }
+    ```
+  - 500 Internal Server Error: Server side error
+    ```json
+    {
+      "success": false,
+      "error": "An unexpected error occurred during token refresh"
+    }
+    ```
+
+  ## Related Endpoints
+  - POST `/api/mobile-app/auth/sign-in` - Authenticate user and get initial tokens
+  - POST `/api/mobile-app/auth/sign-up` - Register new user account
+  - POST `/api/mobile-app/auth/sign-out` - Logout and invalidate session
+}

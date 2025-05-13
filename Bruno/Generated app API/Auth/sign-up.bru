@@ -1,0 +1,115 @@
+meta {
+  name: sign-up
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{PROD_BASE_URL}}/api/mobile-app/auth/sign-up
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+      "storeId": "{{STORE_ID}}",
+      "name": "New User",
+      "email": "newuser@example.com",
+      "password": "SecurePassword123"
+  }
+}
+
+docs {
+  # User Registration Endpoint
+
+  This endpoint registers a new user account for a specific store in the StoreGo platform. It creates a user in both Supabase Auth and the application database.
+
+  ## Registration Process
+
+  1. The system validates the input data against the registration schema
+  2. It checks if the specified store exists
+  3. A new user is created in Supabase Auth with store information in metadata
+  4. The user record is also created in the application database
+  5. A session with JWT tokens is generated for immediate authentication
+
+  ## Request Parameters
+
+  | Parameter | Type   | Required | Description                                 |
+  |-----------|--------|----------|---------------------------------------------|
+  | storeId   | string | Yes      | Unique identifier of the store (UUID format)|
+  | name      | string | Yes      | User's full name (min 2 characters)         |
+  | email     | string | Yes      | User's email address                        |
+  | password  | string | Yes      | User's password (min 8 chars)               |
+
+  ## How to Obtain Store ID
+
+  1. Go to [Store-Go](https://store-go.vercel.app) and create an account
+  2. Create a new store from your dashboard
+  3. Click to enter the store you created
+  4. Check your browser's URL path which will change to:
+     `https://store-go.vercel.app/stores/<store_id>`
+  5. Copy the `<store_id>` from the URL path
+  6. Add this ID to your environment variables as `STORE_ID`
+
+  ## Base URL Selection
+
+  - For development: Use `{{DEV_BASE_URL}}` (http://localhost:3000)
+  - For production: Use `{{PROD_BASE_URL}}` (https://store-go.vercel.app)
+
+  ## Security Implementation
+
+  - Password is securely hashed with bcrypt before storage
+  - User is linked to a specific store for multi-tenant isolation
+  - JWT tokens are generated with proper store context embedded
+  - Row-level security is enforced in the database
+
+  ## Response
+
+  ### Success (201 Created)
+  ```json
+  {
+    "success": true,
+    "session": {
+      "accessToken": "eyJhbGc...truncated...",
+      "refreshToken": "664xxx7qxxxx6",
+      "userId": "846d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+      "expiresAt": "2025-05-13T11:10:12.000Z"
+    }
+  }
+  ```
+
+  ### Error Responses
+  - 400 Bad Request: Invalid request format or missing required fields
+    ```json
+    {
+      "success": false,
+      "error": [{"path": ["password"], "message": "Password must be at least 8 characters"}]
+    }
+    ```
+  - 404 Not Found: Store doesn't exist
+    ```json
+    {
+      "success": false,
+      "error": "Store not found"
+    }
+    ```
+  - 409 Conflict: Email already exists
+    ```json
+    {
+      "success": false,
+      "error": "User with this email already exists"
+    }
+    ```
+  - 500 Internal Server Error: Server side error
+    ```json
+    {
+      "success": false,
+      "error": "An unexpected error occurred during registration"
+    }
+    ```
+
+  ## Related Endpoints
+  - POST `/api/mobile-app/auth/sign-in` - Authenticate existing user
+  - POST `/api/mobile-app/auth/refresh` - Refresh authentication tokens
+  - POST `/api/mobile-app/auth/sign-out` - Logout and invalidate session
+}

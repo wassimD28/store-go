@@ -1,0 +1,94 @@
+meta {
+  name: sign-out
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{PROD_BASE_URL}}/api/mobile-app/auth/sign-out
+  body: none
+  auth:
+    type: bearer
+    token: {{ACCESS_TOKEN}}
+}
+
+
+docs {
+  # Sign-Out Endpoint
+
+  This endpoint logs out a user and invalidates their current session. It should be called when users want to securely end their session.
+
+  ## Sign-Out Process
+
+  1. The system extracts the access token from the Authorization header
+  2. It attempts to invalidate the user's session in Supabase Auth
+  3. All associated tokens are invalidated for security
+  4. The client should clear local storage of tokens after a successful response
+
+  ## Authentication
+
+  This endpoint requires an Authorization header with a valid Bearer token:
+  
+  ```
+  Authorization: Bearer your-access-token
+  ```
+
+  ## Request Body
+
+  No request body is required. The authentication is handled through the Authorization header.
+  
+  You can optionally provide a JSON body with the user ID for fallback authentication:
+  
+  ```json
+  {
+    "userId": "user-id-for-fallback-auth"
+  }
+  ```
+
+  ## Security Considerations
+
+  - Always call this endpoint when users log out to properly invalidate tokens
+  - After a successful response, clear all authentication data from client storage
+  - This helps prevent unauthorized access if tokens are compromised
+
+  ## Response
+
+  ### Success (200 OK)
+  ```json
+  {
+    "success": true,
+    "message": "User logged out successfully"
+  }
+  ```
+
+  ### Alternative Success (200 OK)
+  If the primary logout method fails but the system still wants to ensure the client clears tokens:
+  ```json
+  {
+    "success": true,
+    "message": "Logout processed - please clear local tokens",
+    "clearLocalStorage": true
+  }
+  ```
+
+  ### Error Responses
+  - 401 Unauthorized: Invalid authorization header
+    ```json
+    {
+      "success": false,
+      "error": "Invalid authorization header"
+    }
+    ```
+  - 500 Internal Server Error: Server side error
+    ```json
+    {
+      "success": false,
+      "error": "An unexpected error occurred during logout"
+    }
+    ```
+
+  ## Related Endpoints
+  - POST `/api/mobile-app/auth/sign-in` - Authenticate user
+  - POST `/api/mobile-app/auth/sign-up` - Register new user account
+  - POST `/api/mobile-app/auth/refresh` - Refresh authentication tokens
+}

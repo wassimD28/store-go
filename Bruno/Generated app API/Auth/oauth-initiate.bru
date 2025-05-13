@@ -1,0 +1,98 @@
+meta {
+  name: oauth-initiate
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{PROD_BASE_URL}}/api/mobile-app/auth/oauth/initiate
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+      "provider": "google",
+      "storeId": "{{STORE_ID}}",
+      "redirectUrl": "https://your-app.com/auth/callback"
+  }
+}
+
+docs {
+  # OAuth Initiation Endpoint
+
+  This endpoint initiates the OAuth authentication flow with a selected provider (like Google). It generates a URL that the client should use to redirect the user for authentication.
+
+  ## OAuth Initiation Process
+
+  1. The system validates the input data and checks if the store exists
+  2. It uses Supabase's OAuth capabilities to generate a URL for the selected provider
+  3. The store ID is included in the OAuth parameters for context
+  4. The auth URL is returned to the client for redirection
+
+  ## Request Parameters
+
+  | Parameter   | Type   | Required | Description                                         |
+  |-------------|--------|----------|-----------------------------------------------------|
+  | provider    | string | Yes      | OAuth provider (e.g., "google", "facebook", "apple")|
+  | storeId     | string | Yes      | Unique identifier of the store (UUID format)        |
+  | redirectUrl | string | Yes      | URL where provider should redirect after auth       |
+
+  ## Supported Providers
+
+  - `google` - Google OAuth authentication
+  - `facebook` - Facebook OAuth authentication
+  - `twitter` - Twitter OAuth authentication
+  - `apple` - Apple OAuth authentication
+  - `github` - GitHub OAuth authentication
+
+  ## Base URL Selection
+
+  - For development: Use `{{DEV_BASE_URL}}` (http://localhost:3000)
+  - For production: Use `{{PROD_BASE_URL}}` (https://store-go.vercel.app)
+
+  ## Response
+
+  ### Success (200 OK)
+  ```json
+  {
+    "success": true,
+    "authUrl": "https://accounts.google.com/o/oauth2/v2/auth?...parameters..."
+  }
+  ```
+
+  ### Error Responses
+  - 400 Bad Request: Invalid provider or missing fields
+    ```json
+    {
+      "success": false,
+      "error": [{"path": ["provider"], "message": "Invalid provider"}]
+    }
+    ```
+  - 404 Not Found: Store doesn't exist
+    ```json
+    {
+      "success": false,
+      "error": "Store not found"
+    }
+    ```
+  - 500 Internal Server Error: Server side error
+    ```json
+    {
+      "success": false,
+      "error": "An unexpected error occurred during OAuth initiation"
+    }
+    ```
+
+  ## Integration Flow
+
+  1. Call this endpoint to get the authentication URL
+  2. Redirect the user to the returned `authUrl`
+  3. After user completes authentication, provider redirects to your `redirectUrl`
+  4. Use the OAuth callback endpoint to complete the authentication process
+
+  ## Related Endpoints
+  - POST `/api/mobile-app/auth/oauth/callback` - Complete OAuth authentication process
+  - POST `/api/mobile-app/auth/sign-in` - Standard email/password authentication
+  - POST `/api/mobile-app/auth/sign-up` - Register new user account
+}
