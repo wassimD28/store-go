@@ -1,0 +1,151 @@
+meta {
+  name: get-category-with-products
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{PROD_BASE_URL}}/api/mobile-app/categories/products/{{CATEGORY_ID}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Get Category with Products Endpoint
+  
+  This endpoint retrieves a specific product category by its ID along with all products that belong to that category. It provides a convenient way to display category details and its associated products in a single API call.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - The user must be associated with the store that owns the category
+  
+  ## Request Parameters
+  
+  | Parameter  | Type   | Required | Description                       |
+  |------------|--------|----------|-----------------------------------|
+  | categoryId | string | Yes      | UUID of the category to retrieve (path parameter) |
+  
+  ## Path Parameter Setup
+  
+  - The category ID is specified as part of the URL path: `/api/mobile-app/categories/products/:categoryId`
+  - Ensure the category ID is in the UUID format
+  - You can set the `CATEGORY_ID` environment variable for testing, or replace it directly in the URL
+  
+  ## Security Checks
+  
+  - Validates that the category ID is in a valid format
+  - Verifies the category exists in the database
+  - Confirms the category belongs to the authenticated user's store
+  - Returns 403 Forbidden if the user attempts to access a category from another store
+  
+  ## Response
+  
+  ### Success (200 OK)
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "846d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+      "userId": "user_xxxxxxxxxxxx",
+      "storeId": "store_xxxxxxxxxxxx",
+      "name": "Electronics",
+      "description": "Electronic devices and accessories",
+      "imageUrl": "https://example.com/images/electronics.jpg",
+      "created_at": "2023-10-15T08:30:00.000Z", 
+      "updated_at": "2023-10-15T08:30:00.000Z",
+      "products": [
+        {
+          "id": "946d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+          "name": "Smartphone X",
+          "description": "Latest smartphone with advanced features",
+          "price": 799.99,
+          "imageUrl": "https://example.com/images/smartphone-x.jpg",
+          "categoryId": "846d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+          "created_at": "2023-10-15T10:00:00.000Z", 
+          "updated_at": "2023-10-15T10:00:00.000Z"
+        },
+        {
+          "id": "a46d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+          "name": "Wireless Headphones",
+          "description": "Premium noise-cancelling headphones",
+          "price": 199.99,
+          "imageUrl": "https://example.com/images/headphones.jpg",
+          "categoryId": "846d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+          "created_at": "2023-10-15T11:30:00.000Z", 
+          "updated_at": "2023-10-15T11:30:00.000Z"
+        }
+      ]
+    }
+  }
+  ```
+  
+  ### Error Responses
+  - 400 Bad Request: Invalid category ID format
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid category ID"
+    }
+    ```
+  - 401 Unauthorized: Missing or invalid authentication token
+    ```json
+    {
+      "status": "error",
+      "message": "Authentication required"
+    }
+    ```
+  - 403 Forbidden: User doesn't have access to the requested category
+    ```json
+    {
+      "status": "error", 
+      "message": "Unauthorized access to this category"
+    }
+    ```
+  - 404 Not Found: Category doesn't exist
+    ```json
+    {
+      "status": "error",
+      "message": "Category not found"
+    }
+    ```
+  - 500 Internal Server Error: Server side error
+    ```json
+    {
+      "status": "error",
+      "message": "Failed to fetch category with products"
+    }
+    ```
+  
+  ## Implementation Notes
+  
+  - The endpoint uses a repository pattern to isolate database access
+  - All database queries are optimized to reduce response time
+  - Category and products are joined efficiently in the database query
+  - Error handling provides informative messages without leaking internal details
+  
+  ## Related Endpoints
+  - GET `/api/mobile-app/categories` - Get all categories
+  - GET `/api/mobile-app/products/category/:categoryId` - Alternative way to get products by category
+}

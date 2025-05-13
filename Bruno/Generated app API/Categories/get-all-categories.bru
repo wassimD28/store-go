@@ -1,0 +1,126 @@
+meta {
+  name: get-all-categories
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{PROD_BASE_URL}}/api/mobile-app/categories
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Get All Categories Endpoint
+  
+  This endpoint retrieves all product categories associated with a specific store in the StoreGo multi-tenant e-commerce platform. Categories serve as a way to organize products in a hierarchical structure, making it easier for users to browse and find products in the store.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - The user must be associated with the store
+  
+  ## Request Parameters
+  
+  No request parameters are required in the URL or body. The storeId is automatically extracted from the authenticated user's context.
+  
+  ## Filtering & Security
+  
+  - Categories are automatically filtered based on the authenticated user's store ID
+  - Only categories belonging to the user's store are returned
+  - Store isolation is enforced through database queries
+  
+  ## Response
+  
+  ### Success (200 OK)
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "846d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+        "userId": "user_xxxxxxxxxxxx",
+        "storeId": "store_xxxxxxxxxxxx",
+        "name": "Electronics",
+        "description": "Electronic devices and accessories",
+        "imageUrl": "https://example.com/images/electronics.jpg",
+        "created_at": "2023-10-15T08:30:00.000Z",
+        "updated_at": "2023-10-15T08:30:00.000Z"
+      },
+      {
+        "id": "946d33b9-xxxx-xxxx-xxxx-e14570xxxxxx",
+        "userId": "user_xxxxxxxxxxxx",
+        "storeId": "store_xxxxxxxxxxxx",
+        "name": "Clothing",
+        "description": "Fashion items and accessories",
+        "imageUrl": "https://example.com/images/clothing.jpg",
+        "created_at": "2023-10-15T09:15:00.000Z",
+        "updated_at": "2023-10-15T09:15:00.000Z"
+      }
+    ]
+  }
+  ```
+  
+  ### Error Responses
+  - 401 Unauthorized: Missing or invalid authentication token
+    ```json
+    {
+      "status": "error",
+      "message": "Authentication required"
+    }
+    ```
+  - 403 Forbidden: User not associated with any store
+    ```json
+    {
+      "status": "error", 
+      "message": "User not associated with a store"
+    }
+    ```
+  - 500 Internal Server Error: Server side error
+    ```json
+    {
+      "status": "error",
+      "message": "Failed to fetch categories"
+    }
+    ```
+  
+  ## Data Model
+  
+  Categories contain the following fields:
+  
+  | Field       | Type      | Description                                       |
+  |-------------|-----------|---------------------------------------------------|
+  | id          | UUID      | Unique identifier for the category                 |
+  | userId      | String    | ID of the user who created the category           |
+  | storeId     | UUID      | ID of the store the category belongs to           |
+  | name        | String    | Name of the category (max 255 characters)         |
+  | description | String    | Optional description of the category              |
+  | imageUrl    | String    | Optional URL to an image representing the category|
+  | created_at  | Timestamp | When the category was created                     |
+  | updated_at  | Timestamp | When the category was last updated                |
+  
+  ## Related Endpoints
+  - GET `/api/mobile-app/categories/products/:categoryId` - Get a specific category with its products
+  - GET `/api/mobile-app/subcategories/category/:categoryId` - Get subcategories for a specific category
+}
