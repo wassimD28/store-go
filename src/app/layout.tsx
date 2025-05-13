@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
-import { Geist , Poppins} from "next/font/google";
+import { Geist, Poppins } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/client/providers/theme.provider";
 import { Toaster } from "react-hot-toast";
 import { startWorkers } from "@/server/workers/scheduler";
+import { NetworkProvider } from "@/client/contexts/NetworkContext";
+import { OfflineBanner } from "@/client/components/ui/offline-banner";
 
 // Initialize workers in server environment
-if (typeof window === 'undefined') {
+if (typeof window === "undefined") {
   startWorkers();
 }
 const poppins = Poppins({
@@ -54,8 +56,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${poppins.className} antialiased`}
       >
         <ThemeProvider>
-          
+          {" "}
+          <NetworkProvider>
             {children}
+            <OfflineBanner />
             <Toaster
               toastOptions={{
                 className: `!bg-background !text-foreground border border-border`,
@@ -68,7 +72,7 @@ export default function RootLayout({
                 position: "bottom-right",
               }}
             />
-         
+          </NetworkProvider>
         </ThemeProvider>
       </body>
     </html>
