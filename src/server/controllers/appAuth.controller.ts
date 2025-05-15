@@ -383,15 +383,15 @@ class AppAuthController {
           },
           404,
         );
-      }
-
-      // 3. Use Supabase Auth to send an OTP code via email
+      } // 3. Use Supabase Auth to send an OTP code via email
       // This uses Supabase's signInWithOtp functionality but for password reset
       const { error } =
         await AppAuthController.supabaseAdmin.auth.signInWithOtp({
-          email,
-          options: {
+          email,          options: {
             shouldCreateUser: false, // Don't create a new user if they don't exist
+            emailRedirectTo: undefined, // Don't include a redirect URL, which forces OTP mode
+            // Note: channel is not needed for email OTPs, it's only for SMS or WhatsApp
+            // OTP mode is automatically used when emailRedirectTo is undefined
           },
         });
 

@@ -12,8 +12,8 @@ post {
 
 body:json {
   {
-    "email": "user@example.com",
-    "token": "123456",
+    "email": "{{APP_USER_EMAIL}}",
+    "token": "141444",
     "storeId": "{{STORE_ID}}"
   }
 }
@@ -23,7 +23,7 @@ script:post-response {
   if (res.status === 200) {
     // Parse the JSON body
     const data = res.getBody();
-
+  
     // Check if the verification was successful
     if (data.success && data.userId) {
       // Store the userId for the password reset step
