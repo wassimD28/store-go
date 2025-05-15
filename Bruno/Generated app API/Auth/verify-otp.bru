@@ -1,0 +1,97 @@
+meta {
+  name: verify-otp
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{BASE_URL}}/api/mobile-app/auth/verify-otp
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "user@example.com",
+    "token": "123456",
+    "storeId": "{{STORE_ID}}"
+  }
+}
+
+script:post-response {
+  // Only proceed if we got a 200 OK back
+  if (res.status === 200) {
+    // Parse the JSON body
+    const data = res.getBody();
+
+    // Check if the verification was successful
+    if (data.success && data.userId) {
+      // Store the userId for the password reset step
+      bru.setEnvVar("RESET_USER_ID", data.userId);
+      console.log("✅ User ID for password reset saved to environment variables.");
+    }
+  }
+}
+
+docs {
+  # Verify OTP Code Endpoint
+  
+  This endpoint verifies the 6-digit OTP (One-Time Password) code sent to the user's email during the password reset request process.
+  
+  ## Process Flow
+  
+  1. The system verifies that the user exists and belongs to the specified store
+  2. The provided OTP code is validated against the code sent to the user's email
+  3. If valid, the user's identity is considered verified, and they can proceed to reset their password
+  
+  ## Request Parameters
+  
+  | Parameter | Type   | Required | Description                                    |
+  |-----------|--------|----------|------------------------------------------------|
+  | storeId   | string | Yes      | Unique identifier of the store (UUID format)   |
+  | email     | string | Yes      | User's email address                           |
+  | token     | string | Yes      | The 6-digit OTP code received via email        |
+  
+  ## Response
+  
+  ### Success (200 OK)
+  ```json
+  {
+    "success": true,
+    "message": "Code verified successfully",
+    "userId": "846d33b9-xxxx-xxxx-xxxx-e14570xxxxxx"
+  }
+  ```
+  
+  ### Error - Invalid Code (400 Bad Request)
+  ```json
+  {
+    "success": false,
+    "error": "Invalid verification code"
+  }
+  ```
+  
+  ### Error - User Not Found (404 Not Found)
+  ```json
+  {
+    "success": false,
+    "error": "User not found in this store"
+  }
+  ```
+  
+  ### Error - Missing Parameters (400 Bad Request)
+  ```json
+  {
+    "success": false,
+    "error": "Email and verification code are required"
+  }
+  ```
+  
+  ### Error - Server Error (500 Internal Server Error)
+  ```json
+  {
+    "success": false,
+    "error": "An unexpected error occurred during code verification"
+  }
+  ```
+}

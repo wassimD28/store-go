@@ -351,6 +351,195 @@ class AppAuthController {
       );
     }
   }
+
+  /**
+   * Request a password reset using OTP (One-Time Password) code
+   *
+   * This method sends a 6-digit code to the user's email that can be used
+   * to verify their identity before allowing a password reset.
+   * It leverages Supabase's built-in OTP functionality for secure verification.
+   */
+  static async requestPasswordReset(c: Context) {
+    try {
+      // 1. Parse and validate input data
+      const body = await c.req.json();
+      const { email, storeId } = body;
+
+      if (!email) {
+        return c.json({ success: false, error: "Email is required" }, 400);
+      }
+
+      // 2. Check if the user exists in our app_user table
+      const userRecord = await db.query.AppUser.findFirst({
+        where: (appUser, { eq, and }) =>
+          and(eq(appUser.email, email), eq(appUser.storeId, storeId)),
+      });
+
+      if (!userRecord) {
+        return c.json(
+          {
+            success: false,
+            error: "User not found in this store",
+          },
+          404,
+        );
+      }
+
+      // 3. Use Supabase Auth to send an OTP code via email
+      // This uses Supabase's signInWithOtp functionality but for password reset
+      const { error } =
+        await AppAuthController.supabaseAdmin.auth.signInWithOtp({
+          email,
+          options: {
+            shouldCreateUser: false, // Don't create a new user if they don't exist
+          },
+        });
+
+      if (error) {
+        console.error("Password reset OTP request error:", error);
+        return c.json({ success: false, error: error.message }, 400);
+      }
+
+      // 4. Return success response
+      return c.json({
+        success: true,
+        message: "Password reset code sent to your email",
+      });
+    } catch (error) {
+      console.error("Password reset request error:", error);
+      return c.json(
+        {
+          success: false,
+          error: "An unexpected error occurred during password reset request",
+        },
+        500,
+      );
+    }
+  } /**
+   * Verify OTP code for password reset
+   *
+   * This method validates the OTP code sent to the user's email
+   * without changing the password yet. This allows for a two-step
+   * password reset flow where verification happens first, followed
+   * by setting a new password in a separate step.
+   */
+  static async verifyOtpCode(c: Context) {
+    try {
+      // 1. Parse and validate input data
+      const body = await c.req.json();
+      const { email, token, storeId } = body;
+
+      if (!email || !token) {
+        return c.json(
+          {
+            success: false,
+            error: "Email and verification code are required",
+          },
+          400,
+        );
+      }
+
+      // 2. Check if the user exists in our app_user table
+      const userRecord = await db.query.AppUser.findFirst({
+        where: (appUser, { eq, and }) =>
+          and(eq(appUser.email, email), eq(appUser.storeId, storeId)),
+      });
+
+      if (!userRecord) {
+        return c.json(
+          {
+            success: false,
+            error: "User not found in this store",
+          },
+          404,
+        );
+      }
+
+      // 3. Verify the OTP code using Supabase Auth
+      const { error: sessionError } =
+        await AppAuthController.supabaseAdmin.auth.verifyOtp({
+          email,
+          token,
+          type: "email",
+        });
+
+      if (sessionError) {
+        console.error("OTP verification error:", sessionError);
+        return c.json({ success: false, error: sessionError.message }, 400);
+      }
+
+      // 4. Return success response - the app will now show the password change screen
+      return c.json({
+        success: true,
+        message: "Code verified successfully",
+        userId: userRecord.id,
+      });
+    } catch (error) {
+      console.error("OTP verification error:", error);
+      return c.json(
+        {
+          success: false,
+          error: "An unexpected error occurred during code verification",
+        },
+        500,
+      );
+    }
+  }
+
+  /**
+   * Reset password after OTP verification
+   *
+   * This method updates the user's password after the OTP has been verified.
+   * It should be called only after successfully verifying the OTP with verifyOtpCode.
+   * This completes the password reset flow started by requestPasswordReset.
+   */
+  static async resetPassword(c: Context) {
+    try {
+      // 1. Parse and validate input data
+      const body = await c.req.json();
+      const { userId, password, storeId } = body;
+
+      if (!userId || !password) {
+        return c.json(
+          {
+            success: false,
+            error: "User ID and new password are required",
+          },
+          400,
+        );
+      }
+
+      // 2. Update the user's password using admin privileges
+      const { error } =
+        await AppAuthController.supabaseAdmin.auth.admin.updateUserById(
+          userId,
+          { password },
+        );
+
+      if (error) {
+        console.error("Password reset error:", error);
+        return c.json({ success: false, error: error.message }, 400);
+      }
+
+      // 3. Set the database context for row-level security
+      await db.execute(`SET LOCAL app.current_store_id = '${storeId}'`);
+
+      // 4. Return success response
+      return c.json({
+        success: true,
+        message: "Password has been reset successfully",
+      });
+    } catch (error) {
+      console.error("Password reset error:", error);
+      return c.json(
+        {
+          success: false,
+          error: "An unexpected error occurred during password reset",
+        },
+        500,
+      );
+    }
+  }
 }
 
 export default AppAuthController;

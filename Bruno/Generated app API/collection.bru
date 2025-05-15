@@ -1,28 +1,45 @@
+script:pre-request {
+   // Check if we're in dev or prod mode
+  const envNode = bru.getEnvVar('ENV_NODE');
+  
+  // Set the BASE_URL based on environment
+  if (envNode === 'dev') {
+    bru.setVar('BASE_URL', bru.getEnvVar('DEV_BASE_URL'));
+    console.log('🛠️ Development environment detected. Using   DEV_BASE_URL.');
+  } else {
+    bru.setVar('BASE_URL', bru.getEnvVar('PROD_BASE_URL'));
+    console.log('🚀 Production environment detected. Using  PROD_BASE_URL.');
+  }
+  
+  // Print the current BASE_URL for debugging
+  console.log(`🌐 Current BASE_URL: ${bru.getVar('BASE_URL')}`);
+}
+
 docs {
   # StoreGo Generated App API Documentation
-
+  
   This collection contains API endpoints for the StoreGo generated mobile applications. The API enables store-specific e-commerce functionality with a multi-tenant architecture.
-
+  
   ## Authentication System
-
+  
   The API uses JWT-based authentication with Supabase Auth:
-
+  
   1. Users register or sign in through the mobile app
   2. Authentication is tied to specific store IDs
   3. JWT tokens (access and refresh) are returned for subsequent authenticated requests
   4. User data is isolated per store for multi-tenant security
-
+  
   ## Common Request Parameters
-
+  
   Most API endpoints in this collection require:
-
+  
   - `storeId`: UUID format identifier for the specific store
   - Authentication token for protected routes (provided via Bearer Authentication)
-
+  
   ## Key API Categories
-
+  
   This collection includes endpoints for:
-
+  
   - **Authentication**: User registration, login, token refresh, and logout
   - **Products**: Browsing, searching, and viewing product details
   - **Categories**: Listing and navigating product categories
@@ -31,19 +48,19 @@ docs {
   - **Payments**: Processing and confirming payments
   - **User Profile**: Managing customer profile information
   - **Notifications**: Receiving app notifications
-
+  
   ## Environment Setup
-
+  
   To use these API endpoints:
-
+  
   1. Set environment variables in the "GeneratedApp - env.bru" file
   2. Ensure you have valid `STORE_ID` for the store you're testing
   3. Authentication endpoints will automatically manage your `ACCESS_TOKEN` and `REFRESH_TOKEN`
-
+  
   ## How to Obtain a Valid Store ID
-
+  
   To get a valid `STORE_ID` for testing:
-
+  
   1. Go to [Store-Go](https://store-go.vercel.app) and create an account
   2. Create a new store from your dashboard
   3. Click to enter the store you created
@@ -51,11 +68,11 @@ docs {
      `https://store-go.vercel.app/stores/<store_id>`
   5. Copy the `<store_id>` from the URL path
   6. Add this ID to your environment variables as `STORE_ID`
-
+  
   ## Response Format
-
+  
   All API responses follow a standard format:
-
+  
   ```json
   {
     "success": true|false,
@@ -63,10 +80,10 @@ docs {
     "data": { ... } // Optional data payload
   }
   ```
-
+  
   Error responses include appropriate HTTP status codes and error details.
-
+  
   ## Last Updated
-
+  
   May 13, 2025
 }

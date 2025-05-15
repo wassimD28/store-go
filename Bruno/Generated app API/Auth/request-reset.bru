@@ -1,0 +1,71 @@
+meta {
+  name: request-reset
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{BASE_URL}}/api/mobile-app/auth/request-reset
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "user@example.com",
+    "storeId": "{{STORE_ID}}"
+  }
+}
+
+docs {
+  # Request Password Reset Endpoint
+  
+  This endpoint initiates the password reset process by sending a 6-digit OTP (One-Time Password) code to the user's email.
+  
+  ## Process Flow
+  
+  1. The system verifies that the user exists and belongs to the specified store
+  2. An OTP code is generated and sent to the user's email address
+  3. The code remains valid for 1 hour and can be used to verify the user's identity
+  
+  ## Request Parameters
+  
+  | Parameter | Type   | Required | Description                                 |
+  |-----------|--------|----------|---------------------------------------------|
+  | storeId   | string | Yes      | Unique identifier of the store (UUID format)|
+  | email     | string | Yes      | User's email address                        |
+  
+  ## Response
+  
+  ### Success (200 OK)
+  ```json
+  {
+    "success": true,
+    "message": "Password reset code sent to your email"
+  }
+  ```
+  
+  ### Error - User Not Found (404 Not Found)
+  ```json
+  {
+    "success": false,
+    "error": "User not found in this store"
+  }
+  ```
+  
+  ### Error - Missing Email (400 Bad Request)
+  ```json
+  {
+    "success": false,
+    "error": "Email is required"
+  }
+  ```
+  
+  ### Error - Server Error (500 Internal Server Error)
+  ```json
+  {
+    "success": false,
+    "error": "An unexpected error occurred during password reset request"
+  }
+  ```
+}
