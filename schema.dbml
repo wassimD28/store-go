@@ -1,3 +1,15 @@
+enum built_type {
+  quick_build
+  advanced_build
+}
+
+enum store_template_status {
+  active
+  inactive
+  draft
+  archived
+}
+
 enum age_range_enum {
   "13-18"
   "19-25"
@@ -35,6 +47,13 @@ enum discount_type {
   buy_x_get_y
 }
 
+enum generation_job_status {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
 enum product_status {
   draft
   published
@@ -64,6 +83,7 @@ enum store_notification_type {
 enum store_template_type {
   fashion
   electronic
+  shoes
 }
 
 enum target_gender {
@@ -121,7 +141,9 @@ table session {
 table generation_jobs {
   id uuid [pk, not null, default: `gen_random_uuid()`]
   store_id uuid [not null]
-  status varchar(50) [not null, default: 'PENDING']
+  store_template_id uuid
+  custom_store_template_id uuid
+  status generation_job_status [not null, default: 'PENDING']
   created_at timestamp [not null, default: `now()`]
   completed_at timestamp
   config jsonb
@@ -135,7 +157,7 @@ table stores {
   name varchar(100) [not null]
   logo_url varchar(500)
   app_url varchar(500)
-  currency varchar(3) [default: 'TND']
+  currency varchar(3) [not null, default: 'TND']
   last_generated_at timestamp
   created_at timestamp [not null, default: `now()`]
 }
@@ -167,6 +189,10 @@ table custom_store_template {
   userId text [not null]
   storeId uuid [not null]
   storeTemplateId uuid [not null]
+  name varchar [not null]
+  built_type built_type [not null]
+  is_building json [not null, default: false]
+  is_built json [not null, default: false]
   template_config json [default: `{}`]
   updated_at timestamp [not null, default: `now()`]
   created_at timestamp [not null, default: `now()`]
@@ -175,8 +201,12 @@ table custom_store_template {
 table store_template {
   id uuid [pk, not null, default: `gen_random_uuid()`]
   userId text [not null]
+  name text [not null]
   store_template_type store_template_type [not null]
+  description text
+  status store_template_status [not null, default: 'inactive']
   template_config json [default: `{}`]
+  images json [not null, default: `[]`]
   updated_at timestamp [not null, default: `now()`]
   created_at timestamp [not null, default: `now()`]
 }
@@ -363,7 +393,19 @@ table app_payment {
   status varchar(50) [not null, default: 'pending']
 }
 
+ref: account.user_id > user.id
+
+ref: session.user_id > user.id
+
+ref: generation_jobs.store_id - stores.id
+
+ref: generation_jobs.store_template_id > store_template.id
+
+ref: generation_jobs.custom_store_template_id > custom_store_template.id
+
 ref: stores.category_id > store_category.id
+
+ref: stores.userId - user.id
 
 ref: store_notification.store_id - stores.id
 
@@ -374,6 +416,12 @@ ref: custom_store_template.storeId - stores.id
 ref: custom_store_template.storeTemplateId > store_template.id
 
 ref: store_template.userId - user.id
+
+ref: app_user.store_id - stores.id
+
+ref: app_address.store_id - stores.id
+
+ref: app_address.app_user_id - app_user.id
 
 ref: app_cart.product_id - app_product.id
 
@@ -387,7 +435,27 @@ ref: app_wishlist.app_user_id - app_user.id
 
 ref: app_wishlist.store_id - stores.id
 
+ref: app_user_notification_status.app_user_id - app_user.id
+
+ref: app_user_notification_status.notification_id - app_notification.id
+
 ref: app_product.category_id - app_category.id
+
+ref: app_product.subcategory_id - app_subcategory.id
+
+ref: app_product.store_id - stores.id
+
+ref: app_product.user_id - user.id
+
+ref: app_category.user_id - user.id
+
+ref: app_category.store_id - stores.id
+
+ref: app_subcategory.user_id - user.id
+
+ref: app_subcategory.store_id - stores.id
+
+ref: app_subcategory.parent_category_id - app_category.id
 
 ref: app_review.product_id > app_product.id
 
@@ -396,3 +464,13 @@ ref: app_review.app_user_id - app_user.id
 ref: app_review.store_id - stores.id
 
 ref: app_promotion.store_id - stores.id
+
+ref: app_promotion.user_id - user.id
+
+ref: app_collection.order_id - app_order.id
+
+ref: app_order.app_user_id - app_user.id
+
+ref: app_order.address_id - app_address.id
+
+ref: app_payment.order_id - app_order.id

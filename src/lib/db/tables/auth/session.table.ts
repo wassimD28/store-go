@@ -1,5 +1,6 @@
 import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { user } from "./user.table";
+import { relations } from "drizzle-orm";
 export const session = pgTable("session", {
   id: text("id").primaryKey(),
   expiresAt: timestamp("expires_at").notNull(),
@@ -12,3 +13,11 @@ export const session = pgTable("session", {
     .notNull()
     .references(() => user.id),
 });
+
+// Define relations for session table
+export const sessionRelations = relations(session, ({ one }) => ({
+  user: one(user, {
+    fields: [session.userId],
+    references: [user.id],
+  }),
+}));

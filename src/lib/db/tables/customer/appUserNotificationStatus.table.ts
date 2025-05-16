@@ -1,6 +1,7 @@
 import { boolean, pgTable, timestamp, uuid } from "drizzle-orm/pg-core";
 import { AppUser } from "./appUser.table";
 import { AppNotification } from "./appNotification.table";
+import { relations } from "drizzle-orm";
 
 export const AppUserNotificationStatus = pgTable(
   "app_user_notification_status",
@@ -17,4 +18,19 @@ export const AppUserNotificationStatus = pgTable(
     readAt: timestamp("read_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
+);
+
+// Define relations for AppUserNotificationStatus
+export const AppUserNotificationStatusRelations = relations(
+  AppUserNotificationStatus,
+  ({ one }) => ({
+    user: one(AppUser, {
+      fields: [AppUserNotificationStatus.appUserId],
+      references: [AppUser.id],
+    }),
+    notification: one(AppNotification, {
+      fields: [AppUserNotificationStatus.notificationId],
+      references: [AppNotification.id],
+    }),
+  }),
 );

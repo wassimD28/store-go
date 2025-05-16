@@ -1,6 +1,13 @@
-import { uuid, pgTable, timestamp, varchar, boolean } from "drizzle-orm/pg-core";
+import {
+  uuid,
+  pgTable,
+  timestamp,
+  varchar,
+  boolean,
+} from "drizzle-orm/pg-core";
 import { stores } from "../store";
 import { AgeRangeEnum, AppUserAuthType } from "../tables.enum";
+import { relations } from "drizzle-orm";
 export const AppUser = pgTable("app_user", {
   id: uuid("id").primaryKey().defaultRandom(),
   storeId: uuid("store_id")
@@ -21,3 +28,11 @@ export const AppUser = pgTable("app_user", {
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
+
+// Define relations for AppUser
+export const AppUserRelations = relations(AppUser, ({ one, many }) => ({
+  store: one(stores, {
+    fields: [AppUser.storeId],
+    references: [stores.id],
+  }),
+}));

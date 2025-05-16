@@ -31,7 +31,7 @@ export const AppPromotion = pgTable("app_promotion", {
     precision: 10,
     scale: 2,
   }).default("0"), // Minimum order value
-  buyQuantity: integer("buy_quantity"), // for by_x_get_y option 
+  buyQuantity: integer("buy_quantity"), // for by_x_get_y option
   getQuantity: integer("get_quantity"), // for by_x_get_y option
   yApplicableProducts: json("y_applicable_products").default([]), // Products that can be "Y" items
   yApplicableCategories: json("y_applicable_categories").default([]), // Categories that can be "Y" items
@@ -51,5 +51,9 @@ export const AppPromotionRelations = relations(AppPromotion, ({ one }) => ({
   store: one(stores, {
     fields: [AppPromotion.storeId],
     references: [stores.id],
+  }),
+  user: one(user, {
+    fields: [AppPromotion.userId],
+    references: [user.id],
   }),
 }));

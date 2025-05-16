@@ -1,12 +1,7 @@
-import {
-  pgTable,
-  text,
-  timestamp,
-  uuid,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 import { user } from "../auth";
 import { stores } from "../store";
+import { relations } from "drizzle-orm";
 export const AppCategory = pgTable("app_category", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id")
@@ -21,3 +16,15 @@ export const AppCategory = pgTable("app_category", {
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
+
+// Define relations for AppCategory
+export const AppCategoryRelations = relations(AppCategory, ({ one, many }) => ({
+  user: one(user, {
+    fields: [AppCategory.userId],
+    references: [user.id],
+  }),
+  store: one(stores, {
+    fields: [AppCategory.storeId],
+    references: [stores.id],
+  }),
+}));

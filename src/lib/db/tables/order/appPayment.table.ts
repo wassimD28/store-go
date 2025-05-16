@@ -1,6 +1,12 @@
-import { decimal, pgTable, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  decimal,
+  pgTable,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { AppOrder } from "./appOrder.table";
-
+import { relations } from "drizzle-orm";
 
 export const AppPayment = pgTable("app_payment", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -10,5 +16,13 @@ export const AppPayment = pgTable("app_payment", {
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   payment_date: timestamp("payment_date").defaultNow(),
   payment_method: varchar("payment_method", { length: 50 }).notNull(),
-  status: varchar("status", { length: 50 }).notNull().default("pending"), 
+  status: varchar("status", { length: 50 }).notNull().default("pending"),
 });
+
+// Define relations for AppPayment
+export const AppPaymentRelations = relations(AppPayment, ({ one }) => ({
+  order: one(AppOrder, {
+    fields: [AppPayment.order_id],
+    references: [AppOrder.id],
+  }),
+}));

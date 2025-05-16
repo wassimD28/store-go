@@ -49,6 +49,18 @@ export const AppProductRelations = relations(AppProduct, ({ one, many }) => ({
     fields: [AppProduct.categoryId],
     references: [AppCategory.id],
   }),
+  subcategory: one(AppSubCategory, {
+    fields: [AppProduct.subcategoryId],
+    references: [AppSubCategory.id],
+  }),
+  store: one(stores, {
+    fields: [AppProduct.storeId],
+    references: [stores.id],
+  }),
+  user: one(user, {
+    fields: [AppProduct.userId],
+    references: [user.id],
+  }),
   // Ajout de la relation many vers les reviews
   reviews: many(AppReview),
 }));
