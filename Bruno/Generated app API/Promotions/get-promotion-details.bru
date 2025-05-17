@@ -1,0 +1,100 @@
+meta {
+  name: get-promotion-details
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{PROD_BASE_URL}}/api/mobile-app/promotions/{{PROMOTION_ID}}
+  body: none
+  auth: bearer
+}
+
+vars:pre-request {
+  PROMOTION_ID: 123e4567-e89b-12d3-a456-426614174000
+}
+
+docs {
+  # Get Promotion Details
+
+  This endpoint retrieves the full details of a specific promotion.
+
+  ## Path Parameter Setup
+  
+  The `promotionId` is included in the endpoint URL path:
+  
+  ```
+  /api/mobile-app/promotions/{promotionId}
+  ```
+  
+  Example:
+  ```
+  /api/mobile-app/promotions/123e4567-e89b-12d3-a456-426614174000
+  ```
+
+  ## Authentication
+
+  Bearer token authentication is required.
+
+  ## Sample Response
+
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "123e4567-e89b-12d3-a456-426614174000",
+      "storeId": "789e4567-e89b-12d3-a456-426614174000",
+      "userId": "user_2BQaNL42UQiIehSxpF1gNM19yZn",
+      "name": "Summer Sale",
+      "description": "20% off on all summer collection items",
+      "discountType": "percentage",
+      "discountValue": "20.00",
+      "couponCode": "SUMMER20",
+      "minimumPurchase": "50.00",
+      "buyQuantity": null,
+      "getQuantity": null,
+      "yApplicableProducts": [],
+      "yApplicableCategories": [],
+      "sameProductOnly": true,
+      "promotionImage": "https://example.com/images/summer-promo.jpg",
+      "usageCount": 152,
+      "startDate": "2025-05-01T00:00:00Z",
+      "endDate": "2025-06-30T23:59:59Z",
+      "isActive": true,
+      "applicableProducts": ["5f7c1b9b-5d7b-4a5d-a9b5-d7b5a5d9a5b5"],
+      "applicableCategories": ["8a7c1b9b-5d7b-4a5d-a9b5-d7b5a5d9a5b5"],
+      "created_at": "2025-04-15T10:30:00Z",
+      "updated_at": "2025-04-15T10:30:00Z"
+    }
+  }
+  ```
+
+  ## Error Responses
+
+  ### Not Found (404)
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Promotion not found"
+  }
+  ```
+
+  ### Invalid ID Format (400)
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid promotion ID"
+  }
+  ```
+
+  ### Server Error (500)
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Failed to fetch promotion details"
+  }
+  ```
+}

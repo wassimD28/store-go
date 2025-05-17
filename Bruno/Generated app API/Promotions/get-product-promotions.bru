@@ -1,0 +1,126 @@
+meta {
+  name: get-product-promotions
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{PROD_BASE_URL}}/api/mobile-app/promotions/product/{{PRODUCT_ID}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Get Promotions by Product ID Endpoint
+  
+  This endpoint retrieves all active promotions applicable to a specific product in the StoreGo multi-tenant e-commerce platform. It returns promotions that directly include the product or include the product's category.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - The user must be associated with the store that owns the product
+  
+  ## Request Parameters
+  
+  | Parameter  | Type   | Required | Description                       |
+  |------------|--------|----------|-----------------------------------|
+  | productId  | string | Yes      | UUID of the product to check for promotions (path parameter) |
+    ## Path Parameter Setup
+  
+  The `productId` is included in the endpoint URL path:
+  
+  ```
+  /api/mobile-app/promotions/product/{productId}
+  ```
+  
+  Example:
+  ```
+  /api/mobile-app/promotions/product/123e4567-e89b-12d3-a456-426614174000
+  ```
+  
+  ## Response Format
+  
+  ### Success Response (HTTP 200)
+  
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "uuid",
+        "name": "Summer Sale",
+        "description": "Get 20% off all summer items",
+        "discountType": "percentage",
+        "discountValue": "20.00",
+        "couponCode": "SUMMER20",
+        "minimumPurchase": "0.00",
+        "buyQuantity": null,
+        "getQuantity": null,
+        "sameProductOnly": true,
+        "promotionImage": "url/to/image.jpg",
+        "startDate": "2025-05-01T00:00:00.000Z",
+        "endDate": "2025-08-31T23:59:59.999Z",
+        "isActive": true,
+        "applicableProducts": ["uuid1", "uuid2"],
+        "applicableCategories": ["uuid3"],
+        "created_at": "2025-04-15T12:34:56.789Z",
+        "updated_at": "2025-04-15T12:34:56.789Z"
+      }
+    ]
+  }
+  ```
+  
+  ### Error Responses
+  
+  #### Invalid Product ID (HTTP 400)
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid product ID"
+  }
+  ```
+  
+  #### Server Error (HTTP 500)
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Failed to fetch promotions for product"
+  }
+  ```
+  
+  ## Related Endpoints
+  
+  - GET `/api/mobile-app/products/{id}` - Get details for a specific product
+  - GET `/api/mobile-app/promotions/{promotionId}` - Get details for a specific promotion
+  
+  ## Notes
+  
+  - Only returns active promotions for the current date
+  - Includes promotions where either:
+    - The specific product ID is included in `applicableProducts`
+    - The product's category ID is included in `applicableCategories`
+  - Promotions are filtered by the store ID to ensure proper multi-tenant separation
+}

@@ -3,6 +3,42 @@ import { PromotionRepository } from "@/server/repositories/promotion.repository"
 import { idSchema } from "../schemas/common.schema";
 
 export class PromotionController {
+  static async getPromotionsByProductId(c: Context) {
+    try {
+      const productId = c.req.param("productId");
+      // Validate ID
+      const validId = idSchema.safeParse(productId);
+      if (!validId.success) {
+        return c.json(
+          {
+            status: "error",
+            message: "Invalid product ID",
+          },
+          400,
+        );
+      }
+
+      const { storeId } = c.get("user");
+      const promotions = await PromotionRepository.findByProductId(
+        productId,
+        storeId,
+      );
+
+      return c.json({
+        status: "success",
+        data: promotions,
+      });
+    } catch (error) {
+      console.error("Error in getPromotionsByProductId:", error);
+      return c.json(
+        {
+          status: "error",
+          message: "Failed to fetch promotions for product",
+        },
+        500,
+      );
+    }
+  }
   static async getAllPromotions(c: Context) {
     try {
       const { storeId } = c.get("user");
@@ -27,6 +63,7 @@ export class PromotionController {
   static async getPromotionById(c: Context) {
     try {
       const promotionId = c.req.param("promotionId");
+
       // Validate ID
       const validId = idSchema.safeParse(promotionId);
       if (!validId.success) {
@@ -40,7 +77,10 @@ export class PromotionController {
       }
 
       const { storeId } = c.get("user");
-      const promotion = await PromotionRepository.findById(promotionId, storeId);
+      const promotion = await PromotionRepository.findById(
+        promotionId,
+        storeId,
+      );
 
       if (!promotion) {
         return c.json(
@@ -61,7 +101,7 @@ export class PromotionController {
       return c.json(
         {
           status: "error",
-          message: "Failed to fetch promotion",
+          message: "Failed to fetch promotion details",
         },
         500,
       );

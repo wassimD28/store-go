@@ -1,0 +1,142 @@
+meta {
+  name: check-cart-promotions
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{PROD_BASE_URL}}/api/mobile-app/cart/check-promotions
+  body: json
+  auth: bearer
+}
+
+body:json {
+  {
+    "cartItems": [
+      {
+        "productId": "5f7c1b9b-5d7b-4a5d-a9b5-d7b5a5d9a5b5",
+        "quantity": 2,
+        "variantId": "3a7c1b9b-5d7b-4a5d-a9b5-d7b5a5d9a5b5"
+      },
+      {
+        "productId": "6f7c1b9b-5d7b-4a5d-a9b5-d7b5a5d9a5b5",
+        "quantity": 1
+      }
+    ]
+  }
+}
+
+docs {
+  # Check Applicable Promotions For Cart
+
+  This endpoint checks which promotions are applicable to the current items in the cart and provides information about the promotion eligibility and requirements.
+
+  ## Request Body Parameters
+
+  | Parameter | Type | Description |
+  |-----------|------|-------------|
+  | cartItems | array | An array of items in the cart |
+  | cartItems[].productId | string | The unique ID of the product |
+  | cartItems[].quantity | number | The quantity of the product in the cart |
+  | cartItems[].variantId | string | (Optional) The unique ID of the product variant |
+
+  ## Authentication
+
+  Bearer token authentication is required.
+
+  ## Sample Request
+
+  ```json
+  {
+    "cartItems": [
+      {
+        "productId": "5f7c1b9b-5d7b-4a5d-a9b5-d7b5a5d9a5b5",
+        "quantity": 2,
+        "variantId": "3a7c1b9b-5d7b-4a5d-a9b5-d7b5a5d9a5b5"
+      },
+      {
+        "productId": "6f7c1b9b-5d7b-4a5d-a9b5-d7b5a5d9a5b5",
+        "quantity": 1
+      }
+    ]
+  }
+  ```
+
+  ## Sample Response - With Applicable Promotions
+
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "applicablePromotions": [
+        {
+          "id": "123e4567-e89b-12d3-a456-426614174000",
+          "name": "Summer Sale",
+          "description": "20% off on all summer collection items",
+          "discountType": "percentage",
+          "discountValue": "20.00",
+          "promotionImage": "https://example.com/images/summer-promo.jpg",
+          "isEligible": true,
+          "requiredActions": []
+        },
+        {
+          "id": "223e4567-e89b-12d3-a456-426614174001",
+          "name": "Buy 3 Get 1 Free",
+          "description": "Buy 3 items from the t-shirt collection and get 1 free",
+          "discountType": "buy_x_get_y",
+          "buyQuantity": 3,
+          "getQuantity": 1,
+          "promotionImage": "https://example.com/images/buy3get1-promo.jpg",
+          "isEligible": false,
+          "requiredActions": [
+            {
+              "type": "ADD_SPECIFIC_ITEMS",
+              "message": "Add 1 more qualifying item to receive this offer",
+              "quantityNeeded": 1
+            }
+          ]
+        },
+        {
+          "id": "323e4567-e89b-12d3-a456-426614174002",
+          "name": "$10 Off Orders Over $50",
+          "description": "Get $10 off your purchase of $50 or more",
+          "discountType": "fixed_amount",
+          "discountValue": "10.00",
+          "minimumPurchase": "50.00",
+          "promotionImage": "https://example.com/images/10off-promo.jpg",
+          "isEligible": false,
+          "requiredActions": [
+            {
+              "type": "ADD_MORE_ITEMS",
+              "message": "Add $12.50 more to your cart to qualify",
+              "amountNeeded": 12.5
+            }
+          ]
+        }
+      ]
+    }
+  }
+  ```
+
+  ## Sample Response - No Promotions
+
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "applicablePromotions": []
+    }
+  }
+  ```
+
+  ## Error Responses
+
+  ### Server Error (500)
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Failed to check promotions for cart items"
+  }
+  ```
+}

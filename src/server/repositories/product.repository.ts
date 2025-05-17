@@ -33,11 +33,12 @@ export class ProductRepository {
       throw new Error("Failed to fetch products");
     }
   }
-
-  static async findById(id: string) {
+  static async findById(id: string, storeId?: string) {
     try {
       const product = await db.query.AppProduct.findFirst({
-        where: eq(AppProduct.id, id),
+        where: storeId
+          ? and(eq(AppProduct.id, id), eq(AppProduct.storeId, storeId))
+          : eq(AppProduct.id, id),
         columns: {
           id: true,
           userId: true,
