@@ -110,19 +110,9 @@ export const getTemplatesSideBar = (storeId: string): SideBarData[] => [
 
 export const getPromotionsSideBar = (storeId: string): SideBarData[] => [
   {
-    name: "Discounts",
+    name: "All Promotions",
     icon: TagIcon,
     route: `/stores/${storeId}/promotions/discounts`,
-  },
-  {
-    name: "Coupons",
-    icon: TagIcon,
-    route: `/stores/${storeId}/promotions/coupons`,
-  },
-  {
-    name: "Campaigns",
-    icon: TagIcon,
-    route: `/stores/${storeId}/promotions/campaigns`,
   },
 ];
 
