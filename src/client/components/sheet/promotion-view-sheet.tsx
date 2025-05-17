@@ -9,11 +9,12 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/client/components/ui/tabs";
-import { Pencil, X } from "lucide-react";
+import { Pencil, X, Info, ShoppingBag } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 // Import tab content components
 import DetailsTabContent from "@/client/components/tabContent/promotions/details.tabContent";
+import ProductsTabContent from "@/client/components/tabContent/promotions/products.tabContent";
 
 // Promotion interface based on your existing schema
 interface PromotionViewProps {
@@ -34,6 +35,9 @@ interface PromotionViewProps {
     getQuantity: number | null;
     applicableProducts: string[];
     applicableCategories: string[];
+    yApplicableProducts?: string[];
+    yApplicableCategories?: string[];
+    sameProductOnly?: boolean;
     created_at: Date;
     updated_at: Date;
     usageCount: number;
@@ -85,18 +89,29 @@ export function PromotionViewSheet({
             value={activeTab}
             onValueChange={setActiveTab}
           >
+            {" "}
             <TabsList className="bg-transparent">
               <TabsTrigger
                 className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-1 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent"
                 value="details"
               >
+                <Info className="mr-1 h-4 w-4" />
                 Details
+              </TabsTrigger>
+              <TabsTrigger
+                className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-1 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent"
+                value="products"
+              >
+                <ShoppingBag className="mr-1 h-4 w-4" />
+                Products
               </TabsTrigger>
             </TabsList>
             <hr />
-
             <TabsContent value="details" className="py-4">
               <DetailsTabContent promotion={promotion} />
+            </TabsContent>
+            <TabsContent value="products" className="py-4">
+              <ProductsTabContent promotion={promotion} />
             </TabsContent>
           </Tabs>
         </div>

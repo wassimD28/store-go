@@ -1,4 +1,3 @@
-
 "use client";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -130,9 +129,7 @@ export default function CreatePromotionForm({
         toast.dismiss(loadingToast);
         toast.error("No store selected. Please select a store first.");
         return;
-      }
-
-      // Prepare promotion data
+      } // Prepare promotion data
       const promotionData = {
         userId,
         storeId,
@@ -184,13 +181,15 @@ export default function CreatePromotionForm({
             }),
       };
 
+      // No changes needed to this object - the action function will map the arrays to the new parameter names
+
       // Create the promotion
       const response = await createPromotion(promotionData);
       toast.dismiss(loadingToast);
 
       if (response.success) {
         toast.success("Promotion created successfully!");
-        router.push(`/stores/${storeId}/marketing/promotions`);
+        router.push(`/stores/${storeId}/promotions`);
         router.refresh();
       } else {
         toast.error(response.error || "Failed to create promotion.");
@@ -212,7 +211,7 @@ export default function CreatePromotionForm({
 
   return (
     <Form {...form}>
-      <div className="grid grid-cols-1 gap-6 py-10 lg:grid-cols-4 pl-[80px] pr-4">
+      <div className="grid grid-cols-1 gap-6 py-10 pl-[80px] pr-4 lg:grid-cols-4">
         {/* Form section (scrollable) - takes 2/3 of the space */}
         <div className="space-y-8 lg:col-span-2">
           <form
@@ -293,9 +292,7 @@ export default function CreatePromotionForm({
           <div className="lg:sticky lg:top-20">
             <Card className="shadow-custom-2xl">
               <CardHeader className="pb-2">
-                <h3 className=" text-lg font-semibold">
-                  Promotion Summary
-                </h3>
+                <h3 className="text-lg font-semibold">Promotion Summary</h3>
                 <p className="text-sm text-muted-foreground">
                   Here&apos;s how your promotion will work for customers
                 </p>

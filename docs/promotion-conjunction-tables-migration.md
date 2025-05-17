@@ -15,15 +15,31 @@ This implementation has led to several challenges:
 4. **Lack of Referential Integrity**: No database-enforced constraints to ensure product/category IDs exist.
 5. **Maintenance Complexity**: Debugging and extending this approach requires handling multiple edge cases.
 
-## Proposed Migration: Conjunction Tables
+## Handling Buy X Get Y Promotion Type
 
-### Database Schema Changes
+The "Buy X Get Y" promotion type requires special consideration in our migration to conjunction tables. This promotion type allows customers to receive Y items for free or at a discount when they purchase X items.
 
-We'll introduce two new conjunction tables to replace the JSON arrays:
+### Current Implementation
+
+In the current implementation, this type of promotion has these specific fields:
 
 ```typescript
-// New conjunction tables
-export const PromotionProduct = pgTable("promotion_product", {
+buyQuantity: integer("buy_quantity"), // for by_x_get_y option
+getQuantity: integer("get_quantity"), // for by_x_get_y option
+yApplicableProducts: json("y_applicable_products").default([]), // Products that can be "Y" items
+yApplicableCategories: json("y_applicable_categories").default([]), // Categories that can be "Y" items
+sameProductOnly: boolean("same_product_only").default(true), // If true, Y must be same as X
+```
+
+The `yApplicableProducts` and `yApplicableCategories` fields are JSON arrays, just like the general `applicableProducts` and `applicableCategories` fields. This creates the same challenges with data integrity and query performance.
+
+### Proposed Solution
+
+To properly handle Buy X Get Y promotions in our new architecture, we'll add two additional conjunction tables:
+
+```typescript
+// Additional conjunction tables for "Y" items in "Buy X Get Y" promotions
+export const PromotionYProduct = pgTable("promotion_y_product", {
   id: uuid("id").primaryKey().defaultRandom(),
   promotionId: uuid("promotion_id")
     .notNull()
@@ -34,7 +50,7 @@ export const PromotionProduct = pgTable("promotion_product", {
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const PromotionCategory = pgTable("promotion_category", {
+export const PromotionYCategory = pgTable("promotion_y_category", {
   id: uuid("id").primaryKey().defaultRandom(),
   promotionId: uuid("promotion_id")
     .notNull()
@@ -46,9 +62,7 @@ export const PromotionCategory = pgTable("promotion_category", {
 });
 ```
 
-### AppPromotion Table Modifications
-
-We'll update the `AppPromotion` table to remove the now-redundant JSON fields:
+We'll keep the `buyQuantity`, `getQuantity`, and `sameProductOnly` fields in the `AppPromotion` table as they are scalar values, but replace the JSON array fields with the new conjunction tables:
 
 ```typescript
 export const AppPromotion = pgTable("app_promotion", {
@@ -81,15 +95,13 @@ export const AppPromotion = pgTable("app_promotion", {
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   isActive: boolean("is_active").default(true).notNull(),
-  // Removed: applicableProducts and applicableCategories JSON fields
+  // Removed: yApplicableProducts and yApplicableCategories JSON fields
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 ```
 
-### Relations Configuration
-
-We'll update the Drizzle ORM relations to include the new conjunction tables:
+Then we'll update our relations configuration:
 
 ```typescript
 export const AppPromotionRelations = relations(
@@ -105,32 +117,35 @@ export const AppPromotionRelations = relations(
     }),
     products: many(PromotionProduct),
     categories: many(PromotionCategory),
+    yProducts: many(PromotionYProduct),
+    yCategories: many(PromotionYCategory),
   }),
 );
 
-export const PromotionProductRelations = relations(
-  PromotionProduct,
+// Add relations for Y-product and Y-category tables
+export const PromotionYProductRelations = relations(
+  PromotionYProduct,
   ({ one }) => ({
     promotion: one(AppPromotion, {
-      fields: [PromotionProduct.promotionId],
+      fields: [PromotionYProduct.promotionId],
       references: [AppPromotion.id],
     }),
     product: one(AppProduct, {
-      fields: [PromotionProduct.productId],
+      fields: [PromotionYProduct.productId],
       references: [AppProduct.id],
     }),
   }),
 );
 
-export const PromotionCategoryRelations = relations(
-  PromotionCategory,
+export const PromotionYCategoryRelations = relations(
+  PromotionYCategory,
   ({ one }) => ({
     promotion: one(AppPromotion, {
-      fields: [PromotionCategory.promotionId],
+      fields: [PromotionYCategory.promotionId],
       references: [AppPromotion.id],
     }),
     category: one(AppCategory, {
-      fields: [PromotionCategory.categoryId],
+      fields: [PromotionYCategory.categoryId],
       references: [AppCategory.id],
     }),
   }),
@@ -236,6 +251,65 @@ const migratePromotionRelations = async () => {
       } catch (error) {
         console.error(
           `Error inserting category relation ${categoryId} for promotion ${promotion.id}:`,
+          error,
+        );
+      }
+    }
+
+    // Additional processing for Buy X Get Y promotions
+    let yApplicableProducts = [];
+    let yApplicableCategories = [];
+
+    try {
+      // Parse yApplicableProducts
+      if (promotion.yApplicableProducts) {
+        if (typeof promotion.yApplicableProducts === "string") {
+          yApplicableProducts = JSON.parse(promotion.yApplicableProducts);
+        } else if (Array.isArray(promotion.yApplicableProducts)) {
+          yApplicableProducts = promotion.yApplicableProducts;
+        }
+      }
+
+      // Parse yApplicableCategories
+      if (promotion.yApplicableCategories) {
+        if (typeof promotion.yApplicableCategories === "string") {
+          yApplicableCategories = JSON.parse(promotion.yApplicableCategories);
+        } else if (Array.isArray(promotion.yApplicableCategories)) {
+          yApplicableCategories = promotion.yApplicableCategories;
+        }
+      }
+    } catch (error) {
+      console.error(
+        `Error parsing Y-item JSON for promotion ${promotion.id}:`,
+        error,
+      );
+    }
+
+    // Insert Y-product relationships
+    for (const productId of yApplicableProducts) {
+      try {
+        await db.insert(PromotionYProduct).values({
+          promotionId: promotion.id,
+          productId,
+        });
+      } catch (error) {
+        console.error(
+          `Error inserting Y-product relation ${productId} for promotion ${promotion.id}:`,
+          error,
+        );
+      }
+    }
+
+    // Insert Y-category relationships
+    for (const categoryId of yApplicableCategories) {
+      try {
+        await db.insert(PromotionYCategory).values({
+          promotionId: promotion.id,
+          categoryId,
+        });
+      } catch (error) {
+        console.error(
+          `Error inserting Y-category relation ${categoryId} for promotion ${promotion.id}:`,
           error,
         );
       }

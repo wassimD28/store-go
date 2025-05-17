@@ -54,8 +54,7 @@ const PromotionsPage = async ({ params }: PromotionsPageProps) => {
             </Button>
           </CardContent>
         </Card>
-      ) : !promotionsResult.promotions ||
-        promotionsResult.promotions.length === 0 ? (
+      ) : !promotionsResult.data || promotionsResult.data.length === 0 ? (
         <Card className="w-full">
           <CardHeader>
             <CardTitle>No Promotions Found</CardTitle>
@@ -69,15 +68,38 @@ const PromotionsPage = async ({ params }: PromotionsPageProps) => {
         </Card>
       ) : (
         <PromotionTableClient
-          promotions={promotionsResult.promotions.map((promotion) => ({
-            ...promotion,
-            applicableProducts: Array.isArray(promotion.applicableProducts)
-              ? promotion.applicableProducts
-              : [],
-            applicableCategories: Array.isArray(promotion.applicableCategories)
-              ? promotion.applicableCategories
-              : [],
-          }))}
+          promotions={promotionsResult.data.map((promotion) => {
+            // Convert promotion to expected format for the table
+            // Extract IDs from objects when necessary
+            const extractIdsFromItems = (
+              items: (string | { id: string } | Record<string, unknown>)[],
+            ): string[] => {
+              if (!Array.isArray(items)) return [];
+
+              return items.map((item) => {
+                if (item && typeof item === "object" && "id" in item) {
+                  return item.id as string;
+                }
+                return item as string;
+              });
+            };
+
+            return {
+              ...promotion,
+              applicableProducts: extractIdsFromItems(
+                promotion.applicableProducts || [],
+              ),
+              applicableCategories: extractIdsFromItems(
+                promotion.applicableCategories || [],
+              ),
+              yApplicableProducts: extractIdsFromItems(
+                promotion.yApplicableProducts || [],
+              ),
+              yApplicableCategories: extractIdsFromItems(
+                promotion.yApplicableCategories || [],
+              ),
+            };
+          })}
         />
       )}
     </div>

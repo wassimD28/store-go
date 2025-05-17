@@ -79,8 +79,22 @@ export default function UpdatePromotionForm({
         setIsLoading(true);
         const response = await getPromotionById(promotionId);
 
-        if (response.success && response.promotion) {
-          const promotion = response.promotion;
+        if (response.success && response.data) {
+          const promotion = response.data;
+
+          // Extract IDs from product and category objects
+          const extractIds = (
+            items: (string | { id: string } | Record<string, unknown>)[],
+          ): string[] => {
+            return items.map((item) => {
+              // If the item is an object with an id property, return the id
+              if (item && typeof item === "object" && "id" in item) {
+                return item.id as string;
+              }
+              // Otherwise, assume it's already an id
+              return item as string;
+            });
+          };
 
           // Reset form with promotion data
           form.reset({
@@ -98,27 +112,27 @@ export default function UpdatePromotionForm({
             getQuantity: promotion.getQuantity || 1,
             xSelectionType: "specific_products", // Default values, adjust if available in your schema
             xApplicableProducts: Array.isArray(promotion.applicableProducts)
-              ? promotion.applicableProducts
+              ? extractIds(promotion.applicableProducts)
               : [],
             xApplicableCategories: Array.isArray(promotion.applicableCategories)
-              ? promotion.applicableCategories
+              ? extractIds(promotion.applicableCategories)
               : [],
             ySelectionType: promotion.sameProductOnly
               ? "same_product"
               : "specific_products",
             yApplicableProducts: Array.isArray(promotion.yApplicableProducts)
-              ? promotion.yApplicableProducts
+              ? extractIds(promotion.yApplicableProducts)
               : [],
             yApplicableCategories: Array.isArray(
               promotion.yApplicableCategories,
             )
-              ? promotion.yApplicableCategories
+              ? extractIds(promotion.yApplicableCategories)
               : [],
             applicableProducts: Array.isArray(promotion.applicableProducts)
-              ? promotion.applicableProducts
+              ? extractIds(promotion.applicableProducts)
               : [],
             applicableCategories: Array.isArray(promotion.applicableCategories)
-              ? promotion.applicableCategories
+              ? extractIds(promotion.applicableCategories)
               : [],
           });
         } else {
@@ -144,9 +158,7 @@ export default function UpdatePromotionForm({
     }
 
     try {
-      setIsSubmitting(true);
-
-      // Prepare the data for updating the promotion
+      setIsSubmitting(true); // Prepare the data for updating the promotion
       const formattedData = {
         id: promotionId,
         userId: authData.user.id,
@@ -185,13 +197,14 @@ export default function UpdatePromotionForm({
           values.discountType === DiscountType.BuyXGetY &&
           values.ySelectionType !== "same_product"
             ? values.yApplicableProducts
-            : undefined,
+            : [],
         yApplicableCategories:
           values.discountType === DiscountType.BuyXGetY &&
           values.ySelectionType !== "same_product"
             ? values.yApplicableCategories
-            : undefined,
+            : [],
       };
+      // Changed undefined to empty array for Y products/categories to ensure proper mapping
 
       const result = await updatePromotion(formattedData);
 

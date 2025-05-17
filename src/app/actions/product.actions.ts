@@ -8,6 +8,39 @@ import { and, eq } from "drizzle-orm";
 import Pusher from "pusher";
 import { createBroadcastNotification } from "./appUsersNotification.actions";
 import { AppNotificationType } from "@/lib/types/enums/common.enum";
+// Function to fetch products by their IDs
+export const getProductsByIds = async (
+  storeId: string,
+  productIds: string[],
+): Promise<ActionResponse<any>> => {
+  try {
+    if (!productIds.length) {
+      return { success: true, data: [] };
+    }
+
+    const products = await db.query.AppProduct.findMany({
+      where: and(eq(AppProduct.storeId, storeId)),
+      with: {
+        category: true,
+      },
+    });
+
+    // Filter the products to only include those in the productIds array
+    const filteredProducts = products.filter((product) =>
+      productIds.includes(product.id),
+    );
+
+    return { success: true, data: filteredProducts };
+  } catch (error) {
+    console.error("Error fetching products by IDs:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to fetch products",
+    };
+  }
+};
+
 // Pusher initialization (similar to what's in ReviewController)
 const pusherServer = (() => {
   try {
@@ -114,14 +147,18 @@ export const createProduct = async ({
 
         // Trigger Pusher notification
         if (pusherServer) {
-          await pusherServer.trigger(`store-${storeId}`, AppNotificationType.NewProduct , {
-            productId: newProduct.id,
-            productName: name,
-            price: price.toString(),
-            imageUrl:
-              image_urls && image_urls.length > 0 ? image_urls[0] : null,
-            createdAt: new Date().toISOString(),
-          });
+          await pusherServer.trigger(
+            `store-${storeId}`,
+            AppNotificationType.NewProduct,
+            {
+              productId: newProduct.id,
+              productName: name,
+              price: price.toString(),
+              imageUrl:
+                image_urls && image_urls.length > 0 ? image_urls[0] : null,
+              createdAt: new Date().toISOString(),
+            },
+          );
         }
       } catch (error) {
         console.error("Error sending product notification:", error);

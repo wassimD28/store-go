@@ -40,6 +40,22 @@ export const truncateEmail = (email: string, maxLength: number = 10) => {
   return `${localPart}...@${domain}`;
 };
 
+// Format currency amount
+export const formatCurrency = (
+  amount: number | string,
+  currencyCode: string = "USD",
+): string => {
+  const numericAmount =
+    typeof amount === "string" ? parseFloat(amount) : amount;
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currencyCode,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(numericAmount);
+};
+
 // Function to determine if a route is active
 export const isActiveRoute = (route: string, pathname: string) => {
   // Exact match for dashboard-level routes
@@ -83,28 +99,28 @@ export const isActiveRoute = (route: string, pathname: string) => {
 export const isSubNavActive = (route: string, pathname: string) => {
   // Simple case: exact match
   if (route === pathname) return true;
-  
+
   const routeSegments = route.split("/").filter(Boolean);
   const pathSegments = pathname.split("/").filter(Boolean);
-  
+
   // Must have at least 4 segments for store routes with sub-navigation
   if (routeSegments.length < 4 || pathSegments.length < 4) return false;
-  
+
   // For store routes, match store ID and section
   if (routeSegments[0] === "stores") {
     // Make sure we're comparing routes in the same store
     if (routeSegments[1] !== pathSegments[1]) return false;
-    
+
     // For store main sections (products, templates, etc.)
     if (routeSegments[2] !== pathSegments[2]) return false;
-    
+
     // For subsections (categories, list, attributes, etc.)
     // Here we ensure we match the exact subsection
     if (routeSegments.length >= 4 && pathSegments.length >= 4) {
       return routeSegments[3] === pathSegments[3];
     }
   }
-  
+
   // For dashboard sub-sections
   if (routeSegments[0] === "dashboard" && pathSegments[0] === "dashboard") {
     if (routeSegments.length >= 3 && pathSegments.length >= 3) {
@@ -112,7 +128,7 @@ export const isSubNavActive = (route: string, pathname: string) => {
       return routeSegments[2] === pathSegments[2];
     }
   }
-  
+
   // For team sub-sections
   if (routeSegments[0] === "team" && pathSegments[0] === "team") {
     if (routeSegments.length >= 2 && pathSegments.length >= 2) {
@@ -120,7 +136,7 @@ export const isSubNavActive = (route: string, pathname: string) => {
       return routeSegments[1] === pathSegments[1];
     }
   }
-  
+
   // Default to false if no conditions match
   return false;
 };
@@ -149,56 +165,52 @@ export function getFirstName(fullName: string): string {
 
 // Function to format time difference
 export const formatTimeDifference = (date: Date) => {
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (diffInSeconds < 60) return "just now";
-    if (diffInSeconds < 3600)
-      return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-    if (diffInSeconds < 86400)
-      return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-    if (diffInSeconds < 604800)
-      return `${Math.floor(diffInSeconds / 86400)} days ago`;
-    return `${Math.floor(diffInSeconds / 604800)} weeks ago`;
-  };
+  if (diffInSeconds < 60) return "just now";
+  if (diffInSeconds < 3600)
+    return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+  if (diffInSeconds < 86400)
+    return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+  if (diffInSeconds < 604800)
+    return `${Math.floor(diffInSeconds / 86400)} days ago`;
+  return `${Math.floor(diffInSeconds / 604800)} weeks ago`;
+};
 
-  // src/lib/utils.ts
+// src/lib/utils.ts
 
-import { 
-  differenceInSeconds, 
-  differenceInMinutes, 
-  differenceInHours, 
-  differenceInDays, 
-  differenceInWeeks, 
-  differenceInMonths, 
-  differenceInYears 
+import {
+  differenceInSeconds,
+  differenceInMinutes,
+  differenceInHours,
+  differenceInDays,
+  differenceInWeeks,
+  differenceInMonths,
+  differenceInYears,
 } from "date-fns";
 
 /**
  * Calculates a detailed duration string between two dates with precise time units
- * 
+ *
  * @param startDate - The starting date
  * @param endDate - The ending date
  * @param options - Options for formatting
  * @returns A formatted string representing the duration
  */
 export function calculateDetailedDuration(
-  startDate: Date, 
+  startDate: Date,
   endDate: Date,
   options: {
     includeSeconds?: boolean;
-    maxUnits?: number;  // Maximum number of time units to include (e.g., 2 would show "2 months 5 days" but not smaller units)
+    maxUnits?: number; // Maximum number of time units to include (e.g., 2 would show "2 months 5 days" but not smaller units)
     condensed?: boolean; // If true, returns more compact format (e.g., "2m 5d" instead of "2 months 5 days")
-  } = {}
+  } = {},
 ): string {
-  const { 
-    includeSeconds = false, 
-    maxUnits = 3,
-    condensed = false 
-  } = options;
-  
+  const { includeSeconds = false, maxUnits = 3, condensed = false } = options;
+
   if (!startDate || !endDate) return "Invalid dates";
-  
+
   // Calculate differences in various time units
   const years = differenceInYears(endDate, startDate);
   const months = differenceInMonths(endDate, startDate) % 12;
@@ -206,8 +218,10 @@ export function calculateDetailedDuration(
   const days = differenceInDays(endDate, startDate) % 7;
   const hours = differenceInHours(endDate, startDate) % 24;
   const minutes = differenceInMinutes(endDate, startDate) % 60;
-  const seconds = includeSeconds ? differenceInSeconds(endDate, startDate) % 60 : 0;
-  
+  const seconds = includeSeconds
+    ? differenceInSeconds(endDate, startDate) % 60
+    : 0;
+
   // Initialize units array with calculated differences
   const units = [
     { value: years, singular: "year", plural: "years", short: "y" },
@@ -217,17 +231,22 @@ export function calculateDetailedDuration(
     { value: hours, singular: "hour", plural: "hours", short: "h" },
     { value: minutes, singular: "minute", plural: "minutes", short: "min" },
   ];
-  
+
   // Add seconds only if includeSeconds is true
   if (includeSeconds) {
-    units.push({ value: seconds, singular: "second", plural: "seconds", short: "s" });
+    units.push({
+      value: seconds,
+      singular: "second",
+      plural: "seconds",
+      short: "s",
+    });
   }
-  
+
   // Filter out units with zero value and limit to maxUnits
   const nonZeroUnits = units
-    .filter(unit => unit.value > 0)
+    .filter((unit) => unit.value > 0)
     .slice(0, maxUnits);
-  
+
   // If all units are zero (same time), handle specially
   if (nonZeroUnits.length === 0) {
     // If dates are exactly the same or almost same
@@ -239,15 +258,13 @@ export function calculateDetailedDuration(
       return "Same time";
     }
   }
-  
+
   // Format the duration string
   if (condensed) {
-    return nonZeroUnits
-      .map(unit => `${unit.value}${unit.short}`)
-      .join(" ");
+    return nonZeroUnits.map((unit) => `${unit.value}${unit.short}`).join(" ");
   } else {
     return nonZeroUnits
-      .map(unit => {
+      .map((unit) => {
         const label = unit.value === 1 ? unit.singular : unit.plural;
         return `${unit.value} ${label}`;
       })
@@ -258,81 +275,88 @@ export function calculateDetailedDuration(
 /**
  * Returns a human-readable duration estimate between two dates
  * Optimized for promotion duration display with natural language
- * 
+ *
  * @param startDate - The start date of the promotion
  * @param endDate - The end date of the promotion
  * @returns A formatted string representing the duration
  */
-export function formatPromotionDuration(startDate: Date, endDate: Date): string {
+export function formatPromotionDuration(
+  startDate: Date,
+  endDate: Date,
+): string {
   if (!startDate || !endDate) return "";
-  
+
   const totalDays = differenceInDays(endDate, startDate);
-  
+
   // Handle invalid duration
   if (totalDays < 0) {
     return "Invalid duration";
   }
-  
+
   // Same day special case
   if (totalDays === 0) {
     const hours = differenceInHours(endDate, startDate);
     if (hours < 24 && hours > 0) {
-      return `${hours} hour${hours !== 1 ? 's' : ''}`;
+      return `${hours} hour${hours !== 1 ? "s" : ""}`;
     }
     return "Same day";
   }
-  
+
   const years = differenceInYears(endDate, startDate);
   if (years > 0) {
     const remainingMonths = differenceInMonths(endDate, startDate) % 12;
-    let result = `${years} year${years !== 1 ? 's' : ''}`;
+    let result = `${years} year${years !== 1 ? "s" : ""}`;
     if (remainingMonths > 0) {
-      result += ` and ${remainingMonths} month${remainingMonths !== 1 ? 's' : ''}`;
+      result += ` and ${remainingMonths} month${remainingMonths !== 1 ? "s" : ""}`;
     }
     return result;
   }
-  
+
   const months = differenceInMonths(endDate, startDate);
   if (months > 0) {
-    const remainingDays = totalDays - (months * 30);
-    let result = `${months} month${months !== 1 ? 's' : ''}`;
+    const remainingDays = totalDays - months * 30;
+    let result = `${months} month${months !== 1 ? "s" : ""}`;
     if (remainingDays > 0) {
-      result += ` and ${remainingDays} day${remainingDays !== 1 ? 's' : ''}`;
+      result += ` and ${remainingDays} day${remainingDays !== 1 ? "s" : ""}`;
     }
     return result;
   }
-  
+
   const weeks = Math.floor(totalDays / 7);
   if (weeks > 0) {
     const remainingDays = totalDays % 7;
-    let result = `${weeks} week${weeks !== 1 ? 's' : ''}`;
+    let result = `${weeks} week${weeks !== 1 ? "s" : ""}`;
     if (remainingDays > 0) {
-      result += ` and ${remainingDays} day${remainingDays !== 1 ? 's' : ''}`;
+      result += ` and ${remainingDays} day${remainingDays !== 1 ? "s" : ""}`;
     }
     return result;
   }
-  
+
   // Just days
-  return `${totalDays} day${totalDays !== 1 ? 's' : ''}`;
+  return `${totalDays} day${totalDays !== 1 ? "s" : ""}`;
 }
 
-
-export function formatDistanceToNow(date: Date, options?: { addSuffix?: boolean }): string {
+export function formatDistanceToNow(
+  date: Date,
+  options?: { addSuffix?: boolean },
+): string {
   // Implement a simple function to return time ago format like "2h ago", "3d ago", etc.
   const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - new Date(date).getTime()) / 1000);
-  
+  const diffInSeconds = Math.floor(
+    (now.getTime() - new Date(date).getTime()) / 1000,
+  );
+
   const minute = 60;
   const hour = minute * 60;
   const day = hour * 24;
   const week = day * 7;
   const month = day * 30;
   const year = day * 365;
-  
+
   let result: string;
-  
+
   if (diffInSeconds < minute) {
-    result = 'just now';
+    result = "just now";
   } else if (diffInSeconds < hour) {
     const minutes = Math.floor(diffInSeconds / minute);
     result = `${minutes}m`;
@@ -352,22 +376,22 @@ export function formatDistanceToNow(date: Date, options?: { addSuffix?: boolean 
     const years = Math.floor(diffInSeconds / year);
     result = `${years}y`;
   }
-  
+
   return options?.addSuffix ? `${result} ago` : result;
 }
 
 /**
  * Converts status codes from uppercase with underscores to lowercase with spaces
- * 
+ *
  * @param {string} status - The status code in uppercase with underscores (e.g., "IN_PROGRESS")
  * @returns {string} The formatted status in lowercase with spaces (e.g., "in progress")
  */
 export function formatStatus(status: string) {
   // Return early if status is not a string or is empty
-  if (typeof status !== 'string' || status.trim() === '') {
-    return '';
+  if (typeof status !== "string" || status.trim() === "") {
+    return "";
   }
-  
+
   // Convert to lowercase and replace underscores with spaces
-  return status.toLowerCase().replace(/_/g, ' ');
+  return status.toLowerCase().replace(/_/g, " ");
 }

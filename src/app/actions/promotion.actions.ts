@@ -1,13 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
-import { db } from "@/lib/db/db";
-import { AppPromotion } from "@/lib/db/tables/product/appPromotion.table";
-import { ActionResponse } from "@/lib/types/interfaces/common.interface";
-import { eq } from "drizzle-orm";
 import Pusher from "pusher";
-import { createBroadcastNotification } from "./appUsersNotification.actions";
-import { AppNotificationType, DiscountType } from "@/lib/types/enums/common.enum";
+import { db } from "@/lib/db/db";
+import { AppPromotion } from "@/lib/db/schema";
+import { ActionResponse } from "@/lib/types/interfaces/common.interface";
+import { PromotionWithRelations } from "@/lib/types/interfaces/promotion.interface";
+import { eq } from "drizzle-orm";
+import { DiscountType } from "@/lib/types/enums/common.enum";
+import { NOTIFICATION_CHANNELS } from "@/server/constants/channels";
+import { PromotionRepository } from "@/server/repositories/promotion.repository";
 
 // Pusher initialization
 const pusherServer = (() => {
@@ -19,9 +21,7 @@ const pusherServer = (() => {
     const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER!;
 
     if (!appId || !key || !secret || !cluster) {
-      console.warn(
-        "Pusher environment variables are missing. Real-time notifications will be disabled.",
-      );
+      console.error("Missing Pusher configuration variables");
       return null;
     }
 
@@ -54,9 +54,9 @@ export const createPromotion = async ({
   isActive,
   applicableProducts,
   applicableCategories,
-  sameProductOnly, 
-  yApplicableProducts, 
-  yApplicableCategories, 
+  sameProductOnly,
+  yApplicableProducts,
+  yApplicableCategories,
 }: {
   userId: string;
   storeId: string;
@@ -74,76 +74,38 @@ export const createPromotion = async ({
   getQuantity?: number;
   applicableProducts: string[];
   applicableCategories: string[];
-  sameProductOnly?: boolean; 
-  yApplicableProducts?: string[]; 
-  yApplicableCategories?: string[]; 
+  sameProductOnly?: boolean;
+  yApplicableProducts?: string[];
+  yApplicableCategories?: string[];
 }): Promise<ActionResponse<any>> => {
   try {
-    // Insert new promotion
-    // Insert new promotion
-    const [newPromotion] = await db
-      .insert(AppPromotion)
-      .values({
-        userId,
-        storeId,
-        name,
-        description,
-        discountType,
-        discountValue: discountValue.toString(),
-        couponCode,
-        minimumPurchase: minimumPurchase.toString(),
-        promotionImage,
-        startDate: startDate,
-        endDate: endDate,
-        buyQuantity,
-        getQuantity,
-        sameProductOnly, 
-        yApplicableProducts, 
-        yApplicableCategories, 
-        isActive,
-        applicableProducts,
-        applicableCategories,
-        created_at: new Date(),
-        updated_at: new Date(),
-      })
-      .returning();
+    // Call the repository method with the appropriate parameters
+    const newPromotion = await PromotionRepository.createPromotion({
+      userId,
+      storeId,
+      name,
+      description,
+      discountType,
+      discountValue,
+      couponCode,
+      minimumPurchase,
+      promotionImage,
+      startDate,
+      endDate,
+      isActive,
+      buyQuantity,
+      getQuantity,
+      sameProductOnly,
+      // Map the arrays to the new parameter names
+      productIds: applicableProducts || [],
+      categoryIds: applicableCategories || [],
+      yProductIds: yApplicableProducts || [],
+      yCategoryIds: yApplicableCategories || [],
+    });
+
     // Only send notification if the promotion is active and should start now or soon
     if (newPromotion && isActive && new Date() >= startDate) {
-      try {
-        // Create a notification record in the database
-        await createBroadcastNotification(
-          storeId,
-          "new_promotion",
-          "New promotion available!",
-          `${name} - Check out this special offer!`,
-          {
-            promotionId: newPromotion.id,
-            promotionName: name,
-            discountType,
-            discountValue: discountValue.toString(),
-            imageUrl: promotionImage,
-          },
-        );
-
-        // Trigger Pusher notification
-        if (pusherServer) {
-          await pusherServer.trigger(
-            `store-${storeId}`,
-            AppNotificationType.NewPromotion,
-            {
-              promotionId: newPromotion.id,
-              promotionName: name,
-              discountType,
-              discountValue: discountValue.toString(),
-              imageUrl: promotionImage,
-              createdAt: new Date().toISOString(),
-            },
-          );
-        }
-      } catch (error) {
-        console.error("Error sending promotion notification:", error);
-        // Continue with the response - don't let notification failure break the API
-      }
+      await sendPromotionNotification(storeId, newPromotion);
     }
 
     return { success: true, data: newPromotion };
@@ -157,45 +119,177 @@ export const createPromotion = async ({
   }
 };
 
-export const getPromotionsByStore = async (storeId: string) => {
+export const getPromotionsByStore = async (
+  storeId: string,
+): Promise<ActionResponse<PromotionWithRelations[]>> => {
   try {
-    const promotions = await db
-      .select()
-      .from(AppPromotion)
-      .where(eq(AppPromotion.storeId, storeId));
+    // Use the direct query to get promotions, since we need to transform the data for frontend
+    const promotions = await db.query.AppPromotion.findMany({
+      where: eq(AppPromotion.storeId, storeId),
+      with: {
+        products: {
+          with: {
+            product: true,
+          },
+        },
+        categories: {
+          with: {
+            category: true,
+          },
+        },
+        yProducts: {
+          with: {
+            product: true,
+          },
+        },
+        yCategories: {
+          with: {
+            category: true,
+          },
+        },
+      },
+      orderBy: (promotions, { desc }) => [desc(promotions.created_at)],
+    });
 
-    return { success: true, promotions };
+    // Transform the response to match the format expected by the frontend
+    const transformedPromotions = promotions.map((promotion: any) => {
+      // Safely handle relation data that might be missing
+      const products = promotion.products || [];
+      const categories = promotion.categories || [];
+      const yProducts = promotion.yProducts || [];
+      const yCategories = promotion.yCategories || []; // Get full product and category objects
+      const applicableProducts =
+        products.length > 0
+          ? products.map((p: any) => p.product || { id: p.productId })
+          : Array.isArray(promotion.applicableProducts)
+            ? promotion.applicableProducts
+            : [];
+
+      const applicableCategories =
+        categories.length > 0
+          ? categories.map((c: any) => c.category || { id: c.categoryId })
+          : Array.isArray(promotion.applicableCategories)
+            ? promotion.applicableCategories
+            : [];
+
+      const yApplicableProducts =
+        yProducts.length > 0
+          ? yProducts.map((p: any) => p.product || { id: p.productId })
+          : Array.isArray(promotion.yApplicableProducts)
+            ? promotion.yApplicableProducts
+            : [];
+
+      const yApplicableCategories =
+        yCategories.length > 0
+          ? yCategories.map((c: any) => c.category || { id: c.categoryId })
+          : Array.isArray(promotion.yApplicableCategories)
+            ? promotion.yApplicableCategories
+            : [];
+
+      return {
+        ...promotion,
+        applicableProducts,
+        applicableCategories,
+        yApplicableProducts,
+        yApplicableCategories,
+      } as PromotionWithRelations;
+    });
+
+    return { success: true, data: transformedPromotions };
   } catch (error) {
-    console.error("Error fetching promotions:", error);
+    console.error("Error fetching promotions by store:", error);
     return {
       success: false,
       error:
-        error instanceof Error
-          ? error.message
-          : "Failed to retrieve promotions",
+        error instanceof Error ? error.message : "Failed to fetch promotions",
     };
   }
 };
 
-export const getPromotionById = async (promotionId: string) => {
+export const getPromotionById = async (
+  promotionId: string,
+): Promise<ActionResponse<PromotionWithRelations>> => {
   try {
-    const promotion = await db
-      .select()
-      .from(AppPromotion)
-      .where(eq(AppPromotion.id, promotionId))
-      .limit(1);
+    // Use the repository to find the promotion
+    const promotion: any = await db.query.AppPromotion.findFirst({
+      where: eq(AppPromotion.id, promotionId),
+      with: {
+        products: {
+          with: {
+            product: true,
+          },
+        },
+        categories: {
+          with: {
+            category: true,
+          },
+        },
+        yProducts: {
+          with: {
+            product: true,
+          },
+        },
+        yCategories: {
+          with: {
+            category: true,
+          },
+        },
+      },
+    });
+    if (!promotion) {
+      return {
+        success: false,
+        error: `Promotion with ID ${promotionId} not found`,
+      };
+    } // Safely handle relation data that might be missing
+    const products = promotion.products || [];
+    const categories = promotion.categories || [];
+    const yProducts = promotion.yProducts || [];
+    const yCategories = promotion.yCategories || [];
 
-    if (!promotion || promotion.length === 0) {
-      return { success: false, error: "Promotion not found" };
-    }
+    // Get full product and category objects
+    const applicableProducts =
+      products.length > 0
+        ? products.map((p: any) => p.product || { id: p.productId })
+        : Array.isArray(promotion.applicableProducts)
+          ? promotion.applicableProducts
+          : [];
+    const applicableCategories =
+      categories.length > 0
+        ? categories.map((c: any) => c.category || { id: c.categoryId })
+        : Array.isArray(promotion.applicableCategories)
+          ? promotion.applicableCategories
+          : [];
 
-    return { success: true, promotion: promotion[0] };
+    const yApplicableProducts =
+      yProducts.length > 0
+        ? yProducts.map((p: any) => p.product || { id: p.productId })
+        : Array.isArray(promotion.yApplicableProducts)
+          ? promotion.yApplicableProducts
+          : [];
+
+    const yApplicableCategories =
+      yCategories.length > 0
+        ? yCategories.map((c: any) => c.category || { id: c.categoryId })
+        : Array.isArray(promotion.yApplicableCategories)
+          ? promotion.yApplicableCategories
+          : [];
+
+    const transformedPromotion: PromotionWithRelations = {
+      ...promotion,
+      applicableProducts,
+      applicableCategories,
+      yApplicableProducts,
+      yApplicableCategories,
+    } as PromotionWithRelations;
+
+    return { success: true, data: transformedPromotion };
   } catch (error) {
-    console.error("Error fetching promotion:", error);
+    console.error(`Error fetching promotion with ID ${promotionId}:`, error);
     return {
       success: false,
       error:
-        error instanceof Error ? error.message : "Failed to retrieve promotion",
+        error instanceof Error ? error.message : "Failed to fetch promotion",
     };
   }
 };
@@ -212,8 +306,13 @@ export const updatePromotion = async ({
   startDate,
   endDate,
   isActive,
+  buyQuantity,
+  getQuantity,
+  sameProductOnly,
   applicableProducts,
   applicableCategories,
+  yApplicableProducts,
+  yApplicableCategories,
 }: {
   id: string;
   userId: string;
@@ -228,40 +327,48 @@ export const updatePromotion = async ({
   startDate: Date;
   endDate: Date;
   isActive: boolean;
+  buyQuantity?: number;
+  getQuantity?: number;
+  sameProductOnly?: boolean;
   applicableProducts: string[];
   applicableCategories: string[];
+  yApplicableProducts?: string[];
+  yApplicableCategories?: string[];
 }): Promise<ActionResponse<any>> => {
   try {
-    const [updatedPromotion] = await db
-      .update(AppPromotion)
-      .set({
-        name,
-        description,
-        discountType,
-        discountValue: discountValue.toString(),
-        couponCode,
-        minimumPurchase: minimumPurchase.toString(),
-        promotionImage,
-        startDate,
-        endDate,
-        isActive,
-        applicableProducts,
-        applicableCategories,
-        updated_at: new Date(),
-      })
-      .where(eq(AppPromotion.id, id))
-      .returning();
+    // Call the repository method with the appropriate parameters
+    const updatedPromotion = await PromotionRepository.updatePromotion(id, {
+      name,
+      description,
+      discountType,
+      discountValue,
+      couponCode,
+      minimumPurchase,
+      promotionImage,
+      startDate,
+      endDate,
+      isActive,
+      buyQuantity,
+      getQuantity,
+      sameProductOnly,
+      // Map the arrays to the new parameter names
+      productIds: applicableProducts || [],
+      categoryIds: applicableCategories || [],
+      yProductIds: yApplicableProducts || [],
+      yCategoryIds: yApplicableCategories || [],
+    });
 
-    if (!updatedPromotion) {
-      return {
-        success: false,
-        error: "Promotion not found or you don't have permission to update it",
-      };
+    // Send notification if the promotion is being activated or updated while active
+    if (updatedPromotion && isActive && new Date() >= startDate) {
+      await sendPromotionNotification(
+        updatedPromotion.storeId,
+        updatedPromotion,
+      );
     }
 
     return { success: true, data: updatedPromotion };
   } catch (error) {
-    console.error("Error updating promotion:", error);
+    console.error(`Error updating promotion with ID ${id}:`, error);
     return {
       success: false,
       error:
@@ -274,6 +381,7 @@ export const deletePromotion = async (
   promotionId: string,
 ): Promise<ActionResponse<{ id: string }>> => {
   try {
+    // Due to cascade delete, this will also delete all related records in conjunction tables
     const [deletedPromotion] = await db
       .delete(AppPromotion)
       .where(eq(AppPromotion.id, promotionId))
@@ -282,16 +390,13 @@ export const deletePromotion = async (
     if (!deletedPromotion) {
       return {
         success: false,
-        error: "Promotion not found",
+        error: `Promotion with ID ${promotionId} not found`,
       };
     }
 
-    return {
-      success: true,
-      data: { id: deletedPromotion.id },
-    };
+    return { success: true, data: { id: deletedPromotion.id } };
   } catch (error) {
-    console.error("Error deleting promotion:", error);
+    console.error(`Error deleting promotion with ID ${promotionId}:`, error);
     return {
       success: false,
       error:
@@ -299,3 +404,22 @@ export const deletePromotion = async (
     };
   }
 };
+
+// Helper function to send promotion notification
+async function sendPromotionNotification(storeId: string, promotion: any) {
+  if (!pusherServer) {
+    console.warn("Pusher not initialized, skipping notification");
+    return;
+  }
+
+  const channel = `${NOTIFICATION_CHANNELS.STORE}-${storeId}`;
+
+  try {
+    await pusherServer.trigger(channel, "promotion-activated", {
+      message: `New promotion: ${promotion.name}`,
+      promotion,
+    });
+  } catch (error) {
+    console.error("Failed to send promotion notification:", error);
+  }
+}
