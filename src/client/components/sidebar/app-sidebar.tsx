@@ -3,7 +3,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { FadeText } from "../ui/fade-text";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
 import {
   NavUserData,
   SideBarData,
