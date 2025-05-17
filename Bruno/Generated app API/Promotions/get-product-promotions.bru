@@ -5,13 +5,17 @@ meta {
 }
 
 get {
-  url: {{PROD_BASE_URL}}/api/mobile-app/promotions/product/{{PRODUCT_ID}}
+  url: {{BASE_URL}}/api/mobile-app/promotions/product/{{PRODUCT_ID}}
   body: none
   auth: bearer
 }
 
 auth:bearer {
   token: {{ACCESS_TOKEN}}
+}
+
+vars:pre-request {
+  PRODUCT_ID: f6f59afd-87ee-4167-9082-6181674d8011
 }
 
 script:pre-request {

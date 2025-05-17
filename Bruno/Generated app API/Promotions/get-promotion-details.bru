@@ -5,20 +5,24 @@ meta {
 }
 
 get {
-  url: {{PROD_BASE_URL}}/api/mobile-app/promotions/{{PROMOTION_ID}}
+  url: {{BASE_URL}}/api/mobile-app/promotions/{{PROMOTION_ID}}
   body: none
   auth: bearer
 }
 
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
 vars:pre-request {
-  PROMOTION_ID: 123e4567-e89b-12d3-a456-426614174000
+  PROMOTION_ID: 24896dc3-1c34-409c-8d33-3918c8d75b39
 }
 
 docs {
   # Get Promotion Details
-
+  
   This endpoint retrieves the full details of a specific promotion.
-
+  
   ## Path Parameter Setup
   
   The `promotionId` is included in the endpoint URL path:
@@ -31,13 +35,13 @@ docs {
   ```
   /api/mobile-app/promotions/123e4567-e89b-12d3-a456-426614174000
   ```
-
+  
   ## Authentication
-
+  
   Bearer token authentication is required.
-
+  
   ## Sample Response
-
+  
   ```json
   {
     "status": "success",
@@ -68,9 +72,9 @@ docs {
     }
   }
   ```
-
+  
   ## Error Responses
-
+  
   ### Not Found (404)
   
   ```json
@@ -79,7 +83,7 @@ docs {
     "message": "Promotion not found"
   }
   ```
-
+  
   ### Invalid ID Format (400)
   
   ```json
@@ -88,7 +92,7 @@ docs {
     "message": "Invalid promotion ID"
   }
   ```
-
+  
   ### Server Error (500)
   
   ```json
