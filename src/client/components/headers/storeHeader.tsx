@@ -5,12 +5,19 @@ import { useSidebar } from "@/client/store/sidebar.store";
 import { cn } from "@/lib/utils";
 import { EnhancedBreadcrumb } from "../breadcrumb/enhanced.breadcrumb";
 import { NotificationBell } from "../real-time/notificationBell";
+import { useRouter } from "next/navigation";
 
 interface Props {
   storeId: string;
 }
 function StoreHeader({ storeId }: Props) {
   const { isSidebarOpen } = useSidebar();
+  const router = useRouter();
+
+  // Function to handle going back in navigation history
+  const handleGoBack = () => {
+    router.back();
+  };
 
   if (!storeId) {
     throw "No store ID provided to 'StoreHeader'";
@@ -25,7 +32,12 @@ function StoreHeader({ storeId }: Props) {
             isSidebarOpen && "w-[200px]",
           )}
         ></span>
-        <Button className="size-9 rounded-full bg-primary/10 hover:bg-primary/20">
+        <Button
+          className="size-9 rounded-full bg-primary/10 hover:bg-primary/20"
+          onClick={handleGoBack}
+          aria-label="Go back"
+          title="Go back to previous page"
+        >
           <ChevronLeft className="text-foreground" />
         </Button>
         <EnhancedBreadcrumb />

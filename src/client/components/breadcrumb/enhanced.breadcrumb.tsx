@@ -45,6 +45,9 @@ export function EnhancedBreadcrumb() {
 
   // Process the path into user-friendly segments
   useEffect(() => {
+    // Debug logging for breadcrumb data
+    console.log("Breadcrumb data:", data);
+
     // Split the path and filter out empty segments
     const pathSegments = pathname.split("/").filter((segment) => segment);
     const processedSegments: SegmentInfo[] = [];
@@ -219,14 +222,20 @@ export function EnhancedBreadcrumb() {
         )
       ) {
         // This could be an edit page for either a product or a promotion
-        const entityId = segment;
-        // Check if this is a promotion edit path
-        // The promotion edit path has structure: /stores/[storeId]/promotions/(create&edit)/edit/[promotionId]
+        const entityId = segment; // Check what type of entity is being edited by examining the path
         const promotionsIndex = pathSegments.indexOf("promotions");
+        const categoriesIndex = pathSegments.indexOf("categories");
+
+        // Determine the entity type
         const isPromotionEdit =
           promotionsIndex !== -1 &&
           pathSegments.includes("edit") &&
           pathSegments.indexOf("edit") > promotionsIndex;
+
+        const isCategoryEdit =
+          categoriesIndex !== -1 &&
+          pathSegments.includes("edit") &&
+          pathSegments.indexOf("edit") > categoriesIndex;
 
         if (isPromotionEdit) {
           // It's a promotion
@@ -240,18 +249,51 @@ export function EnhancedBreadcrumb() {
             context: "promotion",
             id: entityId,
           });
-        } else {
-          // Assume it's a product
-          const productName = data.productNames[entityId];
+        } else if (isCategoryEdit) {
+          // It's a category
+          const categoryName = data.categoryNames[entityId];
 
           processedSegments.push({
-            displayName: productName ? `Edit ${productName}` : "Edit Product",
+            displayName: categoryName ? `${categoryName}` : "Edit Category",
             href: currentPath,
             isPage: isLastSegment,
-            isLoading: !productName && isLoading,
-            context: "product",
+            isLoading: !categoryName && isLoading,
+            context: "category",
             id: entityId,
           });
+        } else {
+          // Get product context from path
+          const productsIndex = pathSegments.indexOf("products");
+          const isProductEdit =
+            productsIndex !== -1 &&
+            pathSegments.includes("edit") &&
+            pathSegments.indexOf("edit") > productsIndex;
+
+          if (isProductEdit) {
+            // It's a product
+            const productName = data.productNames[entityId];
+
+            processedSegments.push({
+              displayName: productName ? `${productName}` : "Edit Product",
+              href: currentPath,
+              isPage: isLastSegment,
+              isLoading: !productName && isLoading,
+              context: "product",
+              id: entityId,
+            });
+          } else {
+            // If we can't determine the type, fall back to assuming it's a product
+            const productName = data.productNames[entityId];
+
+            processedSegments.push({
+              displayName: productName ? `${productName}` : "Edit Item",
+              href: currentPath,
+              isPage: isLastSegment,
+              isLoading: !productName && isLoading,
+              context: "product",
+              id: entityId,
+            });
+          }
         }
       } else if (!["dashboard", "stores"].includes(segment)) {
         // For any other segments that aren't specifically handled
@@ -264,11 +306,15 @@ export function EnhancedBreadcrumb() {
     }
 
     setBreadcrumbSegments(processedSegments);
-  }, [pathname, user, store, data, isLoading]);
-
-  // Render a breadcrumb item with proper styling based on context
+  }, [pathname, user, store, data, isLoading]); // Render a breadcrumb item with proper styling based on context
   const renderBreadcrumbItem = (segment: SegmentInfo) => {
-    // Define context-specific styling
+    // Define context-specific styling - but only show in dev tools console, not in UI
+    const debugInfo = segment.id ? ` (${segment.context}: ${segment.id})` : "";
+
+    // Log debug info to console when in development mode
+    if (process.env.NODE_ENV === "development" && segment.id) {
+      console.debug(`Breadcrumb segment: ${segment.displayName}${debugInfo}`);
+    }
 
     if (segment.isLoading) {
       return (
@@ -295,6 +341,9 @@ export function EnhancedBreadcrumb() {
           </TooltipTrigger>
           <TooltipContent>
             <p>Navigate to {segment.displayName}</p>
+            {process.env.NODE_ENV === "development" && segment.id && (
+              <p className="text-xs">ID: {segment.id}</p>
+            )}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

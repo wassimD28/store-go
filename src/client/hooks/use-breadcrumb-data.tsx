@@ -60,9 +60,7 @@ export function useBreadcrumbData() {
         ))
     ) {
       ids.storeId = pathSegments[storeIdIndex + 1];
-    }
-
-    // Find product ID (comes after "products/" segment and is not "list", "categories", etc.)
+    } // Find product ID (comes after "products/" segment and is not "list", "categories", etc.)
     const productIdIndex = pathSegments.findIndex(
       (segment) => segment === "products",
     );
@@ -80,6 +78,22 @@ export function useBreadcrumbData() {
         ))
     ) {
       ids.productId = pathSegments[productIdIndex + 1];
+    }
+
+    // Find product ID from edit path structure (products/edit/[productId])
+    const productsEditIndex = pathSegments.indexOf("products");
+    const editIndex = pathSegments.indexOf("edit");
+    if (
+      productsEditIndex !== -1 &&
+      editIndex !== -1 &&
+      editIndex > productsEditIndex &&
+      editIndex + 1 < pathSegments.length &&
+      (pathSegments[editIndex + 1]?.match(/^[a-f0-9]{24}$/i) ||
+        pathSegments[editIndex + 1]?.match(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+        ))
+    ) {
+      ids.productId = pathSegments[editIndex + 1];
     } // Find category ID (comes after "categories/" segment)
     const categoryIdIndex = pathSegments.findIndex(
       (segment) => segment === "categories",
@@ -94,12 +108,25 @@ export function useBreadcrumbData() {
         ))
     ) {
       ids.categoryId = pathSegments[categoryIdIndex + 1];
+    }
+
+    // Find category ID from edit path structure (categories/edit/[categoryId])
+    const categoriesEditIndex = pathSegments.indexOf("categories");
+    if (
+      categoriesEditIndex !== -1 &&
+      editIndex !== -1 &&
+      editIndex > categoriesEditIndex &&
+      editIndex + 1 < pathSegments.length &&
+      (pathSegments[editIndex + 1]?.match(/^[a-f0-9]{24}$/i) ||
+        pathSegments[editIndex + 1]?.match(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+        ))
+    ) {
+      ids.categoryId = pathSegments[editIndex + 1];
     } // Find promotion ID (comes after "promotions/(create&edit)/edit/" segment)
     const promotionsIndex = pathSegments.findIndex(
       (segment) => segment === "promotions",
     );
-
-    const editIndex = pathSegments.findIndex((segment) => segment === "edit");
 
     if (
       promotionsIndex !== -1 &&
@@ -113,6 +140,10 @@ export function useBreadcrumbData() {
     ) {
       ids.promotionId = pathSegments[editIndex + 1];
     }
+
+    // After extracting all IDs, log them for debugging
+    console.log("Path segments:", pathSegments);
+    console.log("Extracted IDs:", ids);
 
     return ids;
   }, []);
@@ -347,27 +378,39 @@ export function useBreadcrumbData() {
       setIsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, store, data, fetchStatus, extractIdsFromPath, isCacheValid]);
-  // Force a refresh of the data
+  }, [pathname, store, data, fetchStatus, extractIdsFromPath, isCacheValid]); // Force a refresh of the data
   const refetch = useCallback(() => {
     // Clear cache status for current path entities
     const { storeId, productId, categoryId, promotionId } =
       extractIdsFromPath(pathname);
 
-    const newFetchStatus = { ...fetchStatus };
-    if (storeId) delete newFetchStatus[`store-${storeId}`];
-    if (productId) delete newFetchStatus[`product-${productId}`];
-    if (categoryId) delete newFetchStatus[`category-${categoryId}`];
-    if (promotionId) delete newFetchStatus[`promotion-${promotionId}`];
+    setFetchStatus((prevFetchStatus) => {
+      const newFetchStatus = { ...prevFetchStatus };
+      if (storeId) delete newFetchStatus[`store-${storeId}`];
+      if (productId) delete newFetchStatus[`product-${productId}`];
+      if (categoryId) delete newFetchStatus[`category-${categoryId}`];
+      if (promotionId) delete newFetchStatus[`promotion-${promotionId}`];
 
-    setFetchStatus(newFetchStatus);
-    // This will trigger the useEffect to refetch
-  }, [pathname, fetchStatus, extractIdsFromPath]);
-
-  // Fetch data when the path changes or when store context changes
+      return newFetchStatus;
+    });
+    // This will trigger fetchData to run on the next cycle
+  }, [pathname, extractIdsFromPath]); // Fetch data when the path changes or when store context changes
   useEffect(() => {
     fetchData();
-  }, [fetchData, pathname, store?.id]);
+  }, [fetchData]);
+
+  // Separate effect for handling edit paths - runs only when path changes
+  useEffect(() => {
+    if (pathname.includes("/edit/")) {
+      console.log("Edit page detected, refreshing breadcrumb data");
+      // Use a timeout to avoid multiple state updates in the same render cycle
+      const timer = setTimeout(() => {
+        refetch();
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [pathname, refetch]);
 
   return { data, isLoading, refetch };
 }
