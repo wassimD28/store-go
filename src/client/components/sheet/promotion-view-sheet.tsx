@@ -54,7 +54,7 @@ export function PromotionViewSheet({
 
   // Handle edit button click
   const handleEdit = () => {
-    router.push(`/stores/${promotion.storeId}/promotions/${promotion.id}/edit`);
+    router.push(`/stores/${promotion.storeId}/promotions/edit/${promotion.id}`);
     onOpenChange(false);
   };
 

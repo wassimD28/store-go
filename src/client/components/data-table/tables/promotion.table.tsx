@@ -185,7 +185,7 @@ export function PromotionTableClient({
               size="icon"
               onClick={() =>
                 router.push(
-                  `/stores/${promotion.storeId}/promotions/${promotion.id}/edit`,
+                  `/stores/${promotion.storeId}/promotions/edit/${promotion.id}`,
                 )
               }
               title="Edit promotion"

@@ -51,7 +51,7 @@ export default function PromotionPeriod({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                  <div className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm truncate cursor-pointer font-medium text-primary">
                     <Clock className="mr-1 h-3 w-3" />
                     Duration: {durationDisplay}
                   </div>

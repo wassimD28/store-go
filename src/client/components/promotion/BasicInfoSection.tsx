@@ -14,14 +14,16 @@ import { createPromotionSchema } from "../forms/promotion/createPromotionForm";
 
 interface BasicInfoSectionProps {
   control: Control<z.infer<typeof createPromotionSchema>>;
+  title?: string;
 }
 
-export default function BasicInfoSection({ control }: BasicInfoSectionProps) {
+export default function BasicInfoSection({
+  control,
+  title = "Create New Promotion",
+}: BasicInfoSectionProps) {
   return (
     <>
-      <CardHeader className="text-xl font-semibold">
-        Create New Promotion
-      </CardHeader>
+      <CardHeader className="text-xl font-semibold">{title}</CardHeader>
       <CardContent className="flex flex-col gap-4">
         <FormField
           control={control}
