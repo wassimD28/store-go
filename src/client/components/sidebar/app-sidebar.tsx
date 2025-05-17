@@ -4,11 +4,16 @@ import Link from "next/link";
 import { FadeText } from "../ui/fade-text";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { NavUserData, SideBarData } from "@/lib/types/interfaces/common.interface";
+import {
+  NavUserData,
+  SideBarData,
+} from "@/lib/types/interfaces/common.interface";
 import { NavUser } from "./nav-user";
 import { usePathname } from "next/navigation";
 import { useDarkMode } from "@/client/store/darkMode.store";
 import { useSidebar } from "@/client/store/sidebar.store";
+import TextLogoIcon from "../icons/textLogoIcon";
+import LogoIcon from "../icons/logoIcon";
 
 const EXPENDED_WIDTH = 200;
 const COLLAPSED_WIDTH = 60;
@@ -17,21 +22,21 @@ interface props {
   sideBarData: SideBarData[];
   user: NavUserData;
 }
-function MainSideBar({ user, sideBarData  }: props) {
+function MainSideBar({ user, sideBarData }: props) {
   const { darkMode } = useDarkMode();
-  const { setSidebarOpen } = useSidebar()
+  const { setSidebarOpen } = useSidebar();
   const [isExpend, setIsExpend] = useState(false);
-  const pathname = usePathname(); 
+  const pathname = usePathname();
   const segments = pathname.split("/").filter(Boolean);
 
   const handleOnMouseOver = () => {
     setIsExpend(true);
-    setSidebarOpen(true)
-  }
+    setSidebarOpen(true);
+  };
   const handleOnMouseLeave = () => {
     setIsExpend(false);
-    setSidebarOpen(false)
-  }
+    setSidebarOpen(false);
+  };
 
   const isMainActive = (route: string) => {
     const routeSegments = route.split("/").filter(Boolean);
@@ -58,20 +63,31 @@ function MainSideBar({ user, sideBarData  }: props) {
       onMouseLeave={handleOnMouseLeave}
     >
       <div className="flex flex-col gap-2">
-        {/* logo  */}
+        {/* logo  */}{" "}
         <Link href={"/dashboard"}>
-          <Image
-            className={cn(
-              "mb-4 transition-all duration-200 ease-in-out",
-              isExpend && "ml-3",
-            )}
-            src={"/icons/logo.svg"}
-            width={40}
-            height={40}
-            alt="logo"
-          />
+          <div className="relative h-14">
+            <LogoIcon
+              className={cn(
+                "absolute transition-all duration-200 ease-in-out",
+                isExpend && "ml-6 scale-75 opacity-0",
+              )}
+              width={40}
+              height={40}
+              color={darkMode ? "#793DF4" : "#793DF4"}
+              iconColor={"white"}
+            />
+            <TextLogoIcon
+              className={cn(
+                "absolute scale-75 opacity-0 transition-all duration-200 ease-in-out",
+                isExpend && "ml-3 scale-100 opacity-100",
+              )}
+              color={darkMode ? "#793DF4" : "#793DF4"}
+              iconColor={"white"}
+              width={150}
+              height={40}
+            />
+          </div>
         </Link>
-
         {/* sidebar content */}
         {sideBarData.map((item, index) => (
           <Link
@@ -86,7 +102,7 @@ function MainSideBar({ user, sideBarData  }: props) {
           >
             <item.icon
               className={cn(
-                " translate-x-2 transition-all duration-200 ease-in-out",
+                "translate-x-2 transition-all duration-200 ease-in-out",
                 isExpend && "translate-x-5",
               )}
               width={ICON_WIDTH}

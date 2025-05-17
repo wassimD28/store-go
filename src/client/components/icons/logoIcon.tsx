@@ -1,0 +1,39 @@
+"use client";
+import { SVGIcon } from "@/lib/types/interfaces/common.interface";
+
+function LogoIcon({
+  className = "",
+  width = 44,
+  height = 44,
+  color = "#793DF4",
+  iconColor = "white",
+}: SVGIcon) {
+  return (
+    <svg
+      className={className}
+      width={width}
+      height={height}
+      viewBox="0 0 44 44"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <rect
+        x="0.138306"
+        width="43.7232"
+        height="44"
+        rx="21.8616"
+        fill={color}
+      />
+      <path
+        d="M22.4099 10.646C17.4169 10.646 13.3075 14.2869 12.5516 19.0776H17.6937C18.3218 17.023 20.1529 15.5964 22.4418 15.5964C24.7413 15.5964 26.5192 17.023 27.126 19.0776H32.2681C31.5122 14.2869 27.4028 10.646 22.4099 10.646Z"
+        fill={iconColor}
+      />
+      <path
+        d="M34.0247 21.9414C33.6734 28.1161 28.6378 32.9707 22.3992 32.9707C16.1713 32.9707 11.1357 28.1161 10.7844 21.9414H34.0247Z"
+        fill={iconColor}
+      />
+    </svg>
+  );
+}
+
+export default LogoIcon;

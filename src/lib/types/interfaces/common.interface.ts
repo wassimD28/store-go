@@ -1,6 +1,6 @@
 import { JSX } from "react";
 export interface NavUserData {
-  id: string
+  id: string;
   name: string;
   email: string;
   avatar: string;
@@ -8,9 +8,10 @@ export interface NavUserData {
 
 export interface SVGIcon {
   className?: string;
-  width: number;
-  height: number;
-  color: string;
+  width?: number;
+  height?: number;
+  color?: string;
+  iconColor?: string;
 }
 
 export interface SideBarData {
@@ -21,4 +22,4 @@ export interface SideBarData {
 
 export type ActionResponse<T> =
   | { success: true; data: T }
-  | { success: false, error: string };
+  | { success: false; error: string };
