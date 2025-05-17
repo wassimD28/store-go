@@ -6,12 +6,14 @@ import { useStoreStore } from "@/client/store/store.store";
 import { getStoreById } from "@/app/actions/store.actions";
 import { getProductById } from "@/app/actions/product.actions";
 import { getCategoryById } from "@/app/actions/category.actions";
+import { getPromotionById } from "@/app/actions/promotion.actions";
 
 // Improved type definition
 type BreadcrumbData = {
   storeNames: Record<string, string>;
   productNames: Record<string, string>;
   categoryNames: Record<string, string>;
+  promotionNames: Record<string, string>;
 };
 
 // Cache time in milliseconds (5 minutes)
@@ -28,12 +30,12 @@ export function useBreadcrumbData() {
     storeNames: {},
     productNames: {},
     categoryNames: {},
+    promotionNames: {},
   });
   const [isLoading, setIsLoading] = useState(false);
   const [fetchStatus, setFetchStatus] = useState<
     Record<string, { fetched: boolean; timestamp: number }>
   >({});
-
   // Extract IDs from the current path
   const extractIdsFromPath = useCallback((path: string) => {
     const pathSegments = path.split("/").filter((segment) => segment);
@@ -41,6 +43,7 @@ export function useBreadcrumbData() {
       storeId: null as string | null,
       productId: null as string | null,
       categoryId: null as string | null,
+      promotionId: null as string | null,
     };
 
     // Find store ID (comes after "stores/" segment)
@@ -77,9 +80,7 @@ export function useBreadcrumbData() {
         ))
     ) {
       ids.productId = pathSegments[productIdIndex + 1];
-    }
-
-    // Find category ID (comes after "categories/" segment)
+    } // Find category ID (comes after "categories/" segment)
     const categoryIdIndex = pathSegments.findIndex(
       (segment) => segment === "categories",
     );
@@ -93,6 +94,24 @@ export function useBreadcrumbData() {
         ))
     ) {
       ids.categoryId = pathSegments[categoryIdIndex + 1];
+    } // Find promotion ID (comes after "promotions/(create&edit)/edit/" segment)
+    const promotionsIndex = pathSegments.findIndex(
+      (segment) => segment === "promotions",
+    );
+
+    const editIndex = pathSegments.findIndex((segment) => segment === "edit");
+
+    if (
+      promotionsIndex !== -1 &&
+      editIndex !== -1 &&
+      editIndex + 1 < pathSegments.length &&
+      editIndex > promotionsIndex &&
+      (pathSegments[editIndex + 1]?.match(/^[a-f0-9]{24}$/i) ||
+        pathSegments[editIndex + 1]?.match(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+        ))
+    ) {
+      ids.promotionId = pathSegments[editIndex + 1];
     }
 
     return ids;
@@ -128,10 +147,10 @@ export function useBreadcrumbData() {
       }));
     }
   }, [store]);
-
   // Fetch data based on the current path
   const fetchData = useCallback(async () => {
-    const { storeId, productId, categoryId } = extractIdsFromPath(pathname);
+    const { storeId, productId, categoryId, promotionId } =
+      extractIdsFromPath(pathname);
 
     // Track what we need to fetch
     const toFetch = [];
@@ -172,6 +191,18 @@ export function useBreadcrumbData() {
       setFetchStatus((prev) => ({
         ...prev,
         [`category-${categoryId}`]: { fetched: true, timestamp: Date.now() },
+      }));
+    }
+
+    if (
+      promotionId &&
+      !data.promotionNames[promotionId] &&
+      !isCacheValid(`promotion-${promotionId}`)
+    ) {
+      toFetch.push({ type: "promotion", id: promotionId });
+      setFetchStatus((prev) => ({
+        ...prev,
+        [`promotion-${promotionId}`]: { fetched: true, timestamp: Date.now() },
       }));
     }
 
@@ -231,7 +262,6 @@ export function useBreadcrumbData() {
                 name: "Unknown Product",
                 error: productResponse.error,
               };
-
             case "category":
               const categoryResponse = await getCategoryById(item.id);
               if (categoryResponse.success && categoryResponse.category) {
@@ -253,6 +283,27 @@ export function useBreadcrumbData() {
                 error: categoryResponse.error,
               };
 
+            case "promotion":
+              const promotionResponse = await getPromotionById(item.id);
+              if (promotionResponse.success && promotionResponse.promotion) {
+                return {
+                  type: "promotion",
+                  id: item.id,
+                  name: promotionResponse.promotion.name,
+                };
+              }
+
+              console.warn(
+                `Promotion fetch failed for ID ${item.id}:`,
+                promotionResponse.error,
+              );
+              return {
+                type: "promotion",
+                id: item.id,
+                name: "Unknown Promotion",
+                error: promotionResponse.error,
+              };
+
             default:
               return {
                 type: item.type,
@@ -271,7 +322,6 @@ export function useBreadcrumbData() {
         results.forEach((result) => {
           if (result.status === "fulfilled") {
             const { type, id, name } = result.value;
-
             switch (type) {
               case "store":
                 updatedData.storeNames[id] = name;
@@ -281,6 +331,9 @@ export function useBreadcrumbData() {
                 break;
               case "category":
                 updatedData.categoryNames[id] = name;
+                break;
+              case "promotion":
+                updatedData.promotionNames[id] = name;
                 break;
             }
           }
@@ -293,18 +346,19 @@ export function useBreadcrumbData() {
     } finally {
       setIsLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, store, data, fetchStatus, extractIdsFromPath, isCacheValid]);
-
   // Force a refresh of the data
   const refetch = useCallback(() => {
     // Clear cache status for current path entities
-    const { storeId, productId, categoryId } = extractIdsFromPath(pathname);
+    const { storeId, productId, categoryId, promotionId } =
+      extractIdsFromPath(pathname);
 
     const newFetchStatus = { ...fetchStatus };
     if (storeId) delete newFetchStatus[`store-${storeId}`];
     if (productId) delete newFetchStatus[`product-${productId}`];
     if (categoryId) delete newFetchStatus[`category-${categoryId}`];
+    if (promotionId) delete newFetchStatus[`promotion-${promotionId}`];
 
     setFetchStatus(newFetchStatus);
     // This will trigger the useEffect to refetch

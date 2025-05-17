@@ -28,7 +28,7 @@ type SegmentInfo = {
   href: string;
   isPage: boolean;
   isLoading?: boolean;
-  context?: "store" | "product" | "category" | "user"; // Context helps with special styling
+  context?: "store" | "product" | "category" | "user" | "promotion"; // Context helps with special styling
   id?: string; // Store actual IDs for reference
 };
 
@@ -218,18 +218,41 @@ export function EnhancedBreadcrumb() {
           /^([a-f0-9]{24}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i,
         )
       ) {
-        // This is likely an edit page for a product
-        const productId = segment;
-        const productName = data.productNames[productId];
+        // This could be an edit page for either a product or a promotion
+        const entityId = segment;
+        // Check if this is a promotion edit path
+        // The promotion edit path has structure: /stores/[storeId]/promotions/(create&edit)/edit/[promotionId]
+        const promotionsIndex = pathSegments.indexOf("promotions");
+        const isPromotionEdit =
+          promotionsIndex !== -1 &&
+          pathSegments.includes("edit") &&
+          pathSegments.indexOf("edit") > promotionsIndex;
 
-        processedSegments.push({
-          displayName: productName ? `Edit ${productName}` : "Edit Product",
-          href: currentPath,
-          isPage: isLastSegment,
-          isLoading: !productName && isLoading,
-          context: "product",
-          id: productId,
-        });
+        if (isPromotionEdit) {
+          // It's a promotion
+          const promotionName = data.promotionNames[entityId];
+
+          processedSegments.push({
+            displayName: promotionName ? `${promotionName}` : "Edit Promotion",
+            href: currentPath,
+            isPage: isLastSegment,
+            isLoading: !promotionName && isLoading,
+            context: "promotion",
+            id: entityId,
+          });
+        } else {
+          // Assume it's a product
+          const productName = data.productNames[entityId];
+
+          processedSegments.push({
+            displayName: productName ? `Edit ${productName}` : "Edit Product",
+            href: currentPath,
+            isPage: isLastSegment,
+            isLoading: !productName && isLoading,
+            context: "product",
+            id: entityId,
+          });
+        }
       } else if (!["dashboard", "stores"].includes(segment)) {
         // For any other segments that aren't specifically handled
         processedSegments.push({
@@ -246,7 +269,6 @@ export function EnhancedBreadcrumb() {
   // Render a breadcrumb item with proper styling based on context
   const renderBreadcrumbItem = (segment: SegmentInfo) => {
     // Define context-specific styling
-    
 
     if (segment.isLoading) {
       return (
@@ -257,11 +279,7 @@ export function EnhancedBreadcrumb() {
     }
 
     if (segment.isPage) {
-      return (
-        <BreadcrumbPage >
-          {segment.displayName}
-        </BreadcrumbPage>
-      );
+      return <BreadcrumbPage>{segment.displayName}</BreadcrumbPage>;
     }
 
     return (
@@ -270,7 +288,7 @@ export function EnhancedBreadcrumb() {
           <TooltipTrigger asChild>
             <BreadcrumbLink
               href={segment.href}
-              className={`transition-colors hover:underline `}
+              className={`transition-colors hover:underline`}
             >
               {segment.displayName}
             </BreadcrumbLink>
