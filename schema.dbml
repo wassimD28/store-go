@@ -347,23 +347,47 @@ table app_promotion {
   name varchar(255) [not null]
   description text
   discount_type discount_type [not null]
-  discount_value "numeric(10, 2)"
+  discount_value "numeric(10, 2)" [not null]
   coupon_code varchar(50)
-  minimum_purchase "numeric(10, 2)" [default: '0']
+  minimum_purchase "numeric(10, 2)" [not null, default: '0']
   buy_quantity integer
   get_quantity integer
-  y_applicable_products json [default: `[]`]
-  y_applicable_categories json [default: `[]`]
   same_product_only boolean [default: true]
   promotion_image varchar(500)
-  usage_count integer [default: 0]
+  usage_count integer [not null, default: 0]
   start_date timestamp [not null]
   end_date timestamp [not null]
   is_active boolean [not null, default: true]
-  applicable_products json [default: `[]`]
-  applicable_categories json [default: `[]`]
   created_at timestamp [not null, default: `now()`]
   updated_at timestamp [not null, default: `now()`]
+}
+
+table promotion_category {
+  id uuid [pk, not null, default: `gen_random_uuid()`]
+  promotion_id uuid [not null]
+  category_id uuid [not null]
+  created_at timestamp [not null, default: `now()`]
+}
+
+table promotion_product {
+  id uuid [pk, not null, default: `gen_random_uuid()`]
+  promotion_id uuid [not null]
+  product_id uuid [not null]
+  created_at timestamp [not null, default: `now()`]
+}
+
+table promotion_y_category {
+  id uuid [pk, not null, default: `gen_random_uuid()`]
+  promotion_id uuid [not null]
+  category_id uuid [not null]
+  created_at timestamp [not null, default: `now()`]
+}
+
+table promotion_y_product {
+  id uuid [pk, not null, default: `gen_random_uuid()`]
+  promotion_id uuid [not null]
+  product_id uuid [not null]
+  created_at timestamp [not null, default: `now()`]
 }
 
 table app_collection {
@@ -435,6 +459,8 @@ ref: app_wishlist.app_user_id - app_user.id
 
 ref: app_wishlist.store_id - stores.id
 
+ref: app_notification.store_id - stores.id
+
 ref: app_user_notification_status.app_user_id - app_user.id
 
 ref: app_user_notification_status.notification_id - app_notification.id
@@ -466,6 +492,22 @@ ref: app_review.store_id - stores.id
 ref: app_promotion.store_id - stores.id
 
 ref: app_promotion.user_id - user.id
+
+ref: promotion_category.promotion_id > app_promotion.id
+
+ref: promotion_category.category_id - app_category.id
+
+ref: promotion_product.promotion_id > app_promotion.id
+
+ref: promotion_product.product_id - app_product.id
+
+ref: promotion_y_category.promotion_id > app_promotion.id
+
+ref: promotion_y_category.category_id - app_category.id
+
+ref: promotion_y_product.promotion_id > app_promotion.id
+
+ref: promotion_y_product.product_id - app_product.id
 
 ref: app_collection.order_id - app_order.id
 

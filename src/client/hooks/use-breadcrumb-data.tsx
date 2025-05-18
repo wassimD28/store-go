@@ -316,24 +316,20 @@ export function useBreadcrumbData() {
 
             case "promotion":
               const promotionResponse = await getPromotionById(item.id);
-              if (promotionResponse.success && promotionResponse.promotion) {
+              if (promotionResponse.success && promotionResponse.data) {
                 return {
                   type: "promotion",
                   id: item.id,
-                  name: promotionResponse.promotion.name,
+                  name: promotionResponse.data.name,
+                };
+              } else if (!promotionResponse.success) {
+                return {
+                  type: "promotion",
+                  id: item.id,
+                  name: "Unknown Promotion",
+                  error: promotionResponse.error,
                 };
               }
-
-              console.warn(
-                `Promotion fetch failed for ID ${item.id}:`,
-                promotionResponse.error,
-              );
-              return {
-                type: "promotion",
-                id: item.id,
-                name: "Unknown Promotion",
-                error: promotionResponse.error,
-              };
 
             default:
               return {

@@ -23,7 +23,7 @@ export default async function EditPromotionPage({ params }: Props) {
   // Get the promotion data
   const promotionResponse = await getPromotionById(promotionId);
 
-  if (!promotionResponse.success || !promotionResponse.promotion) {
+  if (!promotionResponse.success) {
     return <div>Promotion not found</div>;
   }
 

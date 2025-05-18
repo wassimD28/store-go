@@ -15,9 +15,7 @@ export class OrderRepository {
       const orders = await db.query.AppOrder.findMany({
         where: eq(AppOrder.appUserId, userId),
         with: {
-          orderItems: true,
           address: true,
-          payment: true,
         },
       });
 
@@ -34,9 +32,7 @@ export class OrderRepository {
       const order = await db.query.AppOrder.findFirst({
         where: and(eq(AppOrder.id, id), eq(AppOrder.appUserId, userId)),
         with: {
-          orderItems: true,
           address: true,
-          payment: true,
         },
       });
 
@@ -125,9 +121,7 @@ export class OrderRepository {
       const orders = await db.query.AppOrder.findMany({
         where: and(eq(AppOrder.appUserId, userId), eq(AppOrder.status, status)),
         with: {
-          orderItems: true,
           address: true,
-          payment: true,
         },
       });
 
@@ -147,9 +141,7 @@ export class OrderRepository {
           eq(AppOrder.payment_status, paymentStatus),
         ),
         with: {
-          orderItems: true,
           address: true,
-          payment: true,
         },
       });
 

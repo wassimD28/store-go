@@ -5,7 +5,11 @@ import Pusher from "pusher-js";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Avatar, AvatarImage, AvatarFallback } from "@/client/components/ui/avatar";
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from "@/client/components/ui/avatar";
 import { getProductForNotification } from "@/app/actions/product.actions";
 
 interface PusherProviderProps {
@@ -26,9 +30,7 @@ export const PusherProvider = ({ children, storeId }: PusherProviderProps) => {
     });
 
     // Subscribe to the store channel
-    const channel = client.subscribe(`store-${storeId}`);
-
-    // Listen for new review events with product avatar
+    const channel = client.subscribe(`store-${storeId}`); // Listen for new review events with product avatar
     channel.bind(
       "new-review",
       async (data: {
@@ -75,7 +77,7 @@ export const PusherProvider = ({ children, storeId }: PusherProviderProps) => {
             {
               duration: 5000,
               position: "bottom-right",
-              icon: null
+              icon: null,
             },
           );
         } catch (error) {
@@ -99,10 +101,39 @@ export const PusherProvider = ({ children, storeId }: PusherProviderProps) => {
             {
               duration: 5000,
               position: "bottom-right",
-              icon: null
+              icon: null,
             },
           );
         }
+      },
+    );
+
+    // Listen for new user sign-up events
+    channel.bind(
+      "new-user",
+      async (data: { userId: string; name: string; email: string }) => {
+        // Create notification for new user signup
+        toast.success(
+          <Link
+            href={`/stores/${storeId}/customers`}
+            className="flex items-center gap-3"
+          >
+            <Avatar className="h-10 w-10 border border-gray-200">
+              <AvatarFallback className="bg-blue-100 text-blue-800">
+                👤
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <span className="font-semibold">New user registered!</span>
+              <span>{data.name} has joined your app</span>
+            </div>
+          </Link>,
+          {
+            duration: 5000,
+            position: "bottom-right",
+            icon: null,
+          },
+        );
       },
     );
 
