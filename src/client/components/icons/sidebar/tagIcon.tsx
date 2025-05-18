@@ -2,7 +2,7 @@
 import { SVGIcon } from "@/lib/types/interfaces/common.interface";
 
 // TagIcon.tsx
-function TagIcon({ className, width, height, color }: SVGIcon) {
+function TagIcon({ className, width = 24 , height = 24, color }: SVGIcon) {
   return (
     <svg
       className={className}

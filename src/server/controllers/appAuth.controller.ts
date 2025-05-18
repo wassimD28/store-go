@@ -3,7 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 import { db } from "@/lib/db/db";
 import { hash } from "bcrypt";
 import { AppUser } from "@/lib/db/schema";
+import { StoreNotification } from "@/lib/db/tables/store/storeNotification.table";
 import { appSignInSchema, appSignUpSchema } from "@/server/schemas/auth.schema";
+import Pusher from "pusher";
 
 class AppAuthController {
   // Supabase admin client for secure backend operations
@@ -18,6 +20,34 @@ class AppAuthController {
       },
     },
   );
+
+  // Initialize Pusher for real-time notifications
+  static pusherServer = (() => {
+    try {
+      // Check if all required variables are defined
+      const appId = process.env.PUSHER_APP_ID!;
+      const key = process.env.NEXT_PUBLIC_PUSHER_KEY!;
+      const secret = process.env.PUSHER_APP_SECRET!;
+      const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER!;
+
+      if (!appId || !key || !secret || !cluster) {
+        console.warn(
+          "Pusher environment variables are missing. Real-time notifications will be disabled.",
+        );
+        return null;
+      }
+
+      return new Pusher({
+        appId,
+        key,
+        secret,
+        cluster,
+      });
+    } catch (error) {
+      console.error("Failed to initialize Pusher:", error);
+      return null;
+    }
+  })();
 
   static async signUp(c: Context) {
     try {
@@ -70,7 +100,6 @@ class AppAuthController {
       // 5. Create the user record in the app_user table
       const hashedPassword = await hash(password, 10);
       const userId = authData.user.id;
-
       await db.insert(AppUser).values({
         id: userId,
         storeId: storeId,
@@ -81,6 +110,37 @@ class AppAuthController {
         created_at: new Date(),
         updated_at: new Date(),
       });
+      // Create a store notification for new user sign up
+      await db.insert(StoreNotification).values({
+        storeId,
+        type: "new_app_user_registration",
+        title: "New user registered",
+        content: `${name} has registered to your app`,
+        data: {
+          userId,
+          name,
+          email,
+        },
+        isRead: false,
+      });
+
+      // Trigger notification after user is created
+      if (AppAuthController.pusherServer) {
+        try {
+          await AppAuthController.pusherServer.trigger(
+            `store-${storeId}`,
+            "new-user",
+            {
+              userId,
+              name,
+              email,
+            },
+          );
+        } catch (pusherError) {
+          console.error("Error triggering Pusher notification:", pusherError);
+          // Continue with the response - don't let Pusher failure break the API
+        }
+      }
 
       // 6. Generate a session for the user
       // This creates a session with access and refresh tokens managed by Supabase
@@ -387,7 +447,8 @@ class AppAuthController {
       // This uses Supabase's signInWithOtp functionality but for password reset
       const { error } =
         await AppAuthController.supabaseAdmin.auth.signInWithOtp({
-          email,          options: {
+          email,
+          options: {
             shouldCreateUser: false, // Don't create a new user if they don't exist
             emailRedirectTo: undefined, // Don't include a redirect URL, which forces OTP mode
             // Note: channel is not needed for email OTPs, it's only for SMS or WhatsApp

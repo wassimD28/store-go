@@ -7,6 +7,30 @@ import { db } from "@/lib/db/db";
 import { AppPromotion } from "@/lib/db/schema";
 import { eq, and, lte, gte } from "drizzle-orm";
 
+// Define interfaces for the promotion relation objects
+interface PromotionRelation {
+  id: string;
+  promotionId: string;
+  created_at: Date;
+}
+
+interface PromotionProductRelation extends PromotionRelation {
+  productId: string;
+}
+
+interface PromotionCategoryRelation extends PromotionRelation {
+  categoryId: string;
+}
+
+// Define type for cart items
+interface CartItem {
+  productId: string;
+  quantity: number;
+  variantId?: string;
+  price: number;
+  discountAmount?: number;
+}
+
 // Define the schema for cart items and checkout data
 const cartItemSchema = z.object({
   productId: idSchema,
@@ -20,6 +44,8 @@ const applyPromotionSchema = z.object({
   promotionId: idSchema.optional(),
   couponCode: z.string().optional(),
 });
+
+// No specific Product interface needed, using the existing product type from the repository
 
 export class CheckoutPromotionController {
   static async applyPromotion(c: Context) {
@@ -40,7 +66,7 @@ export class CheckoutPromotionController {
       }
 
       const { cartItems, promotionId, couponCode } = validationResult.data;
-      const { storeId } = c.get("user");
+      const { storeId } = c.get("user") as { storeId: string };
 
       if (!cartItems || cartItems.length === 0) {
         return c.json(
@@ -77,6 +103,12 @@ export class CheckoutPromotionController {
             lte(AppPromotion.startDate, now),
             gte(AppPromotion.endDate, now),
           ),
+          with: {
+            products: true,
+            categories: true,
+            yProducts: true,
+            yCategories: true,
+          },
         });
       }
 
@@ -92,7 +124,7 @@ export class CheckoutPromotionController {
 
       // Calculate cart subtotal before any discounts
       const subtotal = cartItems.reduce(
-        (total, item) => total + item.price * item.quantity,
+        (total: number, item: CartItem) => total + item.price * item.quantity,
         0,
       );
 
@@ -113,18 +145,23 @@ export class CheckoutPromotionController {
           },
           400,
         );
-      } // Get product details for category-based eligibility checks
-      const productIds = [...new Set(cartItems.map((item) => item.productId))];
+      }
+
+      // Get product details for category-based eligibility checks
+      const productIds = [
+        ...new Set(cartItems.map((item: CartItem) => item.productId)),
+      ];
       const products = await Promise.all(
-        productIds.map((id) => ProductRepository.findById(id, storeId)),
+        productIds.map((id: string) => ProductRepository.findById(id, storeId)),
       );
 
-      // Check if the promotion applies to the items in the cart
-      const hasEligibleProducts = productIds.some(
-        (id) =>
-          Array.isArray(promotion.applicableProducts) &&
-          promotion.applicableProducts.includes(id),
+      // Check if the promotion applies to the items in the cart using conjunction tables
+      const hasEligibleProducts = productIds.some((id: string) =>
+        promotion.products?.some(
+          (item: PromotionProductRelation) => item.productId === id,
+        ),
       );
+
       const categoryIds = [
         ...new Set(
           products
@@ -138,10 +175,10 @@ export class CheckoutPromotionController {
         ),
       ];
 
-      const hasEligibleCategories = categoryIds.some(
-        (categoryId) =>
-          Array.isArray(promotion.applicableCategories) &&
-          promotion.applicableCategories.includes(categoryId),
+      const hasEligibleCategories = categoryIds.some((categoryId: string) =>
+        promotion.categories?.some(
+          (item: PromotionCategoryRelation) => item.categoryId === categoryId,
+        ),
       );
 
       if (!hasEligibleProducts && !hasEligibleCategories) {
@@ -156,12 +193,12 @@ export class CheckoutPromotionController {
 
       // Calculate discount based on discount type
       let discount = 0;
-      let discountedItems = [];
+      let discountedItems: CartItem[] = [];
 
       switch (promotion.discountType) {
         case "percentage":
           discount = subtotal * (Number(promotion.discountValue) / 100);
-          discountedItems = cartItems.map((item) => ({
+          discountedItems = cartItems.map((item: CartItem) => ({
             ...item,
             discountAmount:
               item.price *
@@ -175,10 +212,10 @@ export class CheckoutPromotionController {
 
           // Distribute fixed discount proportionally based on item prices
           const totalValue = cartItems.reduce(
-            (sum, item) => sum + item.price * item.quantity,
+            (sum: number, item: CartItem) => sum + item.price * item.quantity,
             0,
           );
-          discountedItems = cartItems.map((item) => {
+          discountedItems = cartItems.map((item: CartItem) => {
             const itemTotal = item.price * item.quantity;
             const proportion = itemTotal / totalValue;
             return {
@@ -192,7 +229,10 @@ export class CheckoutPromotionController {
           // Here we would implement shipping cost calculation and set it to zero
           // For now, we'll set discount to 0 since shipping is handled separately
           discount = 0;
-          discountedItems = cartItems;
+          discountedItems = cartItems.map((item: CartItem) => ({
+            ...item,
+            discountAmount: 0,
+          }));
           break;
 
         case "buy_x_get_y":
@@ -205,41 +245,45 @@ export class CheckoutPromotionController {
               },
               500,
             );
-          }
-
-          // Group items by applicable products/categories
-          const eligibleItems = cartItems.filter((item) => {
+          } // Group items by applicable products/categories using conjunction tables
+          const eligibleItems = cartItems.filter((item: CartItem) => {
             const product = products.find((p) => p?.id === item.productId);
-            return (
-              (Array.isArray(promotion.applicableProducts) &&
-                promotion.applicableProducts.includes(item.productId)) ||
-              (product?.categoryId &&
-                Array.isArray(promotion.applicableCategories) &&
-                promotion.applicableCategories.includes(product.categoryId))
+            const isProductApplicable = promotion.products?.some(
+              (p: PromotionProductRelation) => p.productId === item.productId,
             );
+            const isCategoryApplicable =
+              product?.categoryId &&
+              promotion.categories?.some(
+                (c: PromotionCategoryRelation) =>
+                  c.categoryId === product.categoryId,
+              );
+
+            return isProductApplicable || isCategoryApplicable;
           });
 
           // Sort by price (ascending) to maximize discount by discounting cheaper items
           const sortedItems = [...eligibleItems].sort(
-            (a, b) => a.price - b.price,
+            (a: CartItem, b: CartItem) => a.price - b.price,
           );
           const totalEligibleQuantity = sortedItems.reduce(
-            (sum, item) => sum + item.quantity,
+            (sum: number, item: CartItem) => sum + item.quantity,
             0,
           );
           const discountableSets = Math.floor(
             totalEligibleQuantity /
-              (promotion.buyQuantity + promotion.getQuantity),
+              (Number(promotion.buyQuantity) + Number(promotion.getQuantity)),
           );
           const totalDiscountQuantity =
-            discountableSets * promotion.getQuantity;
+            discountableSets * Number(promotion.getQuantity);
 
           // Apply discount to the cheapest items first
           let remainingDiscountQuantity = totalDiscountQuantity;
-          discountedItems = cartItems.map((cartItem) => {
+          discountedItems = cartItems.map((cartItem: CartItem) => {
             // Skip if this item is not in the sorted list (not eligible)
             if (
-              !sortedItems.some((item) => item.productId === cartItem.productId)
+              !sortedItems.some(
+                (item: CartItem) => item.productId === cartItem.productId,
+              )
             ) {
               return { ...cartItem, discountAmount: 0 };
             }
@@ -262,7 +306,7 @@ export class CheckoutPromotionController {
           });
 
           discount = discountedItems.reduce(
-            (sum, item) => sum + (item.discountAmount || 0),
+            (sum: number, item: CartItem) => sum + (item.discountAmount || 0),
             0,
           );
           break;
@@ -275,7 +319,9 @@ export class CheckoutPromotionController {
             },
             400,
           );
-      } // Update usage count for the promotion
+      }
+
+      // Update usage count for the promotion
       await db
         .update(AppPromotion)
         .set({

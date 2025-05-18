@@ -48,7 +48,9 @@ export class CartPromotionController {
           },
           200,
         );
-      } // Get all product IDs from cart
+      }
+
+      // Get all product IDs from cart
       const productIds = [...new Set(cartItems.map((item) => item.productId))];
 
       // Fetch products to get their categories
@@ -76,25 +78,25 @@ export class CartPromotionController {
       // Filter promotions applicable to the cart items
       const applicablePromotions = allPromotions.filter((promotion) => {
         // Check if the promotion applies to any product in the cart
-        const hasApplicableProduct = productIds.some(
-          (productId) =>
-            Array.isArray(promotion.applicableProducts) &&
-            promotion.applicableProducts.includes(productId),
+        // Using the conjunction tables approach
+        const hasApplicableProduct = productIds.some((productId) =>
+          promotion.products?.some((item) => item.productId === productId),
         );
 
         // Check if the promotion applies to any category of products in the cart
-        const hasApplicableCategory = categoryIds.some(
-          (categoryId) =>
-            Array.isArray(promotion.applicableCategories) &&
-            promotion.applicableCategories.includes(categoryId),
+        const hasApplicableCategory = categoryIds.some((categoryId) =>
+          promotion.categories?.some((item) => item.categoryId === categoryId),
         );
 
         return hasApplicableProduct || hasApplicableCategory;
-      }); // Calculate promotion benefits and eligibility
+      });
+
+      // Calculate promotion benefits and eligibility
       const promotionsWithEligibility = applicablePromotions.map(
         (promotion) => {
           let isEligible = true;
           const requiredActions = [];
+
           // Check minimum purchase requirement
           const cartTotal = cartItems.reduce((total, item) => {
             // Use the price from cart item if provided, otherwise get from product
@@ -117,7 +119,9 @@ export class CartPromotionController {
               message: `Add ${amountNeeded.toFixed(2)} more to your cart to qualify`,
               amountNeeded: parseFloat(amountNeeded.toFixed(2)),
             });
-          } // Check buy X get Y eligibility
+          }
+
+          // Check buy X get Y eligibility
           if (
             promotion.discountType === "buy_x_get_y" &&
             promotion.buyQuantity
@@ -128,19 +132,18 @@ export class CartPromotionController {
             cartItems.forEach((item) => {
               // Check if this item's product is applicable for the promotion
               const product = products.find((p) => p?.id === item.productId);
-              // First check if product is directly in applicable products list
-              const isProductApplicable =
-                Array.isArray(promotion.applicableProducts) &&
-                promotion.applicableProducts.includes(item.productId);
+              if (!product) return;
 
-              // Then check if product category is in applicable categories
+              // Check if product is directly in applicable products list (using conjunction tables)
+              const isProductApplicable = promotion.products?.some(
+                (p) => p.productId === item.productId,
+              );
+
+              // Check if product category is in applicable categories (using conjunction tables)
               let isCategoryApplicable = false;
-              if (
-                product?.categoryId &&
-                Array.isArray(promotion.applicableCategories)
-              ) {
-                isCategoryApplicable = promotion.applicableCategories.includes(
-                  product.categoryId,
+              if (product.categoryId) {
+                isCategoryApplicable = promotion.categories?.some(
+                  (c) => c.categoryId === product.categoryId,
                 );
               }
 
@@ -158,6 +161,7 @@ export class CartPromotionController {
               });
             }
           }
+
           return {
             id: promotion.id,
             name: promotion.name,

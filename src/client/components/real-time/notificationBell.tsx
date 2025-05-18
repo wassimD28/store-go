@@ -13,12 +13,16 @@ import { useEffect, useState } from "react";
 import Pusher from "pusher-js";
 import { useRouter } from "next/navigation";
 import { formatTimeDifference } from "@/lib/utils";
-import { getAllNotifications, markAllNotificationsAsRead, markNotificationAsRead } from "@/app/actions/storeNotification.actions";
+import {
+  getAllNotifications,
+  markAllNotificationsAsRead,
+  markNotificationAsRead,
+} from "@/app/actions/storeNotification.actions";
 import { storeNotificationTypeEnum } from "@/lib/db/schema";
 
 // Define types based on your app schema
-type StoreNotificationType = (typeof storeNotificationTypeEnum.enumValues)[number];
-
+type StoreNotificationType =
+  (typeof storeNotificationTypeEnum.enumValues)[number];
 
 interface Notification {
   id: string;
@@ -44,30 +48,29 @@ export function NotificationBell({ storeId }: NotificationBellProps) {
 
   // Fetch notifications on component mount
   useEffect(() => {
-   const fetchNotifications = async () => {
-     try {
-       const response = await getAllNotifications(storeId);
-       if (!response.success) throw new Error("Failed to fetch notifications");
+    const fetchNotifications = async () => {
+      try {
+        const response = await getAllNotifications(storeId);
+        if (!response.success) throw new Error("Failed to fetch notifications");
 
-       const transformedData = response.data.map((notification) => ({
-         ...notification,
-         data: notification.data as Record<string, any>,
-       }));
+        const transformedData = response.data.map((notification) => ({
+          ...notification,
+          data: notification.data as Record<string, any>,
+        }));
 
-       setNotifications(transformedData);
-     } catch (error) {
-       console.error("Error fetching notifications:", error);
-       // You could also set an error state here if needed
-     } finally {
-       setLoading(false); // Always set loading to false
-     }
-   };
+        setNotifications(transformedData);
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+        // You could also set an error state here if needed
+      } finally {
+        setLoading(false); // Always set loading to false
+      }
+    };
 
     if (storeId) {
       fetchNotifications();
     }
   }, [storeId]);
-
   // Set up Pusher real-time listener
   useEffect(() => {
     if (!storeId) return;
@@ -95,6 +98,32 @@ export function NotificationBell({ storeId }: NotificationBellProps) {
       setNotifications((prev) => [newNotification, ...prev]);
     });
 
+    // Listen for new user registration events
+    channel.bind(
+      "new-user",
+      (data: { userId: string; name: string; email: string }) => {
+        // Create a notification object for the new user
+        const newUserNotification: Notification = {
+          id: `temp-${Date.now()}`, // Temporary ID until refresh
+          storeId,
+          type: "new_app_user_registration",
+          title: "New user registered",
+          content: `${data.name} has joined your app`,
+          data: {
+            userId: data.userId,
+            name: data.name,
+            email: data.email,
+          },
+          isRead: false,
+          createdAt: new Date(),
+          readAt: null,
+        };
+
+        // Add to notifications state
+        setNotifications((prev) => [newUserNotification, ...prev]);
+      },
+    );
+
     // Clean up on unmount
     return () => {
       channel.unbind_all();
@@ -104,14 +133,22 @@ export function NotificationBell({ storeId }: NotificationBellProps) {
   }, [storeId]);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
-
   const handleMarkAllAsRead = async () => {
     try {
-      const response = await markAllNotificationsAsRead(storeId)
+      // Filter out temporary notifications that don't exist in the database
+      const persistedNotifications = notifications.filter(
+        (n) => !n.id.startsWith("temp-"),
+      );
 
-      if (!response.success) throw new Error("Failed to mark notifications as read");
+      // Only make API call if there are any persisted notifications
+      if (persistedNotifications.length > 0) {
+        const response = await markAllNotificationsAsRead(storeId);
+        if (!response.success) {
+          throw new Error("Failed to mark notifications as read");
+        }
+      }
 
-      // Update local state
+      // Update local state for all notifications (including temporary ones)
       setNotifications(
         notifications.map((notification) => ({
           ...notification,
@@ -123,12 +160,11 @@ export function NotificationBell({ storeId }: NotificationBellProps) {
       console.error("Error marking notifications as read:", error);
     }
   };
-
   const handleNotificationClick = async (notification: Notification) => {
     try {
-      // Only make API call if notification is unread
-      if (!notification.isRead) {
-        await markNotificationAsRead(notification.id)
+      // Only make API call if notification is unread and has a valid DB ID (not temporary)
+      if (!notification.isRead && !notification.id.startsWith("temp-")) {
+        await markNotificationAsRead(notification.id);
       }
 
       // Update local state
@@ -138,9 +174,7 @@ export function NotificationBell({ storeId }: NotificationBellProps) {
             ? { ...n, isRead: true, readAt: new Date() }
             : n,
         ),
-      );
-
-      // Navigate based on notification type
+      ); // Navigate based on notification type
       if (notification.type === "new_review" && notification.data.productId) {
         router.push(
           `/stores/${storeId}/products/list?productId=${notification.data.productId}&tab=reviews`,
@@ -150,13 +184,17 @@ export function NotificationBell({ storeId }: NotificationBellProps) {
         notification.data.orderId
       ) {
         router.push(`/stores/${storeId}/orders/${notification.data.orderId}`);
+      } else if (
+        notification.type === "new_app_user_registration" &&
+        notification.data.userId
+      ) {
+        router.push(`/stores/${storeId}/customers`);
       }
       // Add other navigation logic for different notification types
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
   };
-
   // Function to determine notification icon based on type
   const getNotificationIcon = (type: StoreNotificationType) => {
     switch (type) {
@@ -168,6 +206,8 @@ export function NotificationBell({ storeId }: NotificationBellProps) {
         return "⚠️";
       case "payment_received":
         return "💰";
+      case "new_app_user_registration":
+        return "👤";
       default:
         return "📣";
     }
@@ -184,13 +224,16 @@ export function NotificationBell({ storeId }: NotificationBellProps) {
         >
           <Bell size={16} strokeWidth={2} aria-hidden="true" />
           {unreadCount > 0 && (
-            <Badge className="absolute -top-2 left-full min-w-4 max-h-5 text-xs -translate-x-1/2 flex-center">
+            <Badge className="flex-center absolute -top-2 left-full max-h-5 min-w-4 -translate-x-1/2 text-xs">
               {unreadCount > 99 ? "99+" : unreadCount}
             </Badge>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent side="bottom" className="max-h-[70vh] w-80 overflow-auto p-1 mr-2">
+      <PopoverContent
+        side="bottom"
+        className="mr-2 max-h-[70vh] w-80 overflow-auto p-1"
+      >
         <div className="flex items-baseline justify-between gap-4 px-3 py-2">
           <div className="text-sm font-semibold">Notifications</div>
           {unreadCount > 0 && (
