@@ -7,9 +7,13 @@ import { AppPromotion } from "@/lib/db/schema";
 import { ActionResponse } from "@/lib/types/interfaces/common.interface";
 import { PromotionWithRelations } from "@/lib/types/interfaces/promotion.interface";
 import { eq } from "drizzle-orm";
-import { DiscountType } from "@/lib/types/enums/common.enum";
+import {
+  AppNotificationType,
+  DiscountType,
+} from "@/lib/types/enums/common.enum";
 import { NOTIFICATION_CHANNELS } from "@/server/constants/channels";
 import { PromotionRepository } from "@/server/repositories/promotion.repository";
+import { createBroadcastNotification } from "./appUsersNotification.actions";
 
 // Pusher initialization
 const pusherServer = (() => {
@@ -101,10 +105,47 @@ export const createPromotion = async ({
       categoryIds: applicableCategories || [],
       yProductIds: yApplicableProducts || [],
       yCategoryIds: yApplicableCategories || [],
-    });
-
-    // Only send notification if the promotion is active and should start now or soon
+    }); // Only send notification if the promotion is active and should start now or soon
     if (newPromotion && isActive && new Date() >= startDate) {
+      // Create a notification record in the database
+      try {
+        await createBroadcastNotification(
+          storeId,
+          "new_promotion",
+          "New promotion available!",
+          `${name} - ${discountValue}${discountType === "percentage" ? "%" : "$"} off is now available!`,
+          {
+            promotionId: newPromotion.id,
+            promotionName: name,
+            discountType,
+            discountValue: String(discountValue),
+            imageUrl: promotionImage,
+            expiresAt: endDate.toISOString(),
+          },
+        );
+
+        // Trigger real-time Pusher notification
+        if (pusherServer) {
+          await pusherServer.trigger(
+            `store-${storeId}`,
+            AppNotificationType.NewPromotion,
+            {
+              promotionId: newPromotion.id,
+              promotionName: name,
+              discountType,
+              discountValue: String(discountValue),
+              imageUrl: promotionImage,
+              expiresAt: endDate.toISOString(),
+              createdAt: new Date().toISOString(),
+            },
+          );
+        }
+      } catch (error) {
+        console.error("Error sending promotion notification:", error);
+        // Continue with the response - don't let notification failure break the API
+      }
+
+      // Also send the existing notification for backward compatibility
       await sendPromotionNotification(storeId, newPromotion);
     }
 
@@ -356,10 +397,49 @@ export const updatePromotion = async ({
       categoryIds: applicableCategories || [],
       yProductIds: yApplicableProducts || [],
       yCategoryIds: yApplicableCategories || [],
-    });
-
-    // Send notification if the promotion is being activated or updated while active
+    }); // Send notification if the promotion is being activated or updated while active
     if (updatedPromotion && isActive && new Date() >= startDate) {
+      // Create a notification record in the database for the updated promotion
+      try {
+        await createBroadcastNotification(
+          updatedPromotion.storeId,
+          "new_promotion",
+          "Promotion updated!",
+          `${name} - ${discountValue}${discountType === "percentage" ? "%" : "$"} off has been updated!`,
+          {
+            promotionId: updatedPromotion.id,
+            promotionName: name,
+            discountType,
+            discountValue: String(discountValue),
+            imageUrl: promotionImage,
+            expiresAt: endDate.toISOString(),
+            isUpdate: true,
+          },
+        );
+
+        // Trigger real-time Pusher notification
+        if (pusherServer) {
+          await pusherServer.trigger(
+            `store-${updatedPromotion.storeId}`,
+            AppNotificationType.NewPromotion,
+            {
+              promotionId: updatedPromotion.id,
+              promotionName: name,
+              discountType,
+              discountValue: String(discountValue),
+              imageUrl: promotionImage,
+              expiresAt: endDate.toISOString(),
+              createdAt: new Date().toISOString(),
+              isUpdate: true,
+            },
+          );
+        }
+      } catch (error) {
+        console.error("Error sending promotion update notification:", error);
+        // Continue with the response - don't let notification failure break the API
+      }
+
+      // Also send the existing notification for backward compatibility
       await sendPromotionNotification(
         updatedPromotion.storeId,
         updatedPromotion,
@@ -415,9 +495,18 @@ async function sendPromotionNotification(storeId: string, promotion: any) {
   const channel = `${NOTIFICATION_CHANNELS.STORE}-${storeId}`;
 
   try {
+    // Send with the older event name for backward compatibility
     await pusherServer.trigger(channel, "promotion-activated", {
       message: `New promotion: ${promotion.name}`,
       promotion,
+      // Add new consistent fields that match our new_promotion format
+      promotionId: promotion.id,
+      promotionName: promotion.name,
+      discountType: promotion.discountType,
+      discountValue: String(promotion.discountValue),
+      imageUrl: promotion.promotionImage,
+      expiresAt: promotion.endDate,
+      createdAt: new Date().toISOString(),
     });
   } catch (error) {
     console.error("Failed to send promotion notification:", error);
