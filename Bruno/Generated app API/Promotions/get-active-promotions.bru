@@ -1,0 +1,155 @@
+meta {
+  name: get-active-promotions
+  type: http
+  seq: 20
+}
+
+get {
+  url: {{BASE_URL}}/api/mobile-app/promotions
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Get All Active Promotions
+  
+  This endpoint retrieves all current active promotions for the authenticated store. Active promotions are those that are:
+  - Marked as active in the system
+  - Current date is between the promotion start and end dates
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - The user must be associated with the store
+  
+  ## Request Parameters
+  
+  No request parameters required. The store ID is extracted from the authenticated user's context.
+  
+  ## Response Format
+
+  ### Success Response (HTTP 200)
+  
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "123e4567-e89b-12d3-a456-426614174000",
+        "storeId": "789e4567-e89b-12d3-a456-426614174000",
+        "name": "Summer Sale",
+        "description": "20% off on all summer collection items",
+        "discountType": "percentage",
+        "discountValue": "20.00",
+        "couponCode": "SUMMER20",
+        "minimumPurchase": "0.00",
+        "buyQuantity": null,
+        "getQuantity": null,
+        "sameProductOnly": true,
+        "promotionImage": "https://example.com/images/summer-promo.jpg",
+        "startDate": "2025-05-01T00:00:00.000Z",
+        "endDate": "2025-08-31T23:59:59.999Z",
+        "isActive": true,
+        "products": [
+          {
+            "promotionId": "123e4567-e89b-12d3-a456-426614174000",
+            "productId": "5f7c1b9b-5d7b-4a5d-a9b5-d7b5a5d9a5b5",
+            "product": {
+              "id": "5f7c1b9b-5d7b-4a5d-a9b5-d7b5a5d9a5b5",
+              "name": "Summer T-Shirt"
+            }
+          }
+        ],
+        "categories": [
+          {
+            "promotionId": "123e4567-e89b-12d3-a456-426614174000",
+            "categoryId": "8a7c1b9b-5d7b-4a5d-a9b5-d7b5a5d9a5b5",
+            "category": {
+              "id": "8a7c1b9b-5d7b-4a5d-a9b5-d7b5a5d9a5b5",
+              "name": "Summer Collection"
+            }
+          }
+        ],
+        "usageCount": 152,
+        "created_at": "2025-04-15T12:34:56.789Z",
+        "updated_at": "2025-04-15T12:34:56.789Z"
+      },
+      {
+        "id": "223e4567-e89b-12d3-a456-426614174001",
+        "storeId": "789e4567-e89b-12d3-a456-426614174000",
+        "name": "Buy 3 Get 1 Free",
+        "description": "Buy 3 items from the t-shirt collection and get 1 free",
+        "discountType": "buy_x_get_y",
+        "discountValue": "100.00",
+        "couponCode": null,
+        "minimumPurchase": "0.00",
+        "buyQuantity": 3,
+        "getQuantity": 1,
+        "sameProductOnly": true,
+        "promotionImage": "https://example.com/images/buy3get1-promo.jpg",
+        "startDate": "2025-05-01T00:00:00.000Z",
+        "endDate": "2025-06-30T23:59:59.999Z",
+        "isActive": true,
+        "products": [],
+        "categories": [
+          {
+            "promotionId": "223e4567-e89b-12d3-a456-426614174001",
+            "categoryId": "9a7c1b9b-5d7b-4a5d-a9b5-d7b5a5d9a5b5",
+            "category": {
+              "id": "9a7c1b9b-5d7b-4a5d-a9b5-d7b5a5d9a5b5", 
+              "name": "T-Shirts"
+            }
+          }
+        ],
+        "usageCount": 75,
+        "created_at": "2025-04-20T09:15:30.456Z",
+        "updated_at": "2025-04-20T09:15:30.456Z"
+      }
+    ]
+  }
+  ```
+  
+  ### Error Responses
+  
+  #### Server Error (HTTP 500)
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Failed to fetch promotions"
+  }
+  ```
+  
+  ## Related Endpoints
+  
+  - GET `/api/mobile-app/promotions/{promotionId}` - Get details of a specific promotion
+  - GET `/api/mobile-app/promotions/product/{productId}` - Get promotions applicable to a specific product
+  - POST `/api/mobile-app/cart/check-promotions` - Check which promotions apply to cart items
+  
+  ## Notes
+  
+  - The response includes full details of related products and categories
+  - Promotions are filtered by the store ID to ensure proper multi-tenant separation
+  - Only returns currently active promotions (based on isActive flag and date range)
+}
