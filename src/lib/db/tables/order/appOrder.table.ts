@@ -8,9 +8,13 @@ import {
 import { AppUser } from "../customer";
 import { AppAddress } from "../customer/appAddress.table";
 import { relations } from "drizzle-orm";
+import { stores } from "../store";
 
 export const AppOrder = pgTable("app_order", {
   id: uuid("id").primaryKey().defaultRandom(),
+  storeId: uuid("store_id")
+    .references(() => stores.id)
+    .notNull(),
   appUserId: uuid("app_user_id")
     .notNull()
     .references(() => AppUser.id),
@@ -24,7 +28,7 @@ export const AppOrder = pgTable("app_order", {
 });
 
 // Define relations for AppOrder
-export const AppOrderRelations = relations(AppOrder, ({ one, many }) => ({
+export const AppOrderRelations = relations(AppOrder, ({ one }) => ({
   user: one(AppUser, {
     fields: [AppOrder.appUserId],
     references: [AppUser.id],

@@ -226,6 +226,7 @@ table app_user {
   is_online boolean [default: false]
   last_seen timestamp
   status boolean [default: true]
+  stripe_customer_id varchar(255)
   created_at timestamp [default: `now()`]
   updated_at timestamp [default: `now()`]
 }
@@ -283,6 +284,18 @@ table app_user_notification_status {
   is_deleted boolean [not null, default: false]
   read_at timestamp
   created_at timestamp [not null, default: `now()`]
+}
+
+table app_payment_method {
+  id uuid [pk, not null, default: `gen_random_uuid()`]
+  store_id uuid [not null]
+  app_user_id uuid [not null]
+  type varchar(50) [not null]
+  is_default boolean [default: false]
+  details jsonb [default: `{}`]
+  payment_token varchar(255)
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
 }
 
 table app_product {
@@ -390,16 +403,19 @@ table promotion_y_product {
   created_at timestamp [not null, default: `now()`]
 }
 
-table app_collection {
+table order_item {
   id uuid [pk, not null, default: `gen_random_uuid()`]
+  product_id uuid [not null]
   order_id uuid [not null]
   quantity integer [not null]
+  variants json [default: `{}`]
   unit_price "numeric(10, 2)" [not null]
   subtotal "numeric(10, 2)" [not null]
 }
 
 table app_order {
   id uuid [pk, not null, default: `gen_random_uuid()`]
+  store_id uuid [not null]
   app_user_id uuid [not null]
   address_id uuid [not null]
   data_amount "numeric(10, 2)" [not null]
@@ -410,11 +426,17 @@ table app_order {
 
 table app_payment {
   id uuid [pk, not null, default: `gen_random_uuid()`]
+  store_id uuid [not null]
   order_id uuid [not null]
   amount "numeric(10, 2)" [not null]
-  payment_date timestamp [default: `now()`]
   payment_method varchar(50) [not null]
+  stripe_payment_intent_id varchar(255)
+  client_secret varchar(255)
   status varchar(50) [not null, default: 'pending']
+  error_message varchar(255)
+  error_code varchar(50)
+  idempotency_key varchar(255) [unique]
+  payment_date timestamp [default: `now()`]
 }
 
 ref: account.user_id > user.id
@@ -465,6 +487,10 @@ ref: app_user_notification_status.app_user_id - app_user.id
 
 ref: app_user_notification_status.notification_id - app_notification.id
 
+ref: app_payment_method.app_user_id - app_user.id
+
+ref: app_payment_method.store_id - stores.id
+
 ref: app_product.category_id - app_category.id
 
 ref: app_product.subcategory_id - app_subcategory.id
@@ -509,7 +535,9 @@ ref: promotion_y_product.promotion_id > app_promotion.id
 
 ref: promotion_y_product.product_id - app_product.id
 
-ref: app_collection.order_id - app_order.id
+ref: order_item.order_id - app_order.id
+
+ref: order_item.product_id - app_product.id
 
 ref: app_order.app_user_id - app_user.id
 

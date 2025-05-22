@@ -25,12 +25,13 @@ export const AppUser = pgTable("app_user", {
   is_online: boolean("is_online").default(false),
   last_seen: timestamp("last_seen"),
   status: boolean("status").default(true),
+  stripeCustomerId: varchar("stripe_customer_id", { length: 255 }),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
 
 // Define relations for AppUser
-export const AppUserRelations = relations(AppUser, ({ one, many }) => ({
+export const AppUserRelations = relations(AppUser, ({ one }) => ({
   store: one(stores, {
     fields: [AppUser.storeId],
     references: [stores.id],
