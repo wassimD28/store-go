@@ -52,13 +52,14 @@ docs {
       "items": [
         {
           "id": "cart-item-uuid",
-          "userId": "user-uuid",
           "productId": "product-uuid",
           "quantity": 2,
-          "selectedColor": "black",
-          "selectedSize": "medium",
-          "created_at": "2023-05-15T10:30:00Z",
-          "updated_at": "2023-05-15T10:30:00Z",
+          "variants": {
+            "color": "black",
+            "size": "medium"
+          },
+          "createdAt": "2023-05-15T10:30:00Z",
+          "updatedAt": "2023-05-15T10:30:00Z",
           "product": {
             "id": "product-uuid",
             "name": "Smartphone X",
@@ -69,13 +70,11 @@ docs {
         },
         {
           "id": "cart-item-uuid-2",
-          "userId": "user-uuid",
           "productId": "product-uuid-2",
           "quantity": 1,
-          "selectedColor": null,
-          "selectedSize": null,
-          "created_at": "2023-05-15T11:30:00Z",
-          "updated_at": "2023-05-15T11:30:00Z",
+          "variants": {},
+          "createdAt": "2023-05-15T11:30:00Z",
+          "updatedAt": "2023-05-15T11:30:00Z",
           "product": {
             "id": "product-uuid-2",
             "name": "Wireless Headphones",
@@ -100,8 +99,21 @@ docs {
   
   | Status Code | Description | Response Body |
   |-------------|-------------|---------------|
-  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
-  | 500 | Server error | `{ "status": "error", "message": "Failed to fetch cart items" }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized: Missing or invalid authorization header" }` |
+  | 403 | Forbidden | `{ "status": "error", "message": "Unauthorized: User does not have a store associated" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to fetch cart" }` |
+  
+  ## Implementation Notes
+  
+  - The endpoint calculates cart summary statistics including:
+    - Total number of items
+    - Subtotal (sum of item prices × quantities)
+    - Estimated tax (calculated based on subtotal)
+    - Shipping cost (may vary based on order size)
+    - Total amount (subtotal + tax + shipping)
+  - Products with multiple quantities are counted individually in the total items count
+  - Cart items are ordered by most recently updated first
+  - Empty carts return an empty items array and zeroed summary values
   
   ## Related Endpoints
   
@@ -109,5 +121,5 @@ docs {
   - `PUT /api/mobile-app/cart/:cartItemId` - Update cart item quantity
   - `DELETE /api/mobile-app/cart/:cartItemId` - Remove item from cart
   - `DELETE /api/mobile-app/cart` - Clear entire cart
-  - `POST /api/mobile-app/cart/checkout` - Proceed to checkout
+  - `POST /api/mobile-app/checkout` - Proceed to checkout
 }

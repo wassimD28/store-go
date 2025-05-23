@@ -4,10 +4,15 @@ import { isAuthenticated } from "@/server/middleware/isAuthenticated.middleware"
 import { CartController } from "@/server/controllers/cart.controller";
 
 const app = new Hono()
-  .basePath("/api/mobile-app/products/cart")
+  .basePath("/api/mobile-app/cart")
   .use("*", isAuthenticated)
+  // Get user's cart with all items
   .get("/", CartController.getCart)
-  .delete("/", CartController.clearCart);
+  // Clear all items from cart
+  .delete("/", CartController.clearCart)
+  // Apply coupon to cart
+  .post("/apply-coupon", CartController.applyCoupon);
 
 export const GET = handle(app);
 export const DELETE = handle(app);
+export const POST = handle(app);

@@ -1,5 +1,3 @@
-
-
 import { Hono } from "hono";
 import { handle } from "hono/vercel";
 import { isAuthenticated } from "@/server/middleware/isAuthenticated.middleware";
@@ -10,10 +8,10 @@ const app = new Hono()
   // Check if user is authenticated
   .use("*", isAuthenticated)
   .post("/:productId", CartController.addToCart)
-  // Update product quantity in cart
-  .put("/:productId", CartController.updateCartItem)
+  // Update product quantity in cart by product ID
+  .put("/:productId", CartController.updateCartItemByProductId)
   // Remove product from cart by product ID
-  .delete("/:productId", CartController.removeFromCart)
+  .delete("/:productId", CartController.removeFromCart);
 
 export const POST = handle(app);
 export const DELETE = handle(app);

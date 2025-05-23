@@ -22,6 +22,10 @@ body:json {
   }
 }
 
+vars:pre-request {
+  PRODUCT_ID: 
+}
+
 script:pre-request {
   // Get the access token from environment variables
   const accessToken = bru.getEnvVar("ACCESS_TOKEN");

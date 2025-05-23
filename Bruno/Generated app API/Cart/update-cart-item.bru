@@ -5,7 +5,7 @@ meta {
 }
 
 put {
-  url: {{PROD_BASE_URL}}/api/mobile-app/cart/{{CART_ITEM_ID}}
+  url: {{BASE_URL}}/api/mobile-app/cart/{{CART_ITEM_ID}}
   body: json
   auth: bearer
 }
@@ -20,6 +20,10 @@ body:json {
     "selectedColor": "silver",
     "selectedSize": "large"
   }
+}
+
+vars:pre-request {
+  CART_ITEM_ID: test
 }
 
 script:pre-request {
