@@ -1,0 +1,58 @@
+meta {
+  name: get-cart-summary
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{BASE_URL}}/api/mobile-app/cart/summary
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Cart Summary Endpoint
+  
+  This endpoint provides a detailed summary of the user's cart including totals, taxes, shipping costs, and discount eligibility.
+  
+  ## Response Format
+  
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "summary": {
+        "totalItems": 5,
+        "subtotal": 2000,
+        "tax": 200,
+        "shippingCost": 0,
+        "discount": 0,
+        "totalAmount": 2200
+      },
+      "eligibleForFreeShipping": true,
+      "freeShippingThreshold": 50,
+      "amountNeededForFreeShipping": 0
+    }
+  }
+  ```
+}

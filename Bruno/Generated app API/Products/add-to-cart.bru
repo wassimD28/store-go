@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: {{PROD_BASE_URL}}/api/mobile-app/products/cart/{{PRODUCT_ID}}
+  url: {{BASE_URL}}/api/mobile-app/products/cart/{{PRODUCT_ID}}
   body: json
   auth: bearer
 }
@@ -17,13 +17,15 @@ auth:bearer {
 body:json {
   {
     "quantity": 1,
-    "selectedColor": "black",
-    "selectedSize": "medium"
+    "variants": {
+      "color": "red",
+      "size": "small"
+    }
   }
 }
 
 vars:pre-request {
-  PRODUCT_ID: 
+  PRODUCT_ID: f6f59afd-87ee-4167-9082-6181674d8011
 }
 
 script:pre-request {
@@ -45,13 +47,7 @@ script:pre-request {
 docs {
   # Add Product to Cart Endpoint
   
-  This endpoint allows users to add a product to their shopping cart. It supports specifying the quantity and any product variants such as color and size.
-  
-  ## Authentication Requirements
-  
-  - This endpoint requires authentication using a JWT bearer token
-  - The token must be obtained from the sign-in endpoint
-  - The user must have a valid account in the system
+  This endpoint allows users to add a product to their shopping cart. The product ID is specified in the URL path.
   
   ## Request Parameters
   
@@ -61,21 +57,24 @@ docs {
   
   ## Request Body
   
-  The request body must be a JSON object with the following structure:
-  
   ```json
   {
     "quantity": 1,
-    "selectedColor": "black",
-    "selectedSize": "medium"
+    "variants": {
+      "color": "black", 
+      "size": "medium"
+    }
   }
   ```
   
-  | Field        | Type   | Required | Description                              |
-  |--------------|--------|----------|------------------------------------------|
-  | quantity     | number | Yes      | Number of items to add (min: 1)          |
-  | selectedColor| string | No       | Selected product color variant           |
-  | selectedSize | string | No       | Selected product size variant            |
+  | Field     | Type   | Required | Description                              |
+  |-----------|--------|----------|------------------------------------------|
+  | quantity  | number | Yes      | Number of items to add (min: 1)          |
+  | variants  | object | No       | Product variants (color, size, etc.)     |
+  
+  ## Note
+  - The productId is taken from the URL path, not the request body
+  - Use the new `variants` object format instead of `selectedColor`/`selectedSize`
   
   ## Response Format
   

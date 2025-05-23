@@ -1,0 +1,75 @@
+meta {
+  name: validate-cart
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{BASE_URL}}/api/mobile-app/cart/validate
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Cart Validation Endpoint
+  
+  This endpoint validates all items in the cart for availability, stock, and pricing before checkout.
+  
+  ## Response Format
+  
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "isValid": true,
+      "validationErrors": [],
+      "validItems": 2,
+      "totalItems": 2
+    }
+  }
+  ```
+  
+  ## Validation Errors Format
+  
+  ```json
+  {
+    "status": "validation_errors",
+    "data": {
+      "isValid": false,
+      "validationErrors": [
+        {
+          "itemId": "item-uuid",
+          "productId": "product-uuid",
+          "productName": "Product Name",
+          "error": "Insufficient stock. Only 2 available",
+          "requestedQuantity": 5,
+          "availableQuantity": 2,
+          "action": "update_quantity"
+        }
+      ],
+      "validItems": 1,
+      "totalItems": 2
+    }
+  }
+  ```
+}

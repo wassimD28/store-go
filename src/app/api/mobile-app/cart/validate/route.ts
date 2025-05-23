@@ -6,7 +6,6 @@ import { CartController } from "@/server/controllers/cart.controller";
 const app = new Hono()
   .basePath("/api/mobile-app/cart/validate")
   .use("*", isAuthenticated)
-  // Validate cart items before checkout
   .post("/", CartController.validateCart);
 
 export const POST = handle(app);

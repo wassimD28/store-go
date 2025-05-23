@@ -93,14 +93,11 @@ export class CartController {
 
   static async addToCart(c: Context) {
     try {
+      // Get productId from URL path parameter (not from body)
+      const productId = c.req.param("productId");
+
       const body = await c.req.json();
-      const {
-        productId,
-        quantity = 1,
-        variants = {},
-        selectedColor,
-        selectedSize,
-      } = body;
+      const { quantity = 1, variants = {}, selectedColor, selectedSize } = body;
 
       const validId = idSchema.safeParse(productId);
       if (!validId.success) {

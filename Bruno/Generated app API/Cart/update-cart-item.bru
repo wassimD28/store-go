@@ -16,14 +16,16 @@ auth:bearer {
 
 body:json {
   {
-    "quantity": 3,
-    "selectedColor": "silver",
-    "selectedSize": "large"
+    "quantity": 5,
+    "variants": {
+      "color": "red",
+      "size": "medium"
+    }
   }
 }
 
 vars:pre-request {
-  CART_ITEM_ID: test
+  CART_ITEM_ID: 
 }
 
 script:pre-request {
@@ -65,17 +67,18 @@ docs {
   
   ```json
   {
-    "quantity": 3,
-    "selectedColor": "silver",
-    "selectedSize": "large"
+    "quantity": 5,
+    "variants": {
+      "color": "red",
+      "size": "medium"
+    }
   }
   ```
   
-  | Field        | Type   | Required | Description |
-  |--------------|--------|----------|-------------|
-  | quantity     | number | No*      | New quantity for the item (min: 1) |
-  | selectedColor| string | No*      | New color selection for the item |
-  | selectedSize | string | No*      | New size selection for the item |
+  | Field     | Type   | Required | Description |
+  |-----------|--------|----------|-------------|
+  | quantity  | number | No*      | New quantity for the item (min: 1) |
+  | variants  | object | No*      | Product variants (color, size, etc.) |
   
   *At least one field must be provided.
   
@@ -86,29 +89,21 @@ docs {
   ```json
   {
     "status": "success",
-    "message": "Cart item updated successfully",
-    "data": {
-      "item": {
+    "message": "Cart item updated",
+    "data": [
+      {
         "id": "cart-item-uuid",
-        "userId": "user-uuid",
+        "cartId": "cart-uuid",
         "productId": "product-uuid",
-        "quantity": 3,
-        "selectedColor": "silver",
-        "selectedSize": "large",
-        "created_at": "2023-05-15T10:30:00Z",
-        "updated_at": "2023-05-15T11:45:00Z",
-        "product": {
-          "id": "product-uuid",
-          "name": "Smartphone X",
-          "price": 799.99,
-          "image_urls": ["https://example.com/images/smartphone-x.jpg"]
-        }
-      },
-      "cartSummary": {
-        "totalItems": 5,
-        "subtotal": 2599.97
+        "quantity": 5,
+        "variants": {
+          "color": "red",
+          "size": "medium"
+        },
+        "added_at": "2023-05-15T10:30:00Z",
+        "updated_at": "2023-05-15T11:45:00Z"
       }
-    }
+    ]
   }
   ```
   
@@ -117,17 +112,16 @@ docs {
   | Status Code | Description | Response Body |
   |-------------|-------------|---------------|
   | 400 | Invalid cart item ID | `{ "status": "error", "message": "Invalid cart item ID" }` |
-  | 400 | Invalid request body | `{ "status": "error", "message": "Invalid request data", "errors": [...] }` |
+  | 400 | Invalid request body | `{ "status": "error", "message": "Invalid request data", "details": [...] }` |
   | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
   | 403 | Not the owner | `{ "status": "error", "message": "You don't have permission to update this cart item" }` |
   | 404 | Cart item not found | `{ "status": "error", "message": "Cart item not found" }` |
-  | 409 | Insufficient stock | `{ "status": "error", "message": "Insufficient stock. Only 2 items available." }` |
   | 500 | Server error | `{ "status": "error", "message": "Failed to update cart item" }` |
   
   ## Related Endpoints
   
   - `GET /api/mobile-app/cart` - Get all items in the user's cart
   - `POST /api/mobile-app/products/cart/:productId` - Add an item to cart
-  - `DELETE /api/mobile-app/cart/:cartItemId` - Remove item from cart
+  - `DELETE /api/mobile-app/cart/items/:itemId` - Remove item from cart
   - `DELETE /api/mobile-app/cart` - Clear entire cart
 }

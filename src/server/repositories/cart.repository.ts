@@ -35,17 +35,28 @@ export class CartRepository {
   // Find or create cart for a user
   static async findOrCreateCart(appUserId: string, storeId: string) {
     try {
-      // Try to find existing active cart - now works with enum status
+      console.log(
+        `🔍 Looking for cart: userId=${appUserId}, storeId=${storeId}`,
+      ); // Debug log
+
+      // Try to find existing active cart - ensure we get the SAME cart every time
       let cart = await db.query.AppCart.findFirst({
         where: and(
           eq(AppCart.appUserId, appUserId),
           eq(AppCart.storeId, storeId),
-          eq(AppCart.status, "active"), // This should work with enum
+          eq(AppCart.status, "active"), // Only get active carts
         ),
+        orderBy: (cart, { desc }) => [desc(cart.created_at)], // Get the most recent cart if multiple exist
       });
+
+      console.log(`📦 Found existing cart:`, cart?.id); // Debug log
 
       // If no active cart exists, create one
       if (!cart) {
+        console.log(
+          `🆕 Creating new cart for userId=${appUserId}, storeId=${storeId}`,
+        ); // Debug log
+
         const newCarts = await db
           .insert(AppCart)
           .values({
@@ -55,6 +66,8 @@ export class CartRepository {
           })
           .returning();
         cart = newCarts[0];
+
+        console.log(`✅ Created new cart:`, cart.id); // Debug log
       }
 
       return cart;
@@ -170,8 +183,13 @@ export class CartRepository {
     try {
       const { storeId, appUserId, productId, quantity, variants = {} } = data;
 
-      // Get the user's cart
+      console.log(
+        `🛒 Adding to cart: productId=${productId}, userId=${appUserId}, storeId=${storeId}`,
+      ); // Debug log
+
+      // Get the user's cart - this should be the SAME cart returned in getCart
       const cart = await this.findOrCreateCart(appUserId, storeId);
+      console.log("🎯 Using cart ID for add:", cart.id); // Debug log
 
       // Check if the product with these specific variants already exists in the cart
       const existingItem = await this.findCartItemByProductAndUser(
@@ -182,8 +200,10 @@ export class CartRepository {
       );
 
       if (existingItem) {
+        console.log("🔄 Updating existing item:", existingItem.id); // Debug log
+
         // Update existing cart item quantity (keep existing variants)
-        return await db
+        const updated = await db
           .update(CartItem)
           .set({
             quantity: existingItem.quantity + quantity,
@@ -191,18 +211,41 @@ export class CartRepository {
           })
           .where(eq(CartItem.id, existingItem.id))
           .returning();
+
+        console.log("✅ Updated existing item in cart:", existingItem.cartId); // Debug log
+        return updated;
       }
 
-      // Add new cart item with variants
-      return await db
+      console.log("➕ Creating new cart item"); // Debug log
+
+      // Add new cart item with variants - ENSURE it uses the correct cartId
+      const newItem = await db
         .insert(CartItem)
         .values({
-          cartId: cart.id,
+          cartId: cart.id, // This MUST match the cart from findOrCreateCart
           productId,
           quantity,
           variants: Object.keys(variants).length > 0 ? variants : null,
         })
         .returning();
+
+      console.log(
+        "✅ Created new item in cart:",
+        cart.id,
+        "Item cartId:",
+        newItem[0]?.cartId,
+      ); // Debug log
+
+      // Verify the item was created with correct cartId
+      if (newItem[0]?.cartId !== cart.id) {
+        console.error("❌ Cart ID mismatch!", {
+          expected: cart.id,
+          actual: newItem[0]?.cartId,
+        });
+        throw new Error("Cart ID mismatch during item creation");
+      }
+
+      return newItem;
     } catch (error) {
       console.error("Error adding to cart:", error);
       throw new Error("Failed to add item to cart");
@@ -359,8 +402,13 @@ export class CartRepository {
 
   static async findByUser(appUserId: string, storeId: string) {
     try {
-      // Find the user's cart
+      console.log(
+        `🔍 Finding cart for user: userId=${appUserId}, storeId=${storeId}`,
+      ); // Debug log
+
+      // Find the user's cart - this should be the SAME cart from add operation
       const cart = await this.findOrCreateCart(appUserId, storeId);
+      console.log("📦 Found cart for findByUser:", cart.id); // Debug log
 
       // Get all items in the cart with product details
       const cartItems = await db.query.CartItem.findMany({
@@ -375,6 +423,8 @@ export class CartRepository {
         },
         orderBy: (cartItem, { desc }) => [desc(cartItem.updated_at)],
       });
+
+      console.log(`📋 Found ${cartItems.length} items in cart ${cart.id}`); // Debug log
 
       // Calculate cart summary
       const summary = {
