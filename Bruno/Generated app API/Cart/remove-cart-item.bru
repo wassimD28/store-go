@@ -14,6 +14,10 @@ auth:bearer {
   token: {{ACCESS_TOKEN}}
 }
 
+vars:pre-request {
+  CART_ITEM_ID: 6e1db67b-d7c5-477a-9ab9-290633e63032
+}
+
 script:pre-request {
   // Get the access token from environment variables
   const accessToken = bru.getEnvVar("ACCESS_TOKEN");

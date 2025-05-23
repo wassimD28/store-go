@@ -560,6 +560,14 @@ export class CartController {
       for (const item of result.items) {
         const product = item.product;
 
+        console.log(`🔍 Validating product:`, {
+          productId: item.productId,
+          productName: product?.name,
+          productStatus: product?.status,
+          stockQuantity: product?.stock_quantity,
+          requestedQuantity: item.quantity,
+        }); // Debug log
+
         if (!product) {
           validationErrors.push({
             itemId: item.id,
@@ -570,18 +578,25 @@ export class CartController {
           continue;
         }
 
-        // Fix: Use correct product status from schema
+        // Check correct product status values from your enum
         if (product.status !== "published") {
+          console.log(`❌ Product status invalid:`, {
+            productId: item.productId,
+            currentStatus: product.status,
+            requiredStatus: "published",
+          }); // Debug log
+
           validationErrors.push({
             itemId: item.id,
             productId: item.productId,
             productName: product.name,
-            error: "Product is no longer available",
+            error: `Product is ${product.status}. Only published products are available for purchase.`,
             action: "remove",
           });
           continue;
         }
 
+        // Check stock availability
         if (product.stock_quantity < item.quantity) {
           validationErrors.push({
             itemId: item.id,
@@ -595,6 +610,7 @@ export class CartController {
           continue;
         }
 
+        console.log(`✅ Product validation passed:`, item.productId); // Debug log
         updatedItems.push(item);
       }
 

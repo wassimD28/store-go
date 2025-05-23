@@ -1,0 +1,62 @@
+meta {
+  name: clear-cart
+  type: http
+  seq: 8
+}
+
+delete {
+  url: {{BASE_URL}}/api/mobile-app/cart
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Clear Cart Endpoint
+  
+  This endpoint removes all items from the user's shopping cart, effectively resetting it to an empty state.
+  
+  ## Purpose
+  - Clear all items from cart
+  - Reset cart for fresh shopping session
+  - Clean up abandoned cart items
+  
+  ## Expected Response
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Cart cleared successfully"
+  }
+  ```
+  
+  ## After Clearing
+  - Cart will be empty but still exist
+  - Cart ID remains the same
+  - All cart items are permanently deleted
+  - Cart status remains "active"
+  
+  ## Use Cases
+  - User wants to start fresh
+  - Clear cart before checkout cancellation
+  - Reset cart after order completion
+}
