@@ -415,4 +415,34 @@ export class PaymentRepository {
       throw new Error("Failed to fetch default payment method");
     }
   }
+
+  static async findByStripePaymentIntentId(stripePaymentIntentId: string) {
+    try {
+      return await db.query.AppPayment.findFirst({
+        where: eq(AppPayment.stripePaymentIntentId, stripePaymentIntentId),
+      });
+    } catch (error) {
+      console.error("Error finding payment by Stripe ID:", error);
+      throw new Error("Failed to find payment by Stripe ID");
+    }
+  }
+
+  static async updateStripePaymentIntentId(
+    paymentId: string,
+    stripePaymentIntentId: string,
+  ) {
+    try {
+      return await db
+        .update(AppPayment)
+        .set({
+          stripePaymentIntentId,
+          updated_at: new Date(),
+        })
+        .where(eq(AppPayment.id, paymentId))
+        .returning();
+    } catch (error) {
+      console.error("Error updating Stripe payment intent ID:", error);
+      throw new Error("Failed to update Stripe payment intent ID");
+    }
+  }
 }

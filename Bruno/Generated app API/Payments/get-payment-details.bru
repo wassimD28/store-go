@@ -1,0 +1,56 @@
+meta {
+  name: get-payment-details
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{BASE_URL}}/api/mobile-app/payments/{{PAYMENT_ID}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+vars:pre-request {
+  PAYMENT_ID: 89505483-6bb5-4926-8476-08cf6a7b6dda
+}
+
+script:pre-request {
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Get Payment Details
+  
+  This endpoint retrieves details for a specific payment that belongs to the authenticated user.
+  
+  ## Expected Response
+  
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "89505483-6bb5-4926-8476-08cf6a7b6dda",
+      "order_id": "82d94ef6-3727-4f1e-81c8-d487867834c2",
+      "amount": "440.00",
+      "currency": "usd",
+      "payment_method": "credit_card",
+      "status": "succeeded",
+      "payment_date": "2024-01-15T10:30:00Z"
+    }
+  }
+  ```
+}

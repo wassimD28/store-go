@@ -6,6 +6,6 @@ import { PaymentController } from "@/server/controllers/payment.controller";
 const app = new Hono()
   .basePath("/api/mobile-app/orders")
   .use("*", isAuthenticated)
-  .post("/:orderId/pay", PaymentController.payForOrder); // ✅ Fixed: Use controller pattern
+  .post("/:orderId/pay", PaymentController.payForOrder);
 
 export const POST = handle(app);

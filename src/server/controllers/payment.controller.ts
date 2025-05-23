@@ -37,6 +37,7 @@ export class PaymentController {
   static async getAllPayments(c: Context) {
     try {
       const { id: appUserId, storeId } = c.get("user"); // ✅ Fixed user context
+
       const payments = await PaymentRepository.findAllByUser(
         appUserId,
         storeId,
@@ -73,11 +74,13 @@ export class PaymentController {
       }
 
       const { id: appUserId, storeId } = c.get("user"); // ✅ Fixed user context
+
       const payment = await PaymentRepository.findByIdAndVerifyUser(
         id,
         appUserId,
         storeId,
       );
+
       if (!payment) {
         return c.json(
           {
@@ -471,9 +474,9 @@ export class PaymentController {
       const paymentData = {
         order_id: orderId,
         amount: Number(order.data_amount),
-        currency: "usd", // ✅ Fixed: Add required currency
+        currency: "usd",
         payment_method: validatedData.data.paymentMethod,
-        status: "pending" as const, // ✅ Fixed: Use proper enum type
+        status: "pending" as const,
         payment_date: new Date(),
         storeId,
       };
