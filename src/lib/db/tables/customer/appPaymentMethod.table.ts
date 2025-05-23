@@ -9,6 +9,7 @@ import {
 import { AppUser } from "../customer";
 import { stores } from "../store";
 import { relations } from "drizzle-orm";
+import { paymentMethodTypeEnum } from "../tables.enum";
 
 export const AppPaymentMethod = pgTable("app_payment_method", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -18,12 +19,12 @@ export const AppPaymentMethod = pgTable("app_payment_method", {
   appUserId: uuid("app_user_id")
     .notNull()
     .references(() => AppUser.id),
-  type: varchar("type", { length: 50 }).notNull(), // credit_card, paypal, etc.
+  type: paymentMethodTypeEnum("type").notNull(), // Use enum instead of varchar
   isDefault: boolean("is_default").default(false),
   // Store last 4 digits, brand, expiry, etc. but not full card details
   details: jsonb("details").default({}),
-  // Store the payment token from Stripe (or any provider)
-  paymentToken: varchar("payment_token", { length: 255 }),
+  // Store the payment method ID from Stripe (not payment token)
+  stripePaymentMethodId: varchar("stripe_payment_method_id", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

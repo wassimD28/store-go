@@ -1,0 +1,86 @@
+meta {
+  name: pay-for-order
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{BASE_URL}}/api/mobile-app/orders/{{ORDER_ID}}/pay
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+body:json {
+  {
+    "paymentMethod": "credit_card",
+    "paymentToken": "tok_visa",
+    "savePaymentMethod": false
+  }
+}
+
+vars:pre-request {
+  ORDER_ID: 8d55d6d2-fa1a-40e8-9045-12558fd763c6
+}
+
+script:pre-request {
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const data = res.body.data;
+    bru.setEnvVar("PAYMENT_ID", data.paymentId);
+    console.log("✅ Payment processed successfully:", data.paymentId);
+  } else {
+    console.error("❌ Payment failed:", res.body);
+  }
+}
+
+docs {
+  # Pay for Order
+  
+  This endpoint processes payment for a specific order.
+  
+  ## Prerequisites
+  - Order must exist and belong to the authenticated user
+  - Order must not already be paid
+  
+  ## Request Body
+  
+  ```json
+  {
+    "paymentMethod": "credit_card",
+    "paymentToken": "tok_visa",
+    "savePaymentMethod": false
+  }
+  ```
+  
+  ## Expected Response
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Payment processed successfully",
+    "data": {
+      "paymentId": "uuid",
+      "orderId": "uuid",
+      "amount": 440,
+      "status": "succeeded"
+    }
+  }
+  ```
+}

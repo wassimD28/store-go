@@ -89,3 +89,24 @@ export const cartStatusEnum = pgEnum("cart_status", [
   "expired",
   "merged",
 ]);
+
+// Add payment status enum
+export const paymentStatusEnum = pgEnum("payment_status", [
+  "pending",
+  "processing",
+  "succeeded",
+  "failed",
+  "canceled",
+  "requires_action",
+  "requires_payment_method",
+]);
+
+// Add payment method type enum
+export const paymentMethodTypeEnum = pgEnum("payment_method_type", [
+  "credit_card",
+  "debit_card",
+  "paypal",
+  "apple_pay",
+  "google_pay",
+  "bank_transfer",
+]);

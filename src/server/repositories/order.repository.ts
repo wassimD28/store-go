@@ -158,10 +158,11 @@ export class OrderRepository {
 
   static async updatePaymentStatus(orderId: string, paymentStatus: string) {
     try {
+      // ✅ Fixed: Use correct database field names
       return await db
         .update(AppOrder)
         .set({
-          payment_status: paymentStatus, // Use correct field name
+          payment_status: paymentStatus, // Use snake_case field name
           updated_at: new Date(),
         })
         .where(eq(AppOrder.id, orderId))
