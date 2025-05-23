@@ -94,7 +94,13 @@ export class CartController {
   static async addToCart(c: Context) {
     try {
       const body = await c.req.json();
-      const { productId, quantity = 1, variants = {} } = body;
+      const {
+        productId,
+        quantity = 1,
+        variants = {},
+        selectedColor,
+        selectedSize,
+      } = body;
 
       const validId = idSchema.safeParse(productId);
       if (!validId.success) {
@@ -114,12 +120,22 @@ export class CartController {
         return c.json({ status: "error", message: "Product not found" }, 404);
       }
 
+      // Normalize variants - handle both old format (selectedColor, selectedSize) and new format (variants)
+      let normalizedVariants = variants;
+      if (selectedColor || selectedSize) {
+        normalizedVariants = {
+          ...normalizedVariants,
+          ...(selectedColor && { color: selectedColor }),
+          ...(selectedSize && { size: selectedSize }),
+        };
+      }
+
       const cartItem = await CartRepository.add({
         storeId,
         appUserId,
         productId,
         quantity,
-        variants,
+        variants: normalizedVariants,
       });
 
       return c.json({
@@ -131,6 +147,31 @@ export class CartController {
       console.error("Error in addToCart:", error);
       return c.json(
         { status: "error", message: "Failed to add product to cart" },
+        500,
+      );
+    }
+  }
+
+  // Add new method to get cart items for promotion checking
+  static async getCartForPromotions(c: Context) {
+    try {
+      const { id: appUserId, storeId } = c.get("user");
+
+      const cartItems = await CartRepository.getCartItemsForPromotions(
+        appUserId,
+        storeId,
+      );
+
+      return c.json({
+        status: "success",
+        data: {
+          cartItems,
+        },
+      });
+    } catch (error) {
+      console.error("Error in getCartForPromotions:", error);
+      return c.json(
+        { status: "error", message: "Failed to get cart for promotions" },
         500,
       );
     }
@@ -421,6 +462,161 @@ export class CartController {
       }
       return c.json(
         { status: "error", message: "Failed to update cart item" },
+        500,
+      );
+    }
+  }
+
+  static async getCartSummary(c: Context) {
+    try {
+      const { id: appUserId, storeId } = c.get("user");
+
+      // Fetch cart with items
+      const result = await CartRepository.findByUser(appUserId, storeId);
+
+      if (!result || !result.cart) {
+        return c.json({
+          status: "success",
+          data: {
+            summary: {
+              totalItems: 0,
+              subtotal: 0,
+              tax: 0,
+              shippingCost: 0,
+              discount: 0,
+              totalAmount: 0,
+            },
+            eligibleForFreeShipping: false,
+            freeShippingThreshold: 50,
+          },
+        });
+      }
+
+      const { summary } = result;
+
+      // Calculate cart totals with appropriate rounding
+      const taxRate = 0.1; // 10% tax rate - could be configurable per store
+      const tax = Math.round(summary.subtotal * taxRate * 100) / 100;
+
+      // Free shipping threshold could be configured per store
+      const freeShippingThreshold = 50.0;
+      const shippingCost = summary.subtotal >= freeShippingThreshold ? 0 : 15.0;
+      const discount = 0; // Will be calculated based on applied promotions
+
+      const totalAmount =
+        Math.round((summary.subtotal + tax + shippingCost - discount) * 100) /
+        100;
+
+      return c.json({
+        status: "success",
+        data: {
+          summary: {
+            totalItems: summary.totalItems,
+            subtotal: summary.subtotal,
+            tax,
+            shippingCost,
+            discount,
+            totalAmount,
+          },
+          eligibleForFreeShipping: summary.subtotal >= freeShippingThreshold,
+          freeShippingThreshold,
+          amountNeededForFreeShipping: Math.max(
+            0,
+            freeShippingThreshold - summary.subtotal,
+          ),
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching cart summary:", error);
+      return c.json(
+        {
+          status: "error",
+          message: "Failed to fetch cart summary",
+          error: error instanceof Error ? error.message : "Unknown error",
+        },
+        500,
+      );
+    }
+  }
+
+  static async validateCart(c: Context) {
+    try {
+      const { id: appUserId, storeId } = c.get("user");
+
+      // Fetch cart with items
+      const result = await CartRepository.findByUser(appUserId, storeId);
+
+      if (!result || !result.items.length) {
+        return c.json(
+          {
+            status: "error",
+            message: "Cart is empty",
+          },
+          400,
+        );
+      }
+
+      const validationErrors = [];
+      const updatedItems = [];
+
+      // Validate each cart item
+      for (const item of result.items) {
+        const product = item.product;
+
+        if (!product) {
+          validationErrors.push({
+            itemId: item.id,
+            productId: item.productId,
+            error: "Product not found",
+            action: "remove",
+          });
+          continue;
+        }
+
+        // Fix: Use correct product status from schema
+        if (product.status !== "published") {
+          validationErrors.push({
+            itemId: item.id,
+            productId: item.productId,
+            productName: product.name,
+            error: "Product is no longer available",
+            action: "remove",
+          });
+          continue;
+        }
+
+        if (product.stock_quantity < item.quantity) {
+          validationErrors.push({
+            itemId: item.id,
+            productId: item.productId,
+            productName: product.name,
+            error: `Insufficient stock. Only ${product.stock_quantity} available`,
+            requestedQuantity: item.quantity,
+            availableQuantity: product.stock_quantity,
+            action: "update_quantity",
+          });
+          continue;
+        }
+
+        updatedItems.push(item);
+      }
+
+      return c.json({
+        status: validationErrors.length > 0 ? "validation_errors" : "success",
+        data: {
+          isValid: validationErrors.length === 0,
+          validationErrors,
+          validItems: updatedItems.length,
+          totalItems: result.items.length,
+        },
+      });
+    } catch (error) {
+      console.error("Error validating cart:", error);
+      return c.json(
+        {
+          status: "error",
+          message: "Failed to validate cart",
+        },
         500,
       );
     }

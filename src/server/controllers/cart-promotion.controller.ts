@@ -2,18 +2,20 @@ import { Context } from "hono";
 import { z } from "zod";
 import { PromotionRepository } from "@/server/repositories/promotion.repository";
 import { ProductRepository } from "@/server/repositories/product.repository";
+import { CartRepository } from "@/server/repositories/cart.repository";
 import { idSchema } from "../schemas/common.schema";
 
-// Define the schema for cart items
+// Define the schema for cart items - make it more flexible
 const cartItemSchema = z.object({
   productId: idSchema,
   quantity: z.number().int().positive(),
   variantId: idSchema.optional(),
-  price: z.number().positive().optional(), // Price is optional, we'll fetch it if not provided
+  price: z.number().positive().optional(),
+  categoryId: idSchema.optional(), // Add this for easier category checking
 });
 
 const checkPromotionsSchema = z.object({
-  cartItems: z.array(cartItemSchema),
+  cartItems: z.array(cartItemSchema).optional(), // Make optional to allow getting from actual cart
 });
 
 export class CartPromotionController {
@@ -34,8 +36,21 @@ export class CartPromotionController {
         );
       }
 
-      const { cartItems } = validationResult.data;
-      const { storeId } = c.get("user");
+      const { cartItems: providedCartItems } = validationResult.data;
+      const { id: appUserId, storeId } = c.get("user");
+
+      let cartItems;
+
+      // If cart items are provided in request, use them; otherwise get from user's actual cart
+      if (providedCartItems && providedCartItems.length > 0) {
+        cartItems = providedCartItems;
+      } else {
+        // Get actual cart items from database
+        cartItems = await CartRepository.getCartItemsForPromotions(
+          appUserId,
+          storeId,
+        );
+      }
 
       if (!cartItems || cartItems.length === 0) {
         return c.json(
@@ -43,7 +58,7 @@ export class CartPromotionController {
             status: "success",
             data: {
               applicablePromotions: [],
-              message: "No cart items provided",
+              message: "No cart items found",
             },
           },
           200,
@@ -53,7 +68,7 @@ export class CartPromotionController {
       // Get all product IDs from cart
       const productIds = [...new Set(cartItems.map((item) => item.productId))];
 
-      // Fetch products to get their categories
+      // Fetch products to get their categories (only if not already provided)
       const productsResponse = await Promise.all(
         productIds.map((id) => ProductRepository.findById(id, storeId)),
       );
@@ -78,7 +93,6 @@ export class CartPromotionController {
       // Filter promotions applicable to the cart items
       const applicablePromotions = allPromotions.filter((promotion) => {
         // Check if the promotion applies to any product in the cart
-        // Using the conjunction tables approach
         const hasApplicableProduct = productIds.some((productId) =>
           promotion.products?.some((item) => item.productId === productId),
         );
@@ -104,7 +118,6 @@ export class CartPromotionController {
               item.price ??
               products.find((p) => p?.id === item.productId)?.price ??
               0;
-            // Ensure we're working with numbers for the calculation
             return Number(total) + Number(itemPrice) * Number(item.quantity);
           }, 0);
 
@@ -116,7 +129,7 @@ export class CartPromotionController {
             const amountNeeded = Number(promotion.minimumPurchase) - cartTotal;
             requiredActions.push({
               type: "ADD_MORE_ITEMS",
-              message: `Add ${amountNeeded.toFixed(2)} more to your cart to qualify`,
+              message: `Add $${amountNeeded.toFixed(2)} more to your cart to qualify`,
               amountNeeded: parseFloat(amountNeeded.toFixed(2)),
             });
           }
@@ -134,12 +147,12 @@ export class CartPromotionController {
               const product = products.find((p) => p?.id === item.productId);
               if (!product) return;
 
-              // Check if product is directly in applicable products list (using conjunction tables)
+              // Check if product is directly in applicable products list
               const isProductApplicable = promotion.products?.some(
                 (p) => p.productId === item.productId,
               );
 
-              // Check if product category is in applicable categories (using conjunction tables)
+              // Check if product category is in applicable categories
               let isCategoryApplicable = false;
               if (product.categoryId) {
                 isCategoryApplicable = promotion.categories?.some(
@@ -187,6 +200,16 @@ export class CartPromotionController {
         status: "success",
         data: {
           applicablePromotions: promotionsWithEligibility,
+          cartSummary: {
+            totalItems: cartItems.reduce((sum, item) => sum + item.quantity, 0),
+            subtotal: cartItems.reduce((total, item) => {
+              const itemPrice =
+                item.price ??
+                products.find((p) => p?.id === item.productId)?.price ??
+                0;
+              return Number(total) + Number(itemPrice) * Number(item.quantity);
+            }, 0),
+          },
         },
       });
     } catch (error) {

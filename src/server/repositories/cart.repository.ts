@@ -1,19 +1,46 @@
 import { db } from "../../lib/db/db";
 import { eq, and } from "drizzle-orm";
 import { AppCart, CartItem } from "@/lib/db/schema";
+import { z } from "zod";
 
-type VariantObject = Record<string, string | number | boolean | null>;
+// Add the missing VariantObject type
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type VariantObject = Record<string, any>;
+
+// Helper function to compare variants
+function areVariantsEqual(
+  variants1: VariantObject,
+  variants2: VariantObject,
+): boolean {
+  // Handle null/undefined cases
+  const v1 = variants1 || {};
+  const v2 = variants2 || {};
+
+  // Get sorted keys
+  const keys1 = Object.keys(v1).sort();
+  const keys2 = Object.keys(v2).sort();
+
+  // Quick length check
+  if (keys1.length !== keys2.length) return false;
+
+  // Compare each key-value pair
+  for (const key of keys1) {
+    if (v1[key] !== v2[key]) return false;
+  }
+
+  return true;
+}
 
 export class CartRepository {
   // Find or create cart for a user
   static async findOrCreateCart(appUserId: string, storeId: string) {
     try {
-      // Try to find existing active cart
+      // Try to find existing active cart - now works with enum status
       let cart = await db.query.AppCart.findFirst({
         where: and(
           eq(AppCart.appUserId, appUserId),
           eq(AppCart.storeId, storeId),
-          eq(AppCart.status, "active"),
+          eq(AppCart.status, "active"), // This should work with enum
         ),
       });
 
@@ -24,7 +51,7 @@ export class CartRepository {
           .values({
             appUserId,
             storeId,
-            status: "active",
+            status: "active", // Explicitly set active status
           })
           .returning();
         cart = newCarts[0];
@@ -34,6 +61,66 @@ export class CartRepository {
     } catch (error) {
       console.error("Error finding or creating cart:", error);
       throw new Error("Failed to initialize cart");
+    }
+  }
+
+  // Add method to convert cart to order
+  static async convertCartToOrder(cartId: string) {
+    try {
+      const [updatedCart] = await db
+        .update(AppCart)
+        .set({
+          status: "converted",
+          updated_at: new Date(),
+        })
+        .where(eq(AppCart.id, cartId))
+        .returning();
+
+      return updatedCart;
+    } catch (error) {
+      console.error("Error converting cart to order:", error);
+      throw new Error("Failed to convert cart to order");
+    }
+  }
+
+  // Add method to mark cart as abandoned (for analytics)
+  static async markCartAsAbandoned(cartId: string) {
+    try {
+      const [updatedCart] = await db
+        .update(AppCart)
+        .set({
+          status: "abandoned",
+          updated_at: new Date(),
+        })
+        .where(eq(AppCart.id, cartId))
+        .returning();
+
+      return updatedCart;
+    } catch (error) {
+      console.error("Error marking cart as abandoned:", error);
+      throw new Error("Failed to mark cart as abandoned");
+    }
+  }
+
+  // Add method to find carts by status (for analytics)
+  static async findCartsByStatus(
+    storeId: string,
+    status: "active" | "abandoned" | "converted" | "expired" | "merged",
+  ) {
+    try {
+      return await db.query.AppCart.findMany({
+        where: and(eq(AppCart.storeId, storeId), eq(AppCart.status, status)),
+        with: {
+          items: {
+            with: {
+              product: true,
+            },
+          },
+        },
+      });
+    } catch (error) {
+      console.error(`Error fetching ${status} carts:`, error);
+      throw new Error(`Failed to fetch ${status} carts`);
     }
   }
 
@@ -47,32 +134,26 @@ export class CartRepository {
       // Find user's cart
       const cart = await this.findOrCreateCart(appUserId, storeId);
 
-      // Find specific cart item - if variants are provided, match them exactly
-      if (variants && Object.keys(variants).length > 0) {
-        // For variant-specific search, we need to check both productId and variants
-        const cartItems = await db.query.CartItem.findMany({
-          where: and(
-            eq(CartItem.cartId, cart.id),
-            eq(CartItem.productId, productId),
-          ),
-        });
-
-        // Find the item with matching variants
-        const matchingItem = cartItems.find((item) => {
-          const itemVariants = item.variants as VariantObject || {};
-          return JSON.stringify(itemVariants) === JSON.stringify(variants);
-        });
-
-        return matchingItem || null;
-      }
-
-      // For non-variant search, find any item with this product
-      return await db.query.CartItem.findFirst({
+      // Get all cart items for this product
+      const cartItems = await db.query.CartItem.findMany({
         where: and(
           eq(CartItem.cartId, cart.id),
           eq(CartItem.productId, productId),
         ),
       });
+
+      // If variants are specified, find exact match
+      if (variants && Object.keys(variants).length > 0) {
+        return (
+          cartItems.find((item) => {
+            const itemVariants = (item.variants as VariantObject) || {};
+            return areVariantsEqual(itemVariants, variants);
+          }) || null
+        );
+      }
+
+      // If no variants specified, return first item (for backward compatibility)
+      return cartItems[0] || null;
     } catch (error) {
       console.error("Error checking cart item:", error);
       throw new Error("Failed to check cart");
@@ -119,7 +200,7 @@ export class CartRepository {
           cartId: cart.id,
           productId,
           quantity,
-          variants,
+          variants: Object.keys(variants).length > 0 ? variants : null,
         })
         .returning();
     } catch (error) {
@@ -173,7 +254,12 @@ export class CartRepository {
     }
   }
 
-  static async remove(productId: string, appUserId: string, storeId: string, variants?: VariantObject) {
+  static async remove(
+    productId: string,
+    appUserId: string,
+    storeId: string,
+    variants?: VariantObject,
+  ) {
     try {
       // Find the specific cart item with these variants
       const cartItem = await this.findCartItemByProductAndUser(
@@ -197,7 +283,12 @@ export class CartRepository {
     }
   }
 
-  static async removeByProductId(productId: string, appUserId: string, storeId: string, variants?: VariantObject) {
+  static async removeByProductId(
+    productId: string,
+    appUserId: string,
+    storeId: string,
+    variants?: VariantObject,
+  ) {
     try {
       // Find the specific cart item with these variants
       const cartItem = await this.findCartItemByProductAndUser(
@@ -274,7 +365,14 @@ export class CartRepository {
       // Get all items in the cart with product details
       const cartItems = await db.query.CartItem.findMany({
         where: eq(CartItem.cartId, cart.id),
-        with: { product: true },
+        with: {
+          product: {
+            with: {
+              category: true,
+              subcategory: true,
+            },
+          },
+        },
         orderBy: (cartItem, { desc }) => [desc(cartItem.updated_at)],
       });
 
@@ -285,6 +383,7 @@ export class CartRepository {
           const price = item.product?.price ? Number(item.product.price) : 0;
           return sum + price * item.quantity;
         }, 0),
+        uniqueItems: cartItems.length, // Number of unique cart items
       };
 
       return {
@@ -295,6 +394,25 @@ export class CartRepository {
     } catch (error) {
       console.error("Error fetching cart:", error);
       throw new Error("Failed to fetch cart");
+    }
+  }
+
+  // Add method to get cart items formatted for promotions
+  static async getCartItemsForPromotions(appUserId: string, storeId: string) {
+    try {
+      const result = await this.findByUser(appUserId, storeId);
+
+      // Format cart items for promotion checking
+      return result.items.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.product?.price ? Number(item.product.price) : 0,
+        variantId: item.variants ? JSON.stringify(item.variants) : undefined,
+        categoryId: item.product?.categoryId || undefined,
+      }));
+    } catch (error) {
+      console.error("Error getting cart items for promotions:", error);
+      throw new Error("Failed to get cart items for promotions");
     }
   }
 
@@ -354,7 +472,7 @@ export class CartRepository {
     }
   }
 
-  static async removeCartItem(cartItemId:string) {
+  static async removeCartItem(cartItemId: string) {
     try {
       return await db
         .delete(CartItem)

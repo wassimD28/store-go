@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: {{PROD_BASE_URL}}/api/mobile-app/cart
+  url: {{BASE_URL}}/api/mobile-app/cart
   body: none
   auth: bearer
 }
@@ -31,69 +31,79 @@ script:pre-request {
 }
 
 docs {
-  # Get Cart Contents Endpoint
+  # Get Cart Endpoint
   
-  This endpoint retrieves all items in the authenticated user's shopping cart along with a cart summary including totals.
-  
-  ## Authentication Requirements
-  
-  - This endpoint requires authentication using a JWT bearer token
-  - The token must be obtained from the sign-in endpoint
-  - The cart is specific to the authenticated user
+  This endpoint retrieves the current user's shopping cart with all items and calculated totals.
   
   ## Response Format
-  
-  The endpoint returns a JSON object with the following structure:
   
   ```json
   {
     "status": "success",
     "data": {
+      "cartId": "7c55ce04-2ad6-43e2-8bd5-a67786b38d7f",
       "items": [
         {
           "id": "cart-item-uuid",
+          "cartId": "cart-uuid", 
           "productId": "product-uuid",
           "quantity": 2,
           "variants": {
-            "color": "black",
-            "size": "medium"
+            "color": "red",
+            "size": "large"
           },
-          "createdAt": "2023-05-15T10:30:00Z",
-          "updatedAt": "2023-05-15T10:30:00Z",
+          "addedAt": "2023-05-15T10:30:00Z",
+          "updatedAt": "2023-05-15T11:45:00Z",
           "product": {
             "id": "product-uuid",
             "name": "Smartphone X",
             "price": 799.99,
-            "image_urls": ["https://example.com/images/smartphone-x.jpg"],
-            "stock_quantity": 50
-          }
-        },
-        {
-          "id": "cart-item-uuid-2",
-          "productId": "product-uuid-2",
-          "quantity": 1,
-          "variants": {},
-          "createdAt": "2023-05-15T11:30:00Z",
-          "updatedAt": "2023-05-15T11:30:00Z",
-          "product": {
-            "id": "product-uuid-2",
-            "name": "Wireless Headphones",
-            "price": 199.99,
-            "image_urls": ["https://example.com/images/headphones.jpg"],
-            "stock_quantity": 30
+            "imageUrls": ["https://example.com/images/smartphone-x.jpg"],
+            "stockQuantity": 50
           }
         }
       ],
       "summary": {
-        "totalItems": 3,
-        "subtotal": 1799.97,
-        "tax": 180.00,
-        "shippingCost": 15.00,
-        "totalAmount": 1994.97
+        "totalItems": 2,
+        "subtotal": 1599.98,
+        "tax": 159.99,
+        "shippingCost": 0,
+        "totalAmount": 1759.97
       }
     }
   }
   ```
+  
+  ## Empty Cart Response
+  
+  For empty carts, the response will be:
+  
+  ```json
+  {
+    "status": "success", 
+    "data": {
+      "cartId": "7c55ce04-2ad6-43e2-8bd5-a67786b38d7f",
+      "items": [],
+      "summary": {
+        "totalItems": 0,
+        "subtotal": 0,
+        "tax": 0,
+        "shippingCost": 15,
+        "totalAmount": 15
+      }
+    }
+  }
+  ```
+  
+  ## Summary Calculations
+  
+  | Field | Description |
+  |-------|-------------|
+  | totalItems | Total quantity of all items in cart |
+  | subtotal | Sum of (item price × quantity) for all items |
+  | tax | 10% of subtotal |
+  | shippingCost | $15 if subtotal < $50, $0 if subtotal >= $50 |
+  | totalAmount | subtotal + tax + shippingCost |
   
   ## Error Responses
   

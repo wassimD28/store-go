@@ -80,3 +80,12 @@ export const AppUserAuthType = pgEnum("app_user_auth_type", [
   "email_password",
   "oauth",
 ]);
+
+// Add cart status enum
+export const cartStatusEnum = pgEnum("cart_status", [
+  "active",
+  "abandoned",
+  "converted",
+  "expired",
+  "merged",
+]);

@@ -3,6 +3,7 @@ import { AppUser } from "../customer";
 import { stores } from "../store";
 import { relations } from "drizzle-orm";
 import { CartItem } from "./cartItem.table";
+import { cartStatusEnum } from "../tables.enum";
 
 export const AppCart = pgTable("app_cart", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -12,7 +13,7 @@ export const AppCart = pgTable("app_cart", {
   appUserId: uuid("app_user_id")
     .notNull()
     .references(() => AppUser.id),
-  status: json("status").default("active"),
+  status: cartStatusEnum("status").default("active"), // Use enum instead of varchar
   coupon_code: json("coupon_code"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),

@@ -5,17 +5,15 @@ meta {
 }
 
 get {
-  url: {{BASE_URL}}/api/mobile-app/cart/{{CART_ID}}
+  url: {{BASE_URL}}/api/mobile-app/cart/items/{{CART_ITEM_ID}}
   body: none
   auth: bearer
 }
-
 auth:bearer {
   token: {{ACCESS_TOKEN}}
 }
-
 vars:pre-request {
-  CART_ID: 
+  CART_ITEM_ID: 
 }
 
 script:pre-request {
