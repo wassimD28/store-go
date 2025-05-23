@@ -8,19 +8,19 @@ export const OrderItem = pgTable("order_item", {
   productId: uuid("product_id")
     .references(() => AppProduct.id)
     .notNull(),
-  order_id: uuid("order_id")
+  orderId: uuid("order_id") // This should match repository usage
     .notNull()
     .references(() => AppOrder.id),
   quantity: integer("quantity").notNull(),
   variants: json("variants").default({}),
   unit_price: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
-  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+  total_price: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
 });
 
 // Define relations for OrderItem
 export const OrderItemRelations = relations(OrderItem, ({ one }) => ({
   order: one(AppOrder, {
-    fields: [OrderItem.order_id],
+    fields: [OrderItem.orderId],
     references: [AppOrder.id],
   }),
   product: one(AppProduct, {

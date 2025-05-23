@@ -6,8 +6,8 @@ import { OrderController } from "@/server/controllers/order.controller";
 const app = new Hono()
   .basePath("/api/mobile-app/orders")
   .use("*", isAuthenticated)
-  .post("/", OrderController.createOrder) // POST /orders
-  .get("/", OrderController.getUserOrders); // GET /orders
+  .get("/:orderId", OrderController.getOrderById)
+  .put("/:orderId", OrderController.updateOrder);
 
-export const POST = handle(app);
 export const GET = handle(app);
+export const PUT = handle(app);

@@ -1,7 +1,6 @@
 import { db } from "../../lib/db/db";
 import { eq, and } from "drizzle-orm";
 import { AppCart, CartItem } from "@/lib/db/schema";
-import { z } from "zod";
 
 // Add the missing VariantObject type
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -77,7 +76,7 @@ export class CartRepository {
     }
   }
 
-  // Add method to convert cart to order
+  // Add method to convert cart to order (mark as converted)
   static async convertCartToOrder(cartId: string) {
     try {
       const [updatedCart] = await db

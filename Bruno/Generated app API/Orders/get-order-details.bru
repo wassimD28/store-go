@@ -5,13 +5,17 @@ meta {
 }
 
 get {
-  url: {{PROD_BASE_URL}}/api/mobile-app/orders/{{ORDER_ID}}
+  url: {{BASE_URL}}/api/mobile-app/orders/{{ORDER_ID}}
   body: none
   auth: bearer
 }
 
 auth:bearer {
   token: {{ACCESS_TOKEN}}
+}
+
+vars:pre-request {
+  ORDER_ID: 8d55d6d2-fa1a-40e8-9045-12558fd763c6
 }
 
 script:pre-request {

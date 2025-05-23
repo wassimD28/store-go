@@ -1,11 +1,11 @@
 meta {
   name: create-order
   type: http
-  seq: 3
+  seq: 1
 }
 
 post {
-  url: {{PROD_BASE_URL}}/api/mobile-app/orders
+  url: {{BASE_URL}}/api/mobile-app/orders
   body: json
   auth: bearer
 }
@@ -19,30 +19,25 @@ body:json {
     "shippingAddress": {
       "firstName": "John",
       "lastName": "Doe",
-      "street": "123 Main St",
-      "city": "New York",
-      "state": "NY",
-      "zipCode": "10001",
+      "street": "123 Main Street",
+      "city": "Boston",
+      "state": "MA",
+      "zipCode": "02101",
       "country": "USA",
-      "phone": "+1234567890"
+      "phone": "+1-555-0123"
     },
     "billingAddress": {
       "firstName": "John",
       "lastName": "Doe",
-      "street": "123 Main St",
-      "city": "New York", 
-      "state": "NY",
-      "zipCode": "10001",
+      "street": "123 Main Street",
+      "city": "Boston",
+      "state": "MA",
+      "zipCode": "02101",
       "country": "USA",
-      "phone": "+1234567890"
+      "phone": "+1-555-0123"
     },
     "paymentMethod": "credit_card",
-    "paymentDetails": {
-      "cardToken": "tok_visa",
-      "last4": "4242"
-    },
-    "shippingMethod": "standard",
-    "notes": "Please leave at the front door"
+    "notes": "Please deliver to front door"
   }
 }
 
@@ -51,7 +46,6 @@ script:pre-request {
   const accessToken = bru.getEnvVar("ACCESS_TOKEN");
   
   if (accessToken) {
-    // Set the access token in the request's auth header
     req.auth = {
       type: "bearer",
       bearer: accessToken
@@ -62,94 +56,68 @@ script:pre-request {
   }
 }
 
+script:post-response {
+  if (res.status === 200) {
+    const data = res.body.data;
+    bru.setEnvVar("ORDER_ID", data.orderId);
+    bru.setEnvVar("ORDER_NUMBER", data.orderNumber);
+    console.log("✅ Order created successfully:", data.orderNumber);
+  } else {
+    console.error("❌ Order creation failed:", res.body);
+  }
+}
+
 docs {
-  # Create Order Endpoint
+  # Create Order from Cart
   
-  This endpoint allows users to create a new order from the items in their shopping cart. It finalizes the purchase process by collecting shipping and payment information.
+  This endpoint creates a new order from the user's current cart items.
   
-  ## Authentication Requirements
-  
-  - This endpoint requires authentication using a JWT bearer token
-  - The token must be obtained from the sign-in endpoint
-  - User must have items in their cart to create an order
+  ## Prerequisites
+  - User must be authenticated
+  - User must have items in their cart
   
   ## Request Body
-  
-  The request body must be a JSON object with the following structure:
   
   ```json
   {
     "shippingAddress": {
       "firstName": "John",
-      "lastName": "Doe",
-      "street": "123 Main St",
-      "city": "New York",
-      "state": "NY",
-      "zipCode": "10001",
+      "lastName": "Doe", 
+      "street": "123 Main Street",
+      "city": "Boston",
+      "state": "MA",
+      "zipCode": "02101",
       "country": "USA",
-      "phone": "+1234567890"
+      "phone": "+1-555-0123"
     },
     "billingAddress": {
       "firstName": "John",
       "lastName": "Doe",
-      "street": "123 Main St",
-      "city": "New York", 
-      "state": "NY",
-      "zipCode": "10001",
+      "street": "123 Main Street", 
+      "city": "Boston",
+      "state": "MA",
+      "zipCode": "02101",
       "country": "USA",
-      "phone": "+1234567890"
+      "phone": "+1-555-0123"
     },
     "paymentMethod": "credit_card",
-    "paymentDetails": {
-      "cardToken": "tok_visa",
-      "last4": "4242"
-    },
-    "shippingMethod": "standard",
-    "notes": "Please leave at the front door"
+    "notes": "Special delivery instructions"
   }
   ```
   
-  ## Response Format
-  
-  The endpoint returns a JSON object with the following structure:
+  ## Expected Response
   
   ```json
   {
     "status": "success",
     "message": "Order created successfully",
     "data": {
-      "orderId": "order-uuid",
-      "orderNumber": "ORD-12345",
-      "totalAmount": 1114.97,
+      "orderId": "uuid",
+      "orderNumber": "ORD-12345678-ABCD",
+      "totalAmount": 125.99,
       "status": "pending",
-      "estimatedDeliveryDate": "2023-05-10T00:00:00Z"
+      "paymentStatus": "pending"
     }
   }
   ```
-  
-  ## Error Responses
-  
-  | Status Code | Description | Response Body |
-  |-------------|-------------|---------------|
-  | 400 | Invalid request data | `{ "status": "error", "message": "Invalid request data", "errors": [...] }` |
-  | 400 | Empty cart | `{ "status": "error", "message": "Your cart is empty" }` |
-  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
-  | 409 | Stock issues | `{ "status": "error", "message": "Some items in your cart are no longer available in the requested quantity", "items": [...] }` |
-  | 422 | Payment processing error | `{ "status": "error", "message": "Payment processing failed", "details": "..." }` |
-  | 500 | Server error | `{ "status": "error", "message": "Failed to create order" }` |
-  
-  ## Process Flow
-  
-  1. The system validates the request data
-  2. It checks if the user has items in their cart
-  3. It validates product availability and stock quantities
-  4. It processes the payment through the configured payment provider
-  5. If payment succeeds, it creates the order and clears the cart
-  6. Order confirmation notifications are sent to both customer and store
-  
-  ## Related Endpoints
-  
-  - `GET /api/mobile-app/orders` - Get all user orders
-  - `GET /api/mobile-app/orders/:orderId` - Get order details
-  - `PUT /api/mobile-app/orders/:orderId/cancel` - Cancel an order
 }

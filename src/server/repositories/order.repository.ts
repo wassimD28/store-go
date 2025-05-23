@@ -1,157 +1,186 @@
-import { db } from "../../lib/db/db";
-import { eq, and } from "drizzle-orm";
-import { AppOrder } from "@/lib/db/schema";
-import { createOrderSchema, updateOrderSchema } from "../schemas/order.schema"; // Adjust this import path as needed
-import { z } from "zod";
+import { db } from "@/lib/db/db";
+import { eq, and, desc } from "drizzle-orm";
+import { AppOrder, OrderItem } from "@/lib/db/schema";
+import { CartRepository } from "@/server/repositories/cart.repository";
 
-// Use Zod schemas to define the data types
-type OrderCreateData = z.infer<typeof createOrderSchema>;
-type OrderUpdateData = z.infer<typeof updateOrderSchema>;
+// Define types based on actual database schema instead of Zod
+type OrderCreateData = {
+  appUserId: string;
+  storeId: string;
+  shippingAddress: {
+    firstName: string;
+    lastName: string;
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+    phone?: string;
+  };
+  billingAddress?: {
+    firstName: string;
+    lastName: string;
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+    phone?: string;
+  };
+  paymentMethod: string;
+  notes?: string;
+  status?: string;
+  paymentStatus?: string;
+};
 
 export class OrderRepository {
-  // Get all orders for a user
-  static async findAll(userId: string) {
-    try {
-      const orders = await db.query.AppOrder.findMany({
-        where: eq(AppOrder.appUserId, userId),
-        with: {
-          address: true,
-        },
-      });
-
-      return orders;
-    } catch (error) {
-      console.error("Failed to fetch orders:", error);
-      throw error;
-    }
-  }
-
-  // Get single order by ID for a specific user
-  static async findById(id: string, userId: string) {
-    try {
-      const order = await db.query.AppOrder.findFirst({
-        where: and(eq(AppOrder.id, id), eq(AppOrder.appUserId, userId)),
-        with: {
-          address: true,
-        },
-      });
-
-      return order;
-    } catch (error) {
-      console.error(`Failed to fetch order with ID ${id}:`, error);
-      throw error;
-    }
-  }
-
   // Create new order
   static async create(orderData: OrderCreateData) {
     try {
-      // Convert number to string for data_amount
+      // Calculate total from cart items (don't pass it in, calculate it)
+      const cartResult = await CartRepository.findByUser(
+        orderData.appUserId,
+        orderData.storeId,
+      );
+      if (!cartResult || !cartResult.items.length) {
+        throw new Error("Cannot create order: cart is empty");
+      }
+
+      const { summary } = cartResult;
+      const taxRate = 0.1;
+      const tax = Math.round(summary.subtotal * taxRate * 100) / 100;
+      const shippingCost = summary.subtotal >= 50 ? 0 : 15.0;
+      const totalAmount =
+        Math.round((summary.subtotal + tax + shippingCost) * 100) / 100;
+
       const [newOrder] = await db
         .insert(AppOrder)
         .values({
-          appUserId: orderData.appUserId,
-          data_amount: String(orderData.data_amount),
-          status: orderData.status,
-          payment_status: orderData.payment_status,
-          order_date: orderData.order_date,
-          address_id: orderData.address_id || "",
-          ...(orderData.paymentId && { paymentId: orderData.paymentId }),
+          // Fix: Use correct field names that match the database schema
+          appUserId: orderData.appUserId, // ✅ This should match the schema
+          storeId: orderData.storeId,
+          orderNumber: await this.generateOrderNumber(),
+          shippingAddress: orderData.shippingAddress,
+          billingAddress: orderData.billingAddress || orderData.shippingAddress,
+          paymentMethod: orderData.paymentMethod,
+          notes: orderData.notes,
+          status: orderData.status || "pending",
+          payment_status: orderData.paymentStatus || "pending",
+          data_amount: totalAmount.toString(), // Fix: Convert to string for decimal field
         })
         .returning();
 
       return newOrder;
     } catch (error) {
-      console.error("Failed to create order:", error);
-      throw error;
+      console.error("Error creating order:", error);
+      throw new Error("Failed to create order");
     }
   }
 
-  // Update order
-  static async update(id: string, orderData: OrderUpdateData) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static async addOrderItems(orderId: string, cartItems: any[]) {
     try {
-      // Prepare update data
-      const updateValues = {
-        ...(orderData.status && { status: orderData.status }),
-        ...(orderData.payment_status && {
-          payment_status: orderData.payment_status,
-        }),
-        ...(orderData.address_id !== undefined && {
-          address_id: orderData.address_id,
-        }),
-        ...(orderData.paymentId !== undefined && {
-          paymentId: orderData.paymentId,
-        }),
-        ...(orderData.data_amount !== undefined && {
-          data_amount: String(orderData.data_amount),
-        }),
-      };
+      const orderItems = cartItems.map((item) => ({
+        orderId: orderId, // ✅ Ensure this matches schema
+        productId: item.productId,
+        quantity: item.quantity,
+        unit_price: item.product.price.toString(), // Fix: Convert to string for decimal field
+        total_price: (item.product.price * item.quantity).toString(), // Fix: Convert to string for decimal field
+        variants: item.variants || {}, // Fix: Ensure variants is an object, not null
+      }));
 
-      const [updatedOrder] = await db
-        .update(AppOrder)
-        .set(updateValues)
-        .where(eq(AppOrder.id, id))
-        .returning();
-
-      return updatedOrder;
+      return await db.insert(OrderItem).values(orderItems).returning();
     } catch (error) {
-      console.error(`Failed to update order with ID ${id}:`, error);
-      throw error;
+      console.error("Error adding order items:", error);
+      throw new Error("Failed to add order items");
     }
   }
 
-  // Delete order
-  static async delete(id: string) {
+  static async findByUser(appUserId: string, storeId: string) {
     try {
-      const [deletedOrder] = await db
-        .delete(AppOrder)
-        .where(eq(AppOrder.id, id))
-        .returning();
-
-      return deletedOrder;
-    } catch (error) {
-      console.error(`Failed to delete order with ID ${id}:`, error);
-      throw error;
-    }
-  }
-
-  // Optional: Get orders by status
-  static async findByStatus(userId: string, status: string) {
-    try {
-      const orders = await db.query.AppOrder.findMany({
-        where: and(eq(AppOrder.appUserId, userId), eq(AppOrder.status, status)),
+      return await db.query.AppOrder.findMany({
+        where: and(
+          eq(AppOrder.appUserId, appUserId),
+          eq(AppOrder.storeId, storeId),
+        ),
+        orderBy: [desc(AppOrder.created_at)],
         with: {
-          address: true,
+          items: {
+            with: {
+              product: true,
+            },
+          },
         },
       });
-
-      return orders;
     } catch (error) {
-      console.error(`Failed to fetch orders with status ${status}:`, error);
-      throw error;
+      console.error("Error fetching user orders:", error);
+      throw new Error("Failed to fetch orders");
     }
   }
 
-  // Optional: Get orders by payment status
-  static async findByPaymentStatus(userId: string, paymentStatus: string) {
+  static async findById(orderId: string, appUserId: string, storeId: string) {
     try {
-      const orders = await db.query.AppOrder.findMany({
+      return await db.query.AppOrder.findFirst({
         where: and(
-          eq(AppOrder.appUserId, userId),
-          eq(AppOrder.payment_status, paymentStatus),
+          eq(AppOrder.id, orderId),
+          eq(AppOrder.appUserId, appUserId),
+          eq(AppOrder.storeId, storeId),
         ),
         with: {
-          address: true,
+          items: {
+            with: {
+              product: true,
+            },
+          },
         },
       });
-
-      return orders;
     } catch (error) {
-      console.error(
-        `Failed to fetch orders with payment status ${paymentStatus}:`,
-        error,
-      );
-      throw error;
+      console.error("Error fetching order:", error);
+      throw new Error("Failed to fetch order");
     }
+  }
+
+  static async updateStatus(orderId: string, status: string) {
+    try {
+      return await db
+        .update(AppOrder)
+        .set({
+          status,
+          updated_at: new Date(),
+        })
+        .where(eq(AppOrder.id, orderId))
+        .returning();
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      throw new Error("Failed to update order status");
+    }
+  }
+
+  static async updatePaymentStatus(orderId: string, paymentStatus: string) {
+    try {
+      return await db
+        .update(AppOrder)
+        .set({
+          payment_status: paymentStatus, // Use correct field name
+          updated_at: new Date(),
+        })
+        .where(eq(AppOrder.id, orderId))
+        .returning();
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+      throw new Error("Failed to update payment status");
+    }
+  }
+
+  // Remove methods that don't match the schema
+  // static async findAll(userId: string) - Remove address relation that doesn't exist
+  // static async findByStatus - Remove address relation that doesn't exist
+  // static async findByPaymentStatus - Remove address relation that doesn't exist
+
+  private static async generateOrderNumber(): Promise<string> {
+    // Generate unique order number
+    const timestamp = Date.now().toString().slice(-8);
+    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `ORD-${timestamp}-${random}`;
   }
 }
