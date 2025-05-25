@@ -1,0 +1,105 @@
+meta {
+  name: get-address-by-id
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{PROD_BASE_URL}}/api/mobile-app/addresses/{{ADDRESS_ID}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+vars:pre-request {
+  ADDRESS_ID: 
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Get Address by ID Endpoint
+  
+  This endpoint retrieves a specific address belonging to the authenticated user by its unique identifier.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - The address must belong to the authenticated user
+  
+  ## URL Parameters
+  
+  | Parameter | Type | Required | Description |
+  |-----------|------|----------|-------------|
+  | addressId | UUID | Yes | The unique identifier of the address to retrieve |
+  
+  ## Response Format
+  
+  ### Success Response (200)
+  
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "address-uuid",
+      "storeId": "store-uuid",
+      "appUserId": "user-uuid",
+      "firstName": "John",
+      "lastName": "Doe",
+      "street": "123 Main Street",
+      "apartment": "Apt 4B",
+      "city": "New York",
+      "state": "NY",
+      "postalCode": "10001",
+      "country": "USA",
+      "phone": "+1234567890",
+      "isDefault": true,
+      "status": "active",
+      "created_at": "2023-05-15T10:30:00Z",
+      "updated_at": "2023-05-15T14:45:00Z"
+    }
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid address ID | `{ "status": "error", "message": "Invalid address ID" }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 403 | Forbidden | `{ "status": "error", "message": "You don't have permission to access this address" }` |
+  | 404 | Address not found | `{ "status": "error", "message": "Address not found" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to fetch address" }` |
+  
+  ## Behavior
+  
+  - Only addresses belonging to the authenticated user can be retrieved
+  - The address must exist and be accessible to the user
+  - Returns complete address information including contact details
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/addresses` - Get all user addresses
+  - `POST /api/mobile-app/addresses` - Add a new address
+  - `PUT /api/mobile-app/addresses/:addressId` - Update an existing address
+  - `DELETE /api/mobile-app/addresses/:addressId` - Delete an address
+  - `PUT /api/mobile-app/addresses/:addressId/default` - Set an address as default
+}

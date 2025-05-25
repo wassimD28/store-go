@@ -1,0 +1,126 @@
+meta {
+  name: set-address-as-default
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{BASE_URL}}/api/mobile-app/addresses/{{ADDRESS_ID}}/default
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+vars:pre-request {
+  ADDRESS_ID: ff10e4fc-cb82-4e7c-b34b-1816ba16c67c
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Set Address as Default Endpoint
+  
+  This endpoint allows users to set a specific address as their default address. When an address is set as default, all other addresses for the same user will automatically be unset as default.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - The address must belong to the authenticated user
+  
+  ## URL Parameters
+  
+  | Parameter | Type | Required | Description |
+  |-----------|------|----------|-------------|
+  | addressId | UUID | Yes | The unique identifier of the address to set as default |
+  
+  ## Response Format
+  
+  ### Success Response (200)
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Address set as default successfully",
+    "data": {
+      "id": "address-uuid",
+      "storeId": "store-uuid",
+      "appUserId": "user-uuid",
+      "street": "123 Main Street",
+      "city": "New York",
+      "state": "NY",
+      "postalCode": "10001",
+      "country": "USA",
+      "isDefault": true,
+      "status": "active",
+      "created_at": "2023-05-15T10:30:00Z",
+      "updated_at": "2023-05-15T14:45:00Z"
+    }
+  }
+  ```
+  
+  ### Already Default Response (200)
+  
+  If the address is already set as default:
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Address is already set as default",
+    "data": {
+      "id": "address-uuid",
+      "storeId": "store-uuid",
+      "appUserId": "user-uuid",
+      "street": "123 Main Street",
+      "city": "New York",
+      "state": "NY",
+      "postalCode": "10001",
+      "country": "USA",
+      "isDefault": true,
+      "status": "active",
+      "created_at": "2023-05-15T10:30:00Z",
+      "updated_at": "2023-05-15T10:30:00Z"
+    }
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid address ID | `{ "status": "error", "message": "Invalid address ID" }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 404 | Address not found | `{ "status": "error", "message": "Address not found" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to set address as default" }` |
+  
+  ## Behavior
+  
+  - Setting an address as default will automatically unset all other addresses for the same user as default
+  - The operation is atomic - either all changes succeed or none do
+  - Only addresses belonging to the authenticated user can be set as default
+  - The address must exist and be accessible to the user
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/addresses` - Get all user addresses
+  - `POST /api/mobile-app/addresses` - Add a new address
+  - `PUT /api/mobile-app/addresses/:addressId` - Update an existing address
+  - `DELETE /api/mobile-app/addresses/:addressId` - Delete an address
+}

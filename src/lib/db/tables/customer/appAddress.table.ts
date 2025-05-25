@@ -22,7 +22,7 @@ export const AppAddress = pgTable("app_address", {
   postalCode: varchar("postalCode", { length: 20 }).notNull(),
   country: varchar("country", { length: 100 }).notNull(),
   isDefault: boolean("isDefault").default(false),
-  status: varchar("status", { length: 50 }).default("active"), // Add status column
+  status: varchar("status", { length: 50 }).default("active"),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });

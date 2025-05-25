@@ -1,0 +1,140 @@
+meta {
+  name: update-address
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{BASE_URL}}/api/mobile-app/addresses/{{ADDRESS_ID}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+body:json {
+  {
+    "firstName": "John",
+    "lastName": "Doe",
+    "street": "456 Updated Street",
+    "apartment": "Suite 5A",
+    "city": "Boston",
+    "state": "MA",
+    "postalCode": "02101",
+    "country": "USA",
+    "phone": "+1987654321",
+    "isDefault": false
+  }
+}
+
+vars:pre-request {
+  ADDRESS_ID: 
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Update Address Endpoint
+  
+  This endpoint updates an existing address belonging to the authenticated user. All fields are optional - only provided fields will be updated.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - The address must belong to the authenticated user
+  
+  ## URL Parameters
+  
+  | Parameter | Type | Required | Description |
+  |-----------|------|----------|-------------|
+  | addressId | UUID | Yes | The unique identifier of the address to update |
+  
+  ## Request Body Parameters
+  
+  All parameters are optional. Only provided fields will be updated.
+  
+  | Parameter | Type | Required | Description |
+  |-----------|------|----------|-------------|
+  | firstName | string | No | First name for the address |
+  | lastName | string | No | Last name for the address |
+  | street | string | No | Street address |
+  | apartment | string | No | Apartment, suite, or unit number |
+  | city | string | No | City name |
+  | state | string | No | State or province |
+  | postalCode | string | No | Postal or ZIP code |
+  | country | string | No | Country name |
+  | phone | string | No | Phone number |
+  | isDefault | boolean | No | Whether this should be the default address |
+  
+  ## Response Format
+  
+  ### Success Response (200)
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Address updated successfully",
+    "data": {
+      "id": "address-uuid",
+      "storeId": "store-uuid",
+      "appUserId": "user-uuid",
+      "firstName": "John",
+      "lastName": "Doe",
+      "street": "456 Updated Street",
+      "apartment": "Suite 5A",
+      "city": "Boston",
+      "state": "MA",
+      "postalCode": "02101",
+      "country": "USA",
+      "phone": "+1987654321",
+      "isDefault": false,
+      "status": "active",
+      "created_at": "2023-05-15T10:30:00Z",
+      "updated_at": "2023-05-15T16:20:00Z"
+    }
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid address ID | `{ "status": "error", "message": "Invalid address ID" }` |
+  | 400 | Invalid request data | `{ "status": "error", "message": "Invalid request data", "errors": [...] }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 403 | Forbidden | `{ "status": "error", "message": "You don't have permission to update this address" }` |
+  | 404 | Address not found | `{ "status": "error", "message": "Address not found" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to update address" }` |
+  
+  ## Behavior
+  
+  - Only addresses belonging to the authenticated user can be updated
+  - If `isDefault` is set to true, all other addresses will be automatically unset as default
+  - Partial updates are supported - only provided fields will be modified
+  - The `updated_at` timestamp will be automatically set to the current time
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/addresses` - Get all user addresses
+  - `GET /api/mobile-app/addresses/:addressId` - Get specific address
+  - `POST /api/mobile-app/addresses` - Add a new address
+  - `DELETE /api/mobile-app/addresses/:addressId` - Delete an address
+  - `PUT /api/mobile-app/addresses/:addressId/default` - Set an address as default
+}

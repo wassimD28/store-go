@@ -43,7 +43,11 @@ export class AddressController {
       }
 
       const { id: userId, storeId } = c.get("user");
-      const address = await AddressRepository.findById(addressId, userId, storeId);
+      const address = await AddressRepository.findById(
+        addressId,
+        userId,
+        storeId,
+      );
 
       if (!address) {
         return c.json(
@@ -170,7 +174,11 @@ export class AddressController {
 
       const { id: userId, storeId } = c.get("user");
 
-      const existingAddress = await AddressRepository.findById(addressId, userId, storeId);
+      const existingAddress = await AddressRepository.findById(
+        addressId,
+        userId,
+        storeId,
+      );
       if (!existingAddress) {
         return c.json(
           {
@@ -228,10 +236,11 @@ export class AddressController {
           400,
         );
       }
-
       const updatedAddress = await AddressRepository.update(
         addressId,
         validatedData.data,
+        userId,
+        storeId,
       );
 
       return c.json({
@@ -267,7 +276,11 @@ export class AddressController {
 
       const { id: userId, storeId } = c.get("user");
 
-      const existingAddress = await AddressRepository.findById(addressId, userId, storeId);
+      const existingAddress = await AddressRepository.findById(
+        addressId,
+        userId,
+        storeId,
+      );
       if (!existingAddress) {
         return c.json(
           {
@@ -290,6 +303,71 @@ export class AddressController {
         {
           status: "error",
           message: "Failed to delete address",
+        },
+        500,
+      );
+    }
+  }
+
+  static async setAddressAsDefault(c: Context) {
+    try {
+      const addressId = c.req.param("addressId");
+      const validId = idSchema.safeParse(addressId);
+      if (!validId.success) {
+        return c.json(
+          {
+            status: "error",
+            message: "Invalid address ID",
+          },
+          400,
+        );
+      }
+
+      const { id: userId, storeId } = c.get("user");
+
+      // Check if the address exists and belongs to the user
+      const existingAddress = await AddressRepository.findById(
+        addressId,
+        userId,
+        storeId,
+      );
+      if (!existingAddress) {
+        return c.json(
+          {
+            status: "error",
+            message: "Address not found",
+          },
+          404,
+        );
+      }
+
+      // Check if the address is already default
+      if (existingAddress.isDefault) {
+        return c.json({
+          status: "success",
+          message: "Address is already set as default",
+          data: existingAddress,
+        });
+      }
+
+      // Set the address as default
+      const updatedAddress = await AddressRepository.setAsDefault(
+        addressId,
+        userId,
+        storeId,
+      );
+
+      return c.json({
+        status: "success",
+        message: "Address set as default successfully",
+        data: updatedAddress,
+      });
+    } catch (error) {
+      console.error("Error in setAddressAsDefault:", error);
+      return c.json(
+        {
+          status: "error",
+          message: "Failed to set address as default",
         },
         500,
       );
