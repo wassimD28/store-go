@@ -16,15 +16,11 @@ auth:bearer {
 
 body:json {
   {
-    "firstName": "John",
-    "lastName": "Doe",
     "street": "456 Updated Street",
-    "apartment": "Suite 5A",
     "city": "Boston",
     "state": "MA",
     "postalCode": "02101",
     "country": "USA",
-    "phone": "+1987654321",
     "isDefault": false
   }
 }
@@ -65,27 +61,21 @@ docs {
   | Parameter | Type | Required | Description |
   |-----------|------|----------|-------------|
   | addressId | UUID | Yes | The unique identifier of the address to update |
-  
-  ## Request Body Parameters
+    ## Request Body Parameters
   
   All parameters are optional. Only provided fields will be updated.
   
-  | Parameter | Type | Required | Description |
-  |-----------|------|----------|-------------|
-  | firstName | string | No | First name for the address |
-  | lastName | string | No | Last name for the address |
-  | street | string | No | Street address |
-  | apartment | string | No | Apartment, suite, or unit number |
-  | city | string | No | City name |
-  | state | string | No | State or province |
-  | postalCode | string | No | Postal or ZIP code |
-  | country | string | No | Country name |
-  | phone | string | No | Phone number |
-  | isDefault | boolean | No | Whether this should be the default address |
+  | Parameter  | Type    | Required | Description |
+  |------------|---------|----------|-------------|
+  | street     | string  | No       | Street address |
+  | city       | string  | No       | City name |
+  | state      | string  | No       | State or province |
+  | postalCode | string  | No       | Postal or ZIP code |
+  | country    | string  | No       | Country name |
+  | isDefault  | boolean | No       | Whether this should be the default address |
   
   ## Response Format
-  
-  ### Success Response (200)
+    ### Success Response (200)
   
   ```json
   {
@@ -95,15 +85,11 @@ docs {
       "id": "address-uuid",
       "storeId": "store-uuid",
       "appUserId": "user-uuid",
-      "firstName": "John",
-      "lastName": "Doe",
       "street": "456 Updated Street",
-      "apartment": "Suite 5A",
       "city": "Boston",
       "state": "MA",
       "postalCode": "02101",
       "country": "USA",
-      "phone": "+1987654321",
       "isDefault": false,
       "status": "active",
       "created_at": "2023-05-15T10:30:00Z",
@@ -122,11 +108,10 @@ docs {
   | 403 | Forbidden | `{ "status": "error", "message": "You don't have permission to update this address" }` |
   | 404 | Address not found | `{ "status": "error", "message": "Address not found" }` |
   | 500 | Server error | `{ "status": "error", "message": "Failed to update address" }` |
-  
-  ## Behavior
+    ## Behavior
   
   - Only addresses belonging to the authenticated user can be updated
-  - If `isDefault` is set to true, all other addresses will be automatically unset as default
+  - If `isDefault` is set to true, all other user addresses will be automatically unset as default
   - Partial updates are supported - only provided fields will be modified
   - The `updated_at` timestamp will be automatically set to the current time
   

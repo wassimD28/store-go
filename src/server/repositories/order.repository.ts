@@ -3,27 +3,23 @@ import { eq, and, desc } from "drizzle-orm";
 import { AppOrder, OrderItem } from "@/lib/db/schema";
 import { CartRepository } from "@/server/repositories/cart.repository";
 
-// Define types based on actual database schema instead of Zod
+// Define types based on actual database schema
 type OrderCreateData = {
   appUserId: string;
   storeId: string;
   shippingAddress: {
-    firstName: string;
-    lastName: string;
     street: string;
     city: string;
     state: string;
-    zipCode: string;
+    postalCode: string; // Use postalCode to match database
     country: string;
     phone?: string;
   };
   billingAddress?: {
-    firstName: string;
-    lastName: string;
     street: string;
     city: string;
     state: string;
-    zipCode: string;
+    postalCode: string; // Use postalCode to match database
     country: string;
     phone?: string;
   };

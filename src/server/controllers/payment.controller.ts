@@ -468,9 +468,7 @@ export class PaymentController {
           { status: "error", message: "Order is already paid" },
           400,
         );
-      }
-
-      // Create payment record with proper types
+      } // Create payment record with proper types
       const paymentData = {
         order_id: orderId,
         amount: Number(order.data_amount),
@@ -483,10 +481,59 @@ export class PaymentController {
 
       const newPayment = await PaymentRepository.create(paymentData);
 
-      // TODO: Here you would integrate with Stripe for actual payment processing
-      // For now, we'll simulate a successful payment
-      await PaymentRepository.updateStatus(newPayment.id, "succeeded");
-      await OrderRepository.updatePaymentStatus(orderId, "paid");
+      // Process payment with Stripe
+      try {
+        const stripe = await import("@/lib/stripe/stripe.config");
+
+        // Create payment intent with Stripe
+        const paymentIntent = await stripe.default.paymentIntents.create({
+          amount: Math.round(Number(order.data_amount) * 100), // Convert to cents
+          currency: "usd",
+          payment_method: validatedData.data.paymentToken || "pm_card_visa", // Use token from client
+          confirm: true,
+          metadata: {
+            orderId: orderId,
+            storeId: storeId,
+            appUserId: appUserId,
+          },
+        });
+
+        if (paymentIntent.status === "succeeded") {
+          // Update payment with Stripe details
+          await PaymentRepository.updateStatus(newPayment.id, "succeeded");
+          await PaymentRepository.updateStripeDetails(
+            newPayment.id,
+            paymentIntent.id,
+            paymentIntent.client_secret || undefined,
+          );
+          await OrderRepository.updatePaymentStatus(orderId, "paid");
+        } else {
+          // Payment requires additional action (like 3D Secure)
+          await PaymentRepository.updateStatus(
+            newPayment.id,
+            "requires_action",
+          );
+          return c.json({
+            status: "requires_action",
+            message: "Additional authentication required",
+            data: {
+              paymentId: newPayment.id,
+              paymentIntentId: paymentIntent.id,
+              clientSecret: paymentIntent.client_secret,
+            },
+          });
+        }
+      } catch (stripeError) {
+        console.error("Stripe payment failed:", stripeError);
+        await PaymentRepository.updateStatus(newPayment.id, "failed");
+        return c.json(
+          {
+            status: "error",
+            message: "Payment processing failed",
+          },
+          400,
+        );
+      }
 
       return c.json({
         status: "success",

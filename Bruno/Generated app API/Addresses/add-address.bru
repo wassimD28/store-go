@@ -16,17 +16,12 @@ auth:bearer {
 
 body:json {
   {
-    "type": "shipping",
-    "isDefault": true,
-    "firstName": "John",
-    "lastName": "Doe",
     "street": "123 Main Street",
-    "apartment": "Apt 4B",
     "city": "New York",
     "state": "NY",
-    "zipCode": "10001",
+    "postalCode": "10001",
     "country": "USA",
-    "phone": "+1234567890"
+    "isDefault": true
   }
 }
 
@@ -55,42 +50,30 @@ docs {
   
   - This endpoint requires authentication using a JWT bearer token
   - The token must be obtained from the sign-in endpoint
-  
-  ## Request Body
+    ## Request Body
   
   The request body must be a JSON object with the following structure:
   
   ```json
   {
-    "type": "shipping",
-    "isDefault": true,
-    "firstName": "John",
-    "lastName": "Doe",
     "street": "123 Main Street",
-    "apartment": "Apt 4B",
     "city": "New York",
     "state": "NY",
-    "zipCode": "10001",
+    "postalCode": "10001",
     "country": "USA",
-    "phone": "+1234567890"
+    "isDefault": true
   }
   ```
   
-  | Field     | Type    | Required | Description |
-  |-----------|---------|----------|-------------|
-  | type      | string  | Yes      | Address type ("shipping" or "billing") |
-  | isDefault | boolean | No       | Whether this address is the default for its type (defaults to false) |
-  | firstName | string  | Yes      | First name of the recipient |
-  | lastName  | string  | Yes      | Last name of the recipient |
-  | street    | string  | Yes      | Street address |
-  | apartment | string  | No       | Apartment/suite/unit number |
-  | city      | string  | Yes      | City |
-  | state     | string  | Yes      | State/province/region |
-  | zipCode   | string  | Yes      | ZIP/postal code |
-  | country   | string  | Yes      | Country |
-  | phone     | string  | Yes      | Contact phone number |
-  
-  ## Response Format
+  | Field      | Type    | Required | Description |
+  |------------|---------|----------|-------------|
+  | street     | string  | Yes      | Street address |
+  | city       | string  | Yes      | City |
+  | state      | string  | Yes      | State/province/region |
+  | postalCode | string  | Yes      | Postal/ZIP code |
+  | country    | string  | Yes      | Country |
+  | isDefault  | boolean | No       | Whether this address is the default (defaults to false) |
+    ## Response Format
   
   The endpoint returns a JSON object with the following structure:
   
@@ -101,17 +84,12 @@ docs {
     "data": {
       "id": "address-uuid",
       "userId": "user-uuid",
-      "type": "shipping",
-      "isDefault": true,
-      "firstName": "John",
-      "lastName": "Doe",
       "street": "123 Main Street",
-      "apartment": "Apt 4B",
       "city": "New York",
       "state": "NY",
-      "zipCode": "10001",
+      "postalCode": "10001",
       "country": "USA",
-      "phone": "+1234567890",
+      "isDefault": true,
       "created_at": "2023-05-15T10:30:00Z",
       "updated_at": "2023-05-15T10:30:00Z"
     }
@@ -125,11 +103,10 @@ docs {
   | 400 | Invalid request data | `{ "status": "error", "message": "Invalid request data", "errors": [...] }` |
   | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
   | 500 | Server error | `{ "status": "error", "message": "Failed to add address" }` |
+    ## Default Address Behavior
   
-  ## Default Address Behavior
-  
-  - If `isDefault` is set to true, any existing default address of the same type will be automatically un-set
-  - If this is the first address of this type, it will be set as default regardless of the `isDefault` parameter
+  - If `isDefault` is set to true, any existing default address will be automatically un-set
+  - If this is the user's first address, it will be set as default regardless of the `isDefault` parameter
   
   ## Related Endpoints
   

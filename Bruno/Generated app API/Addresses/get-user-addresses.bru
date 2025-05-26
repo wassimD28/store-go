@@ -44,42 +44,31 @@ docs {
   ## Response Format
   
   The endpoint returns a JSON object with the following structure:
-  
-  ```json
+    ```json
   {
     "status": "success",
     "data": [
       {
         "id": "address-uuid",
         "userId": "user-uuid",
-        "type": "shipping",
-        "isDefault": true,
-        "firstName": "John",
-        "lastName": "Doe",
         "street": "123 Main Street",
-        "apartment": "Apt 4B",
         "city": "New York",
         "state": "NY",
-        "zipCode": "10001",
+        "postalCode": "10001",
         "country": "USA",
-        "phone": "+1234567890",
+        "isDefault": true,
         "created_at": "2023-01-15T10:30:00Z",
         "updated_at": "2023-01-15T10:30:00Z"
       },
       {
         "id": "address-uuid-2",
         "userId": "user-uuid",
-        "type": "billing",
-        "isDefault": true,
-        "firstName": "John",
-        "lastName": "Doe",
         "street": "456 Business Ave",
-        "apartment": "Suite 100",
         "city": "New York",
         "state": "NY",
-        "zipCode": "10002",
+        "postalCode": "10002",
         "country": "USA",
-        "phone": "+1234567890",
+        "isDefault": false,
         "created_at": "2023-01-20T14:45:00Z",
         "updated_at": "2023-01-20T14:45:00Z"
       }

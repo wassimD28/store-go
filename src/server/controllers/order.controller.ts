@@ -4,26 +4,22 @@ import { CartRepository } from "@/server/repositories/cart.repository";
 import { idSchema } from "../schemas/common.schema";
 import { z } from "zod";
 
-// Define request validation schema based on your actual needs
+// Define request validation schema based on actual database fields
 const createOrderSchema = z.object({
   shippingAddress: z.object({
-    firstName: z.string(),
-    lastName: z.string(),
     street: z.string(),
     city: z.string(),
     state: z.string(),
-    zipCode: z.string(),
+    postalCode: z.string(), // Use postalCode to match database
     country: z.string(),
     phone: z.string().optional(),
   }),
   billingAddress: z
     .object({
-      firstName: z.string(),
-      lastName: z.string(),
       street: z.string(),
       city: z.string(),
       state: z.string(),
-      zipCode: z.string(),
+      postalCode: z.string(), // Use postalCode to match database
       country: z.string(),
       phone: z.string().optional(),
     })
@@ -154,7 +150,10 @@ export class OrderController {
       // check if order id is not empty or undefined and print it
       if (!orderId) {
         console.log("Order ID is empty or undefined, VALUE : ", orderId);
-        return c.json({ status: "error", message: "Order ID is required" }, 400);
+        return c.json(
+          { status: "error", message: "Order ID is required" },
+          400,
+        );
       }
       const { id: appUserId, storeId } = c.get("user");
 

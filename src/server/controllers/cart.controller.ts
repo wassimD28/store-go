@@ -634,4 +634,54 @@ export class CartController {
       );
     }
   }
+
+  static async getPaymentSummary(c: Context) {
+    try {
+      const { id: appUserId, storeId } = c.get("user");
+
+      // Get cart data
+      const cartResult = await CartRepository.findByUser(appUserId, storeId);
+      if (!cartResult || !cartResult.items.length) {
+        return c.json({
+          status: "success",
+          data: {
+            isEmpty: true,
+            summary: {
+              totalItems: 0,
+              subtotal: 0,
+              tax: 0,
+              shippingCost: 0,
+              totalAmount: 0,
+            },
+          },
+        });
+      }
+
+      const { summary } = cartResult;
+      const tax = Math.round(summary.subtotal * 0.1 * 100) / 100;
+      const shippingCost = summary.subtotal >= 50 ? 0 : 15.0;
+      const totalAmount =
+        Math.round((summary.subtotal + tax + shippingCost) * 100) / 100;
+
+      return c.json({
+        status: "success",
+        data: {
+          isEmpty: false,
+          items: cartResult.items,
+          summary: {
+            ...summary,
+            tax,
+            shippingCost,
+            totalAmount,
+          },
+        },
+      });
+    } catch (error) {
+      console.error("Error in getPaymentSummary:", error);
+      return c.json(
+        { status: "error", message: "Failed to get payment summary" },
+        500,
+      );
+    }
+  }
 }
