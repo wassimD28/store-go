@@ -138,8 +138,8 @@ docs {
   | 500 | Server error | `{ "status": "error", "message": "Failed to fetch orders" }` |
   
   ## Related Endpoints
-  
-  - `GET /api/mobile-app/orders/:orderId` - Get details for a specific order
-  - `POST /api/mobile-app/cart/checkout` - Create a new order (checkout)
-  - `PUT /api/mobile-app/orders/:orderId/cancel` - Cancel an order
+    - `GET /api/mobile-app/orders/:orderId` - Get details for a specific order
+  - `PUT /api/mobile-app/orders/:orderId` - Update order status
+  - `POST /api/mobile-app/orders/:orderId/pay` - Pay for order
+  - `POST /api/mobile-app/orders` - Create new order
 }

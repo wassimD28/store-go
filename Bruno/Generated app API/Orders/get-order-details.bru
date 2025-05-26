@@ -170,9 +170,10 @@ docs {
   | 403 | Not order owner | `{ "status": "error", "message": "You don't have permission to view this order" }` |
   | 404 | Order not found | `{ "status": "error", "message": "Order not found" }` |
   | 500 | Server error | `{ "status": "error", "message": "Failed to fetch order details" }` |
-  
-  ## Related Endpoints
+    ## Related Endpoints
   
   - `GET /api/mobile-app/orders` - Get all user orders
-  - `PUT /api/mobile-app/orders/:orderId/cancel` - Cancel an order
+  - `PUT /api/mobile-app/orders/:orderId` - Update order status
+  - `POST /api/mobile-app/orders/:orderId/pay` - Pay for order
+  - `POST /api/mobile-app/orders` - Create new order
 }

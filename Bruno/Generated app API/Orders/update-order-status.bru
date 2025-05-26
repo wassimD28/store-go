@@ -1,0 +1,124 @@
+meta {
+  name: update-order-status
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{BASE_URL}}/api/mobile-app/orders/{{ORDER_ID}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ACCESS_TOKEN}}
+}
+
+body:json {
+  {
+    "status": "processing"
+  }
+}
+
+vars:pre-request {
+  ORDER_ID: 8d55d6d2-fa1a-40e8-9045-12558fd763c6
+}
+
+script:pre-request {
+  // Get the access token from environment variables
+  const accessToken = bru.getEnvVar("ACCESS_TOKEN");
+  
+  if (accessToken) {
+    // Set the access token in the request's auth header
+    req.auth = {
+      type: "bearer",
+      bearer: accessToken
+    };
+    console.log("✅ Access token applied to request");
+  } else {
+    console.warn("⚠️ No access token found in environment variables");
+  }
+}
+
+docs {
+  # Update Order Status Endpoint
+  
+  This endpoint allows updating the status of an existing order. Only the order owner can update their order status.
+  
+  ## Authentication Requirements
+  
+  - This endpoint requires authentication using a JWT bearer token
+  - The token must be obtained from the sign-in endpoint
+  - Users can only update their own orders
+  
+  ## Request Parameters
+  
+  | Parameter | Location | Required | Description |
+  |-----------|----------|----------|-------------|
+  | orderId   | Path     | Yes      | The UUID of the order to update |
+  
+  ## Request Body
+  
+  The request body must be a JSON object with the following structure:
+  
+  ```json
+  {
+    "status": "processing"
+  }
+  ```
+  
+  | Field  | Type   | Required | Description |
+  |--------|--------|----------|-------------|
+  | status | string | Yes      | New status for the order. Common values: "pending", "processing", "shipped", "delivered", "cancelled" |
+  
+  ## Response Format
+  
+  ### Success Response (200)
+  
+  ```json
+  {
+    "status": "success",
+    "message": "Order updated successfully"
+  }
+  ```
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 400 | Invalid order ID format | `{ "status": "error", "message": "Invalid order ID" }` |
+  | 400 | Missing status field | `{ "status": "error", "message": "Status is required" }` |
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 404 | Order not found | `{ "status": "error", "message": "Order not found" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to update order" }` |
+  
+  ## Example Usage
+  
+  ### Update order to processing status:
+  ```json
+  {
+    "status": "processing"
+  }
+  ```
+  
+  ### Cancel an order:
+  ```json
+  {
+    "status": "cancelled"
+  }
+  ```
+  
+  ### Mark order as shipped:
+  ```json
+  {
+    "status": "shipped"
+  }
+  ```
+  
+  ## Related Endpoints
+  
+  - `GET /api/mobile-app/orders/:orderId` - Get order details
+  - `GET /api/mobile-app/orders` - Get user orders
+  - `POST /api/mobile-app/orders/:orderId/pay` - Pay for order
+  - `POST /api/mobile-app/orders` - Create new order
+}
