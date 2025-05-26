@@ -76,6 +76,10 @@ export const targetGenderEnum = pgEnum("target_gender", [
   "female",
   "unisex",
 ]);
+
+// Gender enum specifically for app users (binary only)
+export const userGenderEnum = pgEnum("user_gender", ["male", "female"]);
+
 export const AppUserAuthType = pgEnum("app_user_auth_type", [
   "email_password",
   "oauth",

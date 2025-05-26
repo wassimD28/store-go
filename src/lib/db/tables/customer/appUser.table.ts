@@ -4,9 +4,10 @@ import {
   timestamp,
   varchar,
   boolean,
+  date,
 } from "drizzle-orm/pg-core";
 import { stores } from "../store";
-import { AgeRangeEnum, AppUserAuthType } from "../tables.enum";
+import { AgeRangeEnum, AppUserAuthType, userGenderEnum } from "../tables.enum";
 import { relations } from "drizzle-orm";
 export const AppUser = pgTable("app_user", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -17,7 +18,10 @@ export const AppUser = pgTable("app_user", {
   email: varchar("email", { length: 255 }).notNull(),
   password: varchar("password", { length: 255 }),
   avatar: varchar("avatar", { length: 500 }),
-  gender: varchar("gender", { length: 10 }),
+  gender: userGenderEnum("gender"),
+  country: varchar("country", { length: 100 }),
+  date_of_birth: date("date_of_birth"),
+  phone_number: varchar("phone_number", { length: 20 }),
   age_range: AgeRangeEnum("age_range"),
   auth_type: AppUserAuthType("auth_type").notNull().default("email_password"),
   auth_provider: varchar("auth_provider", { length: 50 }), // "google", "facebook", etc.

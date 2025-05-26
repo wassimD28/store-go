@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: {{PROD_BASE_URL}}/api/mobile-app/users/{{USER_ID}}
+  url: {{BASE_URL}}/api/mobile-app/users/{{USER_ID}}
   body: none
   auth: bearer
 }
@@ -57,11 +57,13 @@ docs {
     "message": "User retrieved successfully",
     "data": {
       "id": "uuid",
-      "storeId": "uuid",
-      "name": "John Doe",
+      "storeId": "uuid",      "name": "John Doe",
       "email": "john.doe@example.com",
       "image": "https://example.com/profile.jpg",
       "gender": "male",
+      "country": "United States",
+      "date_of_birth": "1990-05-15",
+      "phone_number": "+1234567890",
       "age_range": "26-35",
       "is_online": true,
       "last_seen": "2023-01-01T00:00:00.000Z",

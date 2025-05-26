@@ -13,7 +13,19 @@ const updateUserSchema = z
     name: z.string().min(1, "Name cannot be empty").optional(),
     email: z.string().email("Invalid email format").optional(),
     image: z.string().url("Invalid URL format").optional(),
-    gender: z.string().optional(),
+    gender: z
+      .enum(["male", "female"], {
+        errorMap: () => ({
+          message: "Gender must be either 'male' or 'female'",
+        }),
+      })
+      .optional(),
+    country: z.string().min(1, "Country cannot be empty").optional(),
+    date_of_birth: z
+      .string()
+      .date("Invalid date format (YYYY-MM-DD)")
+      .optional(),
+    phone_number: z.string().min(1, "Phone number cannot be empty").optional(),
     age_range: z
       .enum(["13-18", "19-25", "26-35", "36-45", "46-60", "60+"])
       .optional(),
