@@ -15,15 +15,14 @@ auth:bearer {
 }
 
 body:json {
-  {
-    "name": "Updated Name",
-    "gender": "male",
-    "country": "United States", 
-    "date_of_birth": "1990-05-15",
-    "phone_number": "+1234567890",
-    "age_range": "26-35",
-    "image": "https://example.com/updated-profile.jpg"
-  }
+  "name": "Updated Name",
+  "gender": "female",
+  "country": "United States", 
+  "date_of_birth": "1990-05-15",
+  "phone_number": "+1234567890",
+  "age_range": "26-35",
+  "avatar": "https://example.com/updated-profile.jpg"
+}
 }
 
 script:pre-request {
@@ -62,11 +61,10 @@ docs {
   ## Request Body
   
   The request body must be a JSON object with at least one of the following fields:
-    ```json
-  {
+    ```json  {
     "name": "Updated Name",
     "email": "updated.email@example.com",
-    "image": "https://example.com/profile.jpg",
+    "avatar": "https://example.com/profile.jpg",
     "gender": "female",
     "country": "United States",
     "date_of_birth": "1990-05-15",
@@ -75,10 +73,9 @@ docs {
   }
   ```
     | Field        | Type   | Required | Description |
-  |--------------|--------|----------|-------------|
-  | name         | string | No*      | User's display name |
+  |--------------|--------|----------|-------------|  | name         | string | No*      | User's display name |
   | email        | string | No*      | User's email (must be a valid email format) |
-  | image        | string | No*      | URL to user's profile picture |
+  | avatar       | string | No*      | URL to user's profile picture |
   | gender       | string | No*      | User's gender (must be either "male" or "female") |
   | country      | string | No*      | User's country |
   | date_of_birth| string | No*      | User's date of birth (format: YYYY-MM-DD) |
@@ -98,15 +95,19 @@ docs {
     "data": {
       "id": "uuid",
       "storeId": "uuid",      "name": "Updated Name",
-      "email": "john.doe@example.com",
-      "image": "https://example.com/updated-profile.jpg",
+      "email": "john.doe@example.com",      "avatar": "https://example.com/updated-profile.jpg",
       "gender": "female",
       "country": "United States",
       "date_of_birth": "1990-05-15",
       "phone_number": "+1234567890",
       "age_range": "26-35",
+      "auth_type": "email_password",
+      "auth_provider": null,
+      "provider_user_id": null,
       "is_online": true,
       "last_seen": "2023-01-01T00:00:00.000Z",
+      "status": true,
+      "stripeCustomerId": "cus_123456789",
       "created_at": "2023-01-01T00:00:00.000Z",
       "updated_at": "2023-01-02T00:00:00.000Z"
     }

@@ -12,7 +12,7 @@ const updateUserSchema = z
   .object({
     name: z.string().min(1, "Name cannot be empty").optional(),
     email: z.string().email("Invalid email format").optional(),
-    image: z.string().url("Invalid URL format").optional(),
+    avatar: z.string().url("Invalid URL format").optional(),
     gender: z
       .enum(["male", "female"], {
         errorMap: () => ({
