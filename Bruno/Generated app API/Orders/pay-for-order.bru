@@ -53,11 +53,12 @@ script:post-response {
 docs {
   # Pay for Order
   
-  This endpoint processes payment for a specific order. It simulates the generated Flutter app payment workflow.
+  This endpoint processes payment for a specific order following the Stripe PaymentIntent pattern. It simulates the generated Flutter app payment workflow with support for 3D Secure authentication.
   
   ## Prerequisites
   - Order must exist and belong to the authenticated user
   - Order must not already be paid
+  - Valid Stripe payment token required
   
   ## Request Body
   
@@ -69,18 +70,74 @@ docs {
   }
   ```
   
-  ## Expected Response
+  ### Parameters
+  - `paymentMethod`: Payment method type (credit_card, debit_card, paypal, etc.)
+  - `paymentToken`: Stripe payment method ID created client-side
+  - `savePaymentMethod`: Optional - whether to save payment method for future use
+  
+  ## Response Scenarios
+  
+  ### 1. Successful Payment (No 3D Secure Required)
   
   ```json
   {
     "status": "success",
     "message": "Payment processed successfully",
     "data": {
-      "paymentId": "uuid",
-      "orderId": "uuid",
+      "paymentId": "pay_1234567890",
+      "orderId": "82d94ef6-3727-4f1e-81c8-d487867834c2",
       "amount": 440,
       "status": "succeeded"
     }
   }
   ```
+  
+  ### 2. 3D Secure Authentication Required
+  
+  **⚠️ IMPORTANT**: When Stripe requires 3D Secure authentication, this endpoint returns a `client_secret` that Flutter apps must use to complete payment authentication.
+  
+  ```json
+  {
+    "status": "requires_action",
+    "message": "Additional authentication required",
+    "data": {
+      "paymentId": "pay_1234567890",
+      "paymentIntentId": "pi_1234567890",
+      "clientSecret": "pi_1234567890_secret_abcd1234"
+    }
+  }
+  ```
+  
+  **Flutter Implementation Note**: The `clientSecret` should be passed to Stripe's `confirmPayment()` method to handle 3D Secure authentication flow.
+  
+  ### 3. Payment Failed
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Payment declined",
+    "errors": [
+      "Insufficient funds",
+      "Card declined"
+    ]
+  }
+  ```
+  
+  ## Backend Implementation Flow
+  
+  1. **Validate Request**: Check order exists and payment details
+  2. **Create PaymentIntent**: Backend creates Stripe PaymentIntent with provided payment method
+  3. **Attempt Confirmation**: Try to confirm payment automatically
+  4. **Handle Response**:
+     - If successful → Return success response
+     - If 3D Secure required → Return `requires_action` with `client_secret`
+     - If failed → Return error response
+  
+  ## Error Codes
+  
+  - `400`: Bad request (invalid order ID, missing payment method)
+  - `401`: Unauthorized (invalid or missing JWT token)
+  - `404`: Order not found
+  - `409`: Order already paid
+  - `402`: Payment failed (insufficient funds, card declined, etc.)
 }
