@@ -113,7 +113,6 @@ export class OrderRepository {
       throw new Error("Failed to fetch orders");
     }
   }
-
   static async findById(orderId: string, appUserId: string, storeId: string) {
     try {
       return await db.query.AppOrder.findFirst({
@@ -128,6 +127,7 @@ export class OrderRepository {
               product: true,
             },
           },
+          user: true, // ✅ Include user data for Stripe Customer management (relation name is 'user')
         },
       });
     } catch (error) {

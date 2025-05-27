@@ -1,6 +1,7 @@
 import { Context } from "hono";
 import { PaymentRepository } from "@/server/repositories/payment.repository";
 import { OrderRepository } from "@/server/repositories/order.repository"; // ✅ Add missing import
+import { UserRepository } from "@/server/repositories/user.repository"; // ✅ Add UserRepository import
 import { idSchema } from "../schemas/common.schema";
 import {
   createPaymentSchema,
@@ -478,14 +479,44 @@ export class PaymentController {
         storeId,
       };
 
-      const newPayment = await PaymentRepository.create(paymentData);
-
-      // Process payment with Stripe
+      const newPayment = await PaymentRepository.create(paymentData); // Process payment with Stripe
       try {
-        const stripe = await import("@/lib/stripe/stripe.config"); // Create payment intent with Stripe - Mobile-compatible configuration
+        const stripe = await import("@/lib/stripe/stripe.config");
+
+        // ✅ FIX: Get or create Stripe Customer for user
+        let stripeCustomerId = order.user?.stripeCustomerId;
+
+        if (!stripeCustomerId) {
+          // Create new Stripe Customer if user doesn't have one
+          const customer = await stripe.default.customers.create({
+            email: order.user?.email || `user-${appUserId}@example.com`,
+            metadata: {
+              appUserId: appUserId,
+              storeId: storeId,
+            },
+          });
+
+          stripeCustomerId = customer.id;
+          // Save Stripe Customer ID to user record
+          await UserRepository.update(appUserId, { stripeCustomerId });
+          console.log(
+            `Created Stripe Customer ${stripeCustomerId} for user ${appUserId}`,
+          );
+        }
+
+        // ✅ FIX: Attach PaymentMethod to Customer (makes it reusable)
+        await stripe.default.paymentMethods.attach(
+          validatedData.data.paymentToken,
+          {
+            customer: stripeCustomerId,
+          },
+        );
+
+        // Create payment intent with Stripe - Mobile-compatible configuration
         const paymentIntent = await stripe.default.paymentIntents.create({
           amount: Math.round(Number(order.data_amount) * 100), // Convert to cents
           currency: "usd",
+          customer: stripeCustomerId, // ✅ FIX: Critical - Customer attachment
           payment_method: validatedData.data.paymentToken, // ✅ Use required token from client
           confirm: true,
           // ✅ FIX: Mobile-compatible configuration
