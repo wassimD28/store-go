@@ -46,10 +46,10 @@ export async function POST(request: Request) {
         description: description || "StoreGo test payment",
         confirm: true, // Confirm the payment immediately
         return_url: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/payment-result`,
-        // Use automatic payment methods to support more payment methods
+        // ✅ FIX: Use mobile-compatible automatic payment methods
         automatic_payment_methods: {
           enabled: true,
-          allow_redirects: "always",
+          allow_redirects: "never", // Prevent redirects for mobile compatibility
         },
         metadata: {
           isTestPayment: "true",

@@ -274,6 +274,51 @@ Future<PaymentMethod> addPaymentMethod({
 
 **Note:** This endpoint follows the standard Stripe payment flow where your backend creates a PaymentIntent and returns a `client_secret` for 3D Secure authentication when required.
 
+### 🔑 Understanding the `paymentToken` Parameter
+
+The `paymentToken` is a **Stripe PaymentMethod ID** that you must create client-side in your Flutter app before calling this endpoint. Here's how it works:
+
+#### **What is `paymentToken`?**
+
+- **Format**: `pm_1234567890abcdef` (Stripe PaymentMethod ID)
+- **Purpose**: Secure representation of user's card details
+- **Created by**: Stripe's `createPaymentMethod()` function in your Flutter app
+- **Security**: Contains no actual card numbers - just a secure reference
+
+#### **How to get `paymentToken`:**
+
+```dart
+// 1. User enters card details in CardField widget
+CardField(
+  onCardChanged: (card) {
+    setState(() {
+      _cardDetails = card; // Captures card details securely
+    });
+  },
+);
+
+// 2. Create Stripe PaymentMethod (this gives you the paymentToken)
+final paymentToken = await StripeService.createPaymentMethod(
+  cardDetails: _cardDetails,
+);
+// paymentToken = "pm_1NQJ1b2eZvKYlo2C0Z1Q2b3c" (example Stripe PaymentMethod ID)
+
+// 3. Use paymentToken in your API call
+await payForOrder(
+  orderId: orderId,
+  paymentMethod: 'credit_card',
+  paymentToken: paymentToken, // ← The Stripe PaymentMethod ID from step 2
+);
+```
+
+#### **Test Tokens for Bruno/Development:**
+
+- `tok_visa` - Valid Visa test card
+- `tok_mastercard` - Valid Mastercard test card
+- `tok_chargeDeclined` - Declined card test
+
+> ⚠️ **Important**: Never send raw card details to your backend. Always use Stripe's `createPaymentMethod()` to get a secure `paymentToken` first.
+
 ```dart
 Future<PaymentResult> payForOrder({
   required String orderId,

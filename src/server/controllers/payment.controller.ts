@@ -16,6 +16,7 @@ const createPaymentMethodSchema = z.object({
     "paypal",
     "apple_pay",
     "google_pay",
+    "bank_transfer", // ✅ Added missing type from repository
   ]),
   stripePaymentMethodId: z.string(),
   isDefault: z.boolean().optional(),
@@ -434,13 +435,11 @@ export class PaymentController {
       const validId = idSchema.safeParse(orderId);
       if (!validId.success) {
         return c.json({ status: "error", message: "Invalid order ID" }, 400);
-      }
-
-      // Validate request body
+      } // Validate request body
       const body = await c.req.json();
       const payOrderSchema = z.object({
         paymentMethod: z.string(),
-        paymentToken: z.string().optional(),
+        paymentToken: z.string().min(1, "Payment token is required"), // ✅ Required validation
         savePaymentMethod: z.boolean().optional(),
       });
 
@@ -483,14 +482,17 @@ export class PaymentController {
 
       // Process payment with Stripe
       try {
-        const stripe = await import("@/lib/stripe/stripe.config");
-
-        // Create payment intent with Stripe
+        const stripe = await import("@/lib/stripe/stripe.config"); // Create payment intent with Stripe - Mobile-compatible configuration
         const paymentIntent = await stripe.default.paymentIntents.create({
           amount: Math.round(Number(order.data_amount) * 100), // Convert to cents
           currency: "usd",
-          payment_method: validatedData.data.paymentToken || "pm_card_visa", // Use token from client
+          payment_method: validatedData.data.paymentToken, // ✅ Use required token from client
           confirm: true,
+          // ✅ FIX: Mobile-compatible configuration
+          automatic_payment_methods: {
+            enabled: true,
+            allow_redirects: "never", // Prevent redirects for mobile apps
+          },
           metadata: {
             orderId: orderId,
             storeId: storeId,
