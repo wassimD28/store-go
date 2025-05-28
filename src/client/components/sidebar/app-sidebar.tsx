@@ -54,7 +54,7 @@ function MainSideBar({ user, sideBarData }: props) {
   };
   return (
     <div
-      className="fixed z-50 flex h-full flex-col items-center justify-between overflow-hidden border-r border-sidebar-border bg-sidebar py-6 transition-all duration-200 ease-in-out"
+      className="fixed z-50 flex h-full flex-col items-center justify-between overflow-hidden border-r border-sidebar-border py-6 transition-all duration-200 ease-in-out bg-background"
       style={{
         width: isExpend ? EXPENDED_WIDTH : COLLAPSED_WIDTH,
       }}

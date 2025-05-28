@@ -4,11 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
-import {
-  Card,
-  CardContent,
-  CardFooter,
-} from "@/client/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/client/components/ui/card";
 import {
   ChartConfig,
   ChartContainer,
@@ -40,6 +36,30 @@ interface RevenueLineChartProps {
 }
 
 export function RevenueLineChart({ storeId }: RevenueLineChartProps) {
+  // Cache key for sessionStorage
+  const cacheKey = `revenue-chart-cache-${storeId}`;
+
+  // Initialize state with cached data if available
+  const [cache, setCache] = useState<
+    Record<
+      RevenuePeriod,
+      {
+        data: RevenueData[];
+        stats: { totalRevenue: number; growth: number; growthPeriod: string };
+      }
+    >
+  >(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        return cached ? JSON.parse(cached) : {};
+      } catch {
+        return {};
+      }
+    }
+    return {};
+  });
+
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
   const [revenueStats, setRevenueStats] = useState<{
     totalRevenue: number;
@@ -48,16 +68,43 @@ export function RevenueLineChart({ storeId }: RevenueLineChartProps) {
   }>({ totalRevenue: 0, growth: 0, growthPeriod: "" });
   const [activePeriod, setActivePeriod] = useState<RevenuePeriod>("monthly");
   const [loading, setLoading] = useState(true);
+  const [isFromCache, setIsFromCache] = useState(false);
   const fetchData = useCallback(
     async (period: RevenuePeriod) => {
+      // Check if we have cached data for this period
+      if (cache[period]) {
+        setRevenueData(cache[period].data);
+        setRevenueStats(cache[period].stats);
+        setIsFromCache(true);
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
+        setIsFromCache(false);
         const [data, stats] = await Promise.all([
           getRevenueData(storeId, period),
           getRevenueStats(storeId, period),
         ]);
         setRevenueData(data);
         setRevenueStats(stats);
+
+        // Update cache
+        const newCache = {
+          ...cache,
+          [period]: { data, stats },
+        };
+        setCache(newCache);
+
+        // Save to sessionStorage
+        if (typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem(cacheKey, JSON.stringify(newCache));
+          } catch (error) {
+            console.warn("Failed to save cache to sessionStorage:", error);
+          }
+        }
       } catch (error) {
         console.error("Error fetching revenue data:", error);
         setRevenueData([]);
@@ -65,13 +112,38 @@ export function RevenueLineChart({ storeId }: RevenueLineChartProps) {
         setLoading(false);
       }
     },
-    [storeId],
+    [storeId, cache, cacheKey, setCache],
   );
-
   useEffect(() => {
     fetchData(activePeriod);
   }, [activePeriod, fetchData]);
 
+  // Clear cache on component mount (page refresh)
+  useEffect(() => {
+    const clearCacheOnRefresh = () => {
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.removeItem(cacheKey);
+        } catch (error) {
+          console.warn("Failed to clear cache:", error);
+        }
+      }
+    };
+
+    // Clear cache when the component mounts (page refresh)
+    clearCacheOnRefresh();
+
+    // Optional: Clear cache when the user navigates away
+    const handleBeforeUnload = () => {
+      clearCacheOnRefresh();
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [cacheKey]);
   const handlePeriodChange = (period: string) => {
     const newPeriod = period as RevenuePeriod;
     setActivePeriod(newPeriod);
@@ -120,6 +192,11 @@ export function RevenueLineChart({ storeId }: RevenueLineChartProps) {
                     right: 12,
                   }}
                 >
+                  <defs>
+                    <clipPath id="clipAboveXAxis">
+                      <rect x="0" y="0" width="100%" height="100%" />
+                    </clipPath>
+                  </defs>
                   <CartesianGrid vertical={false} />
                   <XAxis
                     dataKey="period"
@@ -131,6 +208,8 @@ export function RevenueLineChart({ storeId }: RevenueLineChartProps) {
                     tickFormatter={(value) => `$${value}`}
                     tickLine={false}
                     axisLine={false}
+                    domain={[0, "auto"]}
+                    allowDataOverflow={false}
                   />
                   <ChartTooltip
                     cursor={false}
@@ -165,10 +244,15 @@ export function RevenueLineChart({ storeId }: RevenueLineChartProps) {
                   </defs>
                   <Area
                     dataKey="revenue"
-                    type="natural"
+                    type="monotone" // Keep the monotone type for better boundary handling
                     fill="url(#fillRevenue)"
                     fillOpacity={0.4}
                     stroke="var(--color-revenue)"
+                    strokeWidth={2}
+                    connectNulls={true}
+                    clipPath="url(#clipAboveXAxis)"
+                    baseValue={0} // Explicitly set base value to 0
+                    isAnimationActive={true} // Re-enable animations
                   />
                 </AreaChart>
               </ChartContainer>
@@ -195,10 +279,13 @@ export function RevenueLineChart({ storeId }: RevenueLineChartProps) {
                   <TrendingDown className="h-4 w-4" />
                 </>
               )}
-            </div>
+            </div>{" "}
             <div className="flex items-center gap-2 leading-none text-muted-foreground">
               {periodLabels[activePeriod]} • Total:{" "}
               {formatCurrency(revenueStats.totalRevenue)}
+              {isFromCache && (
+                <span className="text-xs opacity-70">• Cached</span>
+              )}
             </div>
           </div>
         </div>

@@ -1,3 +1,4 @@
+import { RevenueCategoryPieChart } from "@/client/components/charts/store/revenue-category-pie-chart";
 import { RevenueLineChart } from "@/client/components/charts/store/revenue-line-chart";
 
 interface StorePageProps {
@@ -19,7 +20,7 @@ export default async function StorePage({ params }: StorePageProps) {
       <div className="grid grid-cols-3 grid-rows-2 gap-2">
   
           <RevenueLineChart storeId={storeId} />
-        <div className="bg-purple-400/10 rounded-md"></div>
+          <RevenueCategoryPieChart storeId={storeId}/>
         <div className="bg-purple-400/10 rounded-md"></div>
         <div className="bg-purple-400/10 rounded-md"></div>
       </div>

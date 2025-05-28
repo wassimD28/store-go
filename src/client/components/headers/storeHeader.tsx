@@ -24,7 +24,7 @@ function StoreHeader({ storeId }: Props) {
   }
 
   return (
-    <div className="col-span-full flex w-full justify-between border-b bg-sidebar px-4 py-3 shadow-xl shadow-black/5">
+    <div className="col-span-full flex w-full justify-between border-b px-4 py-3 shadow-xl shadow-black/5 bg-background">
       <div className="flex items-center gap-3">
         <span
           className={cn(
