@@ -395,3 +395,62 @@ export function formatStatus(status: string) {
   // Convert to lowercase and replace underscores with spaces
   return status.toLowerCase().replace(/_/g, " ");
 }
+
+/**
+ * Abbreviates large numbers with appropriate suffixes (K, M, B)
+ * @param value - The numeric value to abbreviate
+ * @returns An object containing the abbreviated value and suffix
+ * @example
+ * abbreviateNumber(1234) // { value: 1.2, suffix: "K" }
+ * abbreviateNumber(5678900) // { value: 5.7, suffix: "M" }
+ * abbreviateNumber(2345000000) // { value: 2.3, suffix: "B" }
+ */
+export const abbreviateNumber = (value: number): { value: number; suffix: string } => {
+  if (value >= 1000000000) {
+    return {
+      value: parseFloat((value / 1000000000).toFixed(1)),
+      suffix: "B"
+    };
+  } else if (value >= 1000000) {
+    return {
+      value: parseFloat((value / 1000000).toFixed(1)),
+      suffix: "M"
+    };
+  } else if (value >= 1000) {
+    return {
+      value: parseFloat((value / 1000).toFixed(1)),
+      suffix: "K"
+    };
+  } else {
+    return {
+      value: value,
+      suffix: ""
+    };
+  }
+};
+
+/**
+ * Formats a number as an abbreviated currency string
+ * @param amount - The numeric amount to format
+ * @param currencyCode - The currency code (default: USD)
+ * @returns A formatted currency string with abbreviation (e.g., "$4.2M")
+ * @example
+ * formatAbbreviatedCurrency(4242960.67) // "$4.2M"
+ * formatAbbreviatedCurrency(1500) // "$1.5K"
+ * formatAbbreviatedCurrency(999) // "$999.00"
+ */
+export const formatAbbreviatedCurrency = (
+  amount: number | string,
+  currencyCode: string = "USD",
+): string => {
+  const numericAmount = typeof amount === "string" ? parseFloat(amount) : amount;
+  const { value, suffix } = abbreviateNumber(numericAmount);
+  
+  if (suffix) {
+    // For abbreviated numbers, show 1 decimal place
+    return `$${value.toFixed(1)}${suffix}`;
+  } else {
+    // For small numbers, use regular currency formatting
+    return formatCurrency(numericAmount, currencyCode);
+  }
+};
