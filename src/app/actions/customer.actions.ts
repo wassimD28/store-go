@@ -123,7 +123,7 @@ export async function getCustomerOrders(
       where: eq(AppOrder.appUserId, userId),
       orderBy: (orders, { desc }) => [desc(orders.order_date)],
       with: {
-        address: true,
+        items: true,
       },
     });
 

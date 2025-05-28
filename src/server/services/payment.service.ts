@@ -75,7 +75,9 @@ export class PaymentService {
         order_id: orderId,
         amount,
         payment_method: paymentMethod,
-        status: "completed",
+        status: "succeeded",
+        currency: "usd",
+        storeId: paymentIntent.metadata.storeId,
         payment_date: new Date(),
       });
 

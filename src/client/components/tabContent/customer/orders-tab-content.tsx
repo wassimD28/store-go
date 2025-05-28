@@ -14,26 +14,28 @@ interface OrdersTabContentProps {
 }
 
 interface Address {
-  id: string;
-  appUserId: string;
-  street: string;
-  city: string;
-  state: string;
-  status: string;
-  postalCode: string;
-  country: string;
-  isDefault: boolean;
+  street?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
 }
 
 interface Order {
   id: string;
+  storeId: string;
   appUserId: string;
-  address_id: string;
-  data_amount: string; 
+  orderNumber: string | null;
+  shippingAddress: Address | null; // JSON field from database
+  billingAddress: Address | null; // JSON field from database
+  paymentMethod: string | null;
+  notes: string | null;
+  data_amount: string;
   order_date: Date;
   status: string;
   payment_status: string;
-  address?: Address;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export function OrdersTabContent({ userId }: OrdersTabContentProps) {
@@ -45,7 +47,8 @@ export function OrdersTabContent({ userId }: OrdersTabContentProps) {
       try {
         const response = await getCustomerOrders(userId);
         if (response.success && response.data) {
-          setOrders(response.data);
+          // Type assertion to handle the unknown address fields from the API
+          setOrders(response.data as Order[]);
         }
       } catch (error) {
         console.error("Error fetching orders:", error);
@@ -56,6 +59,20 @@ export function OrdersTabContent({ userId }: OrdersTabContentProps) {
 
     fetchOrders();
   }, [userId]);
+
+  // Helper function to safely extract address information
+  const formatAddress = (address: Address | null): string => {
+    if (address && typeof address === "object") {
+      const { street, city, state, postalCode, country } = address;
+      const addressParts = [street, city, state, postalCode, country].filter(
+        Boolean,
+      );
+      return addressParts.length > 0
+        ? addressParts.join(", ")
+        : "Address not available";
+    }
+    return "Address not available";
+  };
 
   // Format currency
   const formatCurrency = (amount: number | string) => {
@@ -82,7 +99,7 @@ export function OrdersTabContent({ userId }: OrdersTabContentProps) {
   ): "default" | "secondary" | "destructive" | "outline" => {
     switch (status.toLowerCase()) {
       case "completed":
-        return "default"; 
+        return "default";
       case "processing":
         return "secondary";
       case "cancelled":
@@ -93,6 +110,27 @@ export function OrdersTabContent({ userId }: OrdersTabContentProps) {
         return "outline";
       default:
         return "secondary";
+    }
+  };
+
+  // Get payment status badge variant
+  const getPaymentStatusBadgeVariant = (
+    paymentStatus: string,
+  ): "default" | "secondary" | "destructive" | "outline" => {
+    switch (paymentStatus.toLowerCase()) {
+      case "paid":
+      case "completed":
+        return "default";
+      case "pending":
+      case "processing":
+        return "secondary";
+      case "failed":
+      case "cancelled":
+      case "refunded":
+        return "destructive";
+      case "unpaid":
+      default:
+        return "outline";
     }
   };
 
@@ -141,28 +179,23 @@ export function OrdersTabContent({ userId }: OrdersTabContentProps) {
                     <p className="text-sm">Amount</p>
                     <p className="font-medium">
                       {formatCurrency(order.data_amount)}
-                    </p>
+                    </p>{" "}
                   </div>
                   <div>
                     <p className="text-sm">Payment</p>
                     <Badge
-                      variant={
-                        order.payment_status.toLowerCase() === "paid"
-                          ? "default" // Changed from "success"
-                          : "outline"
-                      }
+                      variant={getPaymentStatusBadgeVariant(
+                        order.payment_status,
+                      )}
                     >
                       {order.payment_status}
                     </Badge>
                   </div>
                 </div>
-                {order.address && (
+                {order.shippingAddress && (
                   <div className="mt-4 rounded-md bg-muted/20 p-2 text-xs">
                     <p className="font-medium">Shipping Address:</p>
-                    <p>
-                      {order.address.street}, {order.address.city},{" "}
-                      {order.address.state}, {order.address.postalCode}
-                    </p>
+                    <p>{formatAddress(order.shippingAddress)}</p>
                   </div>
                 )}
               </div>
