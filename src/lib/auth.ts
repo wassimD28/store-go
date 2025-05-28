@@ -9,6 +9,7 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
   }),
+  baseURL: process.env.NEXT_PUBLIC_BASE_URL!,
   advanced: {
     cookiePrefix: "storeGo",
   },
