@@ -4,13 +4,16 @@ import { ReactNode, useEffect } from "react";
 import Pusher from "pusher-js";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import {
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-} from "@/client/components/ui/avatar";
 import { getProductForNotification } from "@/app/actions/product.actions";
+import {
+  ReviewToastNotification,
+  UserSignupToastNotification,
+  OrderToastNotification,
+  OrderStatusToastNotification,
+  PaymentSuccessToastNotification,
+  PaymentFailedToastNotification,
+  PaymentActionRequiredToastNotification,
+} from "@/client/components/notifications/toast-notifications";
 
 interface PusherProviderProps {
   children: ReactNode;
@@ -48,32 +51,21 @@ export const PusherProvider = ({ children, storeId }: PusherProviderProps) => {
 
           // Create the notification with product avatar
           toast.success(
-            <Link
+            <ReviewToastNotification
+              storeId={storeId}
+              title="New review received!"
+              content={`${
+                productDetails.success ? productDetails.data.name : "A product"
+              } received a ${data.rating}-star review`}
               href={`/stores/${storeId}/products/list?productId=${data.productId}&tab=reviews`}
-              className="flex items-center gap-3"
-            >
-              <Avatar className="h-10 w-10 border border-gray-200">
-                {productDetails.success && productDetails.data.image ? (
-                  <AvatarImage
-                    src={productDetails.data.image}
-                    alt={productDetails.data.name}
-                  />
-                ) : (
-                  <AvatarFallback className="bg-gray-600 text-yellow-800">
-                    ⭐
-                  </AvatarFallback>
-                )}
-              </Avatar>
-              <div className="flex flex-col">
-                <span className="font-semibold">New review received!</span>
-                <span>
-                  {productDetails.success
-                    ? productDetails.data.name
-                    : "A product"}{" "}
-                  received a {data.rating}-star review
-                </span>
-              </div>
-            </Link>,
+              productImage={
+                productDetails.success ? productDetails.data.image : undefined
+              }
+              productName={
+                productDetails.success ? productDetails.data.name : undefined
+              }
+              rating={data.rating}
+            />,
             {
               duration: 5000,
               position: "bottom-right",
@@ -84,20 +76,13 @@ export const PusherProvider = ({ children, storeId }: PusherProviderProps) => {
           // Fallback to simpler notification if fetching product details fails
           console.error("Error fetching product details for review:", error);
           toast.success(
-            <Link
+            <ReviewToastNotification
+              storeId={storeId}
+              title="New review received!"
+              content={`A product received a ${data.rating}-star review`}
               href={`/stores/${storeId}/products/list?productId=${data.productId}&tab=reviews`}
-              className="flex items-center gap-3"
-            >
-              <Avatar className="h-10 w-10 border border-gray-200">
-                <AvatarFallback className="bg-yellow-100 text-yellow-800">
-                  ⭐
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col">
-                <span className="font-semibold">New review received!</span>
-                <span>A product received a {data.rating}-star review</span>
-              </div>
-            </Link>,
+              rating={data.rating}
+            />,
             {
               duration: 5000,
               position: "bottom-right",
@@ -106,30 +91,188 @@ export const PusherProvider = ({ children, storeId }: PusherProviderProps) => {
           );
         }
       },
-    );
-
-    // Listen for new user sign-up events
+    ); // Listen for new user sign-up events
     channel.bind(
       "new-user",
       async (data: { userId: string; name: string; email: string }) => {
         // Create notification for new user signup
         toast.success(
-          <Link
+          <UserSignupToastNotification
+            storeId={storeId}
+            title="New user registered!"
+            content={`${data.name} has joined your app`}
             href={`/stores/${storeId}/customers`}
-            className="flex items-center gap-3"
-          >
-            <Avatar className="h-10 w-10 border border-gray-200">
-              <AvatarFallback className="bg-blue-100 text-blue-800">
-                👤
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col">
-              <span className="font-semibold">New user registered!</span>
-              <span>{data.name} has joined your app</span>
-            </div>
-          </Link>,
+            userName={data.name}
+          />,
           {
             duration: 5000,
+            position: "bottom-right",
+            icon: null,
+          },
+        );
+      },
+    ); // Listen for new order events
+    channel.bind(
+      "new-order",
+      async (data: {
+        type: string;
+        title: string;
+        content: string;
+        data: {
+          orderId: string;
+          orderNumber: string;
+          totalAmount: number;
+          customerInfo: {
+            appUserId: string;
+            city: string;
+            state: string;
+          };
+        };
+      }) => {
+        toast.success(
+          <OrderToastNotification
+            storeId={storeId}
+            title={data.title}
+            content={data.content}
+            href={`/stores/${storeId}/orders`}
+            orderNumber={data.data.orderNumber}
+          />,
+          {
+            duration: 5000,
+            position: "bottom-right",
+            icon: null,
+          },
+        );
+      },
+    );
+
+    // Listen for order status change events
+    channel.bind(
+      "order-status-change",
+      async (data: {
+        type: string;
+        title: string;
+        content: string;
+        data: {
+          orderId: string;
+          orderNumber: string;
+          previousStatus: string;
+          newStatus: string;
+          totalAmount: number;
+        };
+      }) => {
+        toast.success(
+          <OrderStatusToastNotification
+            storeId={storeId}
+            title={data.title}
+            content={data.content}
+            href={`/stores/${storeId}/orders`}
+            orderNumber={data.data.orderNumber}
+          />,
+          {
+            duration: 5000,
+            position: "bottom-right",
+            icon: null,
+          },
+        );
+      },
+    );
+
+    // Listen for payment received events
+    channel.bind(
+      "payment-received",
+      async (data: {
+        type: string;
+        title: string;
+        content: string;
+        data: {
+          orderId: string;
+          orderNumber: string;
+          paymentAmount: number;
+          paymentIntentId: string;
+          paymentStatus: string;
+        };
+      }) => {
+        toast.success(
+          <PaymentSuccessToastNotification
+            storeId={storeId}
+            title={data.title}
+            content={data.content}
+            href={`/stores/${storeId}/orders`}
+            orderNumber={data.data.orderNumber}
+            amount={data.data.paymentAmount}
+          />,
+          {
+            duration: 5000,
+            position: "bottom-right",
+            icon: null,
+          },
+        );
+      },
+    );
+
+    // Listen for payment failed events
+    channel.bind(
+      "payment-failed",
+      async (data: {
+        type: string;
+        title: string;
+        content: string;
+        data: {
+          orderId: string;
+          orderNumber: string;
+          paymentAmount: number;
+          paymentIntentId: string;
+          paymentStatus: string;
+          errorMessage: string;
+          errorCode: string;
+        };
+      }) => {
+        toast.error(
+          <PaymentFailedToastNotification
+            storeId={storeId}
+            title={data.title}
+            content={data.content}
+            href={`/stores/${storeId}/orders`}
+            orderNumber={data.data.orderNumber}
+            amount={data.data.paymentAmount}
+            errorMessage={data.data.errorMessage}
+          />,
+          {
+            duration: 6000,
+            position: "bottom-right",
+            icon: null,
+          },
+        );
+      },
+    );
+
+    // Listen for payment requires action events
+    channel.bind(
+      "payment-requires-action",
+      async (data: {
+        type: string;
+        title: string;
+        content: string;
+        data: {
+          orderId: string;
+          orderNumber: string;
+          paymentAmount: number;
+          paymentIntentId: string;
+          paymentStatus: string;
+        };
+      }) => {
+        toast(
+          <PaymentActionRequiredToastNotification
+            storeId={storeId}
+            title={data.title}
+            content={data.content}
+            href={`/stores/${storeId}/orders`}
+            orderNumber={data.data.orderNumber}
+            amount={data.data.paymentAmount}
+          />,
+          {
+            duration: 6000,
             position: "bottom-right",
             icon: null,
           },

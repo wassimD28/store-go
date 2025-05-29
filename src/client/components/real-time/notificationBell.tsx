@@ -12,13 +12,21 @@ import { Bell } from "lucide-react";
 import { useEffect, useState } from "react";
 import Pusher from "pusher-js";
 import { useRouter } from "next/navigation";
-import { formatTimeDifference } from "@/lib/utils";
 import {
   getAllNotifications,
   markAllNotificationsAsRead,
   markNotificationAsRead,
 } from "@/app/actions/storeNotification.actions";
 import { storeNotificationTypeEnum } from "@/lib/db/schema";
+import {
+  NotificationItem,
+  createUserRegistrationNotification,
+  createOrderNotification,
+  createOrderStatusNotification,
+  createPaymentReceivedNotification,
+  createPaymentFailedNotification,
+  createPaymentActionRequiredNotification,
+} from "@/client/components/notifications/notification-components";
 
 // Define types based on your app schema
 type StoreNotificationType =
@@ -96,31 +104,123 @@ export function NotificationBell({ storeId }: NotificationBellProps) {
     // Listen for new notifications
     channel.bind("new-notification", (newNotification: Notification) => {
       setNotifications((prev) => [newNotification, ...prev]);
-    });
-
-    // Listen for new user registration events
+    }); // Listen for new user registration events
     channel.bind(
       "new-user",
       (data: { userId: string; name: string; email: string }) => {
         // Create a notification object for the new user
-        const newUserNotification: Notification = {
-          id: `temp-${Date.now()}`, // Temporary ID until refresh
+        const newUserNotification = createUserRegistrationNotification(
           storeId,
-          type: "new_app_user_registration",
-          title: "New user registered",
-          content: `${data.name} has joined your app`,
-          data: {
-            userId: data.userId,
-            name: data.name,
-            email: data.email,
-          },
-          isRead: false,
-          createdAt: new Date(),
-          readAt: null,
-        };
+          data,
+        );
 
         // Add to notifications state
         setNotifications((prev) => [newUserNotification, ...prev]);
+      },
+    ); // Listen for new order events
+    channel.bind(
+      "new-order",
+      (data: {
+        type: string;
+        title: string;
+        content: string;
+        data: {
+          orderId: string;
+          orderNumber: string;
+          totalAmount: number;
+          customerInfo: {
+            appUserId: string;
+            city: string;
+            state: string;
+          };
+        };
+      }) => {
+        const newOrderNotification = createOrderNotification(storeId, data);
+        setNotifications((prev) => [newOrderNotification, ...prev]);
+      },
+    ); // Listen for order status change events
+    channel.bind(
+      "order-status-change",
+      (data: {
+        type: string;
+        title: string;
+        content: string;
+        data: {
+          orderId: string;
+          orderNumber: string;
+          previousStatus: string;
+          newStatus: string;
+          totalAmount: number;
+        };
+      }) => {
+        const orderStatusNotification = createOrderStatusNotification(
+          storeId,
+          data,
+        );
+        setNotifications((prev) => [orderStatusNotification, ...prev]);
+      },
+    ); // Listen for payment received events
+    channel.bind(
+      "payment-received",
+      (data: {
+        type: string;
+        title: string;
+        content: string;
+        data: {
+          orderId: string;
+          orderNumber: string;
+          paymentAmount: number;
+          paymentIntentId: string;
+          paymentStatus: string;
+        };
+      }) => {
+        const paymentReceivedNotification = createPaymentReceivedNotification(
+          storeId,
+          data,
+        );
+        setNotifications((prev) => [paymentReceivedNotification, ...prev]);
+      },
+    ); // Listen for payment failed events
+    channel.bind(
+      "payment-failed",
+      (data: {
+        type: string;
+        title: string;
+        content: string;
+        data: {
+          orderId: string;
+          orderNumber: string;
+          paymentAmount: number;
+          paymentIntentId: string;
+          paymentStatus: string;
+          errorMessage: string;
+          errorCode: string;
+        };
+      }) => {
+        const paymentFailedNotification = createPaymentFailedNotification(
+          storeId,
+          data,
+        );
+        setNotifications((prev) => [paymentFailedNotification, ...prev]);
+      },
+    ); // Listen for payment requires action events
+    channel.bind(
+      "payment-requires-action",
+      (data: {
+        type: string;
+        title: string;
+        content: string;
+        data: {
+          orderId: string;
+          orderNumber: string;
+          paymentAmount: number;
+          paymentIntentId: string;
+          paymentStatus: string;
+        };
+      }) => {
+        const paymentActionNotification =
+          createPaymentActionRequiredNotification(storeId, data);
+        setNotifications((prev) => [paymentActionNotification, ...prev]);
       },
     );
 
@@ -183,7 +283,17 @@ export function NotificationBell({ storeId }: NotificationBellProps) {
         notification.type === "new_order" &&
         notification.data.orderId
       ) {
-        router.push(`/stores/${storeId}/orders/${notification.data.orderId}`);
+        router.push(`/stores/${storeId}/orders`);
+      } else if (
+        notification.type === "order_status_change" &&
+        notification.data.orderId
+      ) {
+        router.push(`/stores/${storeId}/orders`);
+      } else if (
+        notification.type === "payment_received" &&
+        notification.data.orderId
+      ) {
+        router.push(`/stores/${storeId}/orders`);
       } else if (
         notification.type === "new_app_user_registration" &&
         notification.data.userId
@@ -193,23 +303,6 @@ export function NotificationBell({ storeId }: NotificationBellProps) {
       // Add other navigation logic for different notification types
     } catch (error) {
       console.error("Error marking notification as read:", error);
-    }
-  };
-  // Function to determine notification icon based on type
-  const getNotificationIcon = (type: StoreNotificationType) => {
-    switch (type) {
-      case "new_review":
-        return "⭐";
-      case "new_order":
-        return "🛒";
-      case "product_out_of_stock":
-        return "⚠️";
-      case "payment_received":
-        return "💰";
-      case "new_app_user_registration":
-        return "👤";
-      default:
-        return "📣";
     }
   };
 
@@ -261,48 +354,11 @@ export function NotificationBell({ storeId }: NotificationBellProps) {
           </div>
         ) : (
           notifications.map((notification) => (
-            <div
+            <NotificationItem
               key={notification.id}
-              className="rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent"
-            >
-              <div className="relative flex items-start gap-3 pe-3">
-                <div className="flex size-9 items-center justify-center rounded-md bg-muted">
-                  <span className="text-lg" aria-hidden="true">
-                    {getNotificationIcon(notification.type)}
-                  </span>
-                </div>
-                <div className="flex-1 space-y-1">
-                  <button
-                    className="text-left text-foreground/80 after:absolute after:inset-0"
-                    onClick={() => handleNotificationClick(notification)}
-                  >
-                    <span className="font-medium text-foreground">
-                      {notification.title}
-                    </span>
-                    <div className="text-foreground/80">
-                      {notification.content}
-                    </div>
-                  </button>
-                  <div className="text-xs text-muted-foreground">
-                    {formatTimeDifference(notification.createdAt)}
-                  </div>
-                </div>
-                {!notification.isRead && (
-                  <div className="absolute end-0 self-center">
-                    <svg
-                      width="6"
-                      height="6"
-                      fill="currentColor"
-                      viewBox="0 0 6 6"
-                      xmlns="http://www.w3.org/2000/svg"
-                      aria-hidden="true"
-                    >
-                      <circle cx="3" cy="3" r="3" />
-                    </svg>
-                  </div>
-                )}
-              </div>
-            </div>
+              notification={notification}
+              onClick={handleNotificationClick}
+            />
           ))
         )}
       </PopoverContent>

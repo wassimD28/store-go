@@ -3,6 +3,43 @@ import { OrderRepository } from "@/server/repositories/order.repository";
 import { CartRepository } from "@/server/repositories/cart.repository";
 import { idSchema } from "../schemas/common.schema";
 import { z } from "zod";
+import { StoreNotificationRepository } from "@/server/repositories/notification.repository";
+import Pusher from "pusher";
+
+// Define OrderStatus type to match the database enum
+type OrderStatus =
+  | "pending"
+  | "processing"
+  | "shipped"
+  | "delivered"
+  | "cancelled";
+type PaymentStatus =
+  | "pending"
+  | "processing"
+  | "completed"
+  | "paid"
+  | "failed"
+  | "canceled"
+  | "refunded"
+  | "requires_action"
+  | "requires_payment_method";
+
+// Initialize Pusher for real-time notifications
+let pusherServer: Pusher | null = null;
+if (
+  process.env.PUSHER_APP_ID &&
+  process.env.PUSHER_KEY &&
+  process.env.PUSHER_SECRET &&
+  process.env.PUSHER_CLUSTER
+) {
+  pusherServer = new Pusher({
+    appId: process.env.PUSHER_APP_ID,
+    key: process.env.PUSHER_KEY,
+    secret: process.env.PUSHER_SECRET,
+    cluster: process.env.PUSHER_CLUSTER,
+    useTLS: true,
+  });
+}
 
 // Define request validation schema based on actual database fields
 const createOrderSchema = z.object({
@@ -71,9 +108,7 @@ export class OrderController {
         );
       }
 
-      const { cart, items: cartItems } = cartResult;
-
-      // Create order - let repository calculate the total
+      const { cart, items: cartItems } = cartResult; // Create order - let repository calculate the total
       const orderData = {
         appUserId,
         storeId,
@@ -81,17 +116,50 @@ export class OrderController {
         billingAddress: billingAddress || shippingAddress,
         paymentMethod,
         notes,
-        status: "pending",
-        paymentStatus: "pending",
+        status: "pending" as OrderStatus,
+        paymentStatus: "pending" as PaymentStatus,
       };
 
-      const newOrder = await OrderRepository.create(orderData);
-
-      // Add order items
+      const newOrder = await OrderRepository.create(orderData); // Add order items
       await OrderRepository.addOrderItems(newOrder.id, cartItems);
 
       // Convert cart to order
       await CartRepository.convertCartToOrder(cart.id);
+
+      // Create notification for new order
+      try {
+        const notificationData = {
+          orderId: newOrder.id,
+          orderNumber: newOrder.orderNumber,
+          totalAmount: Number(newOrder.data_amount),
+          customerInfo: {
+            appUserId,
+            city: shippingAddress.city,
+            state: shippingAddress.state,
+          },
+        };
+
+        await StoreNotificationRepository.create({
+          storeId,
+          type: "new_order",
+          title: "New Order Received",
+          content: `Order #${newOrder.orderNumber} has been placed for $${Number(newOrder.data_amount).toFixed(2)}`,
+          data: notificationData,
+        });
+
+        // Send real-time notification via Pusher
+        if (pusherServer) {
+          await pusherServer.trigger(`store-${storeId}`, "new-order", {
+            type: "new_order",
+            title: "New Order Received",
+            content: `Order #${newOrder.orderNumber} has been placed for $${Number(newOrder.data_amount).toFixed(2)}`,
+            data: notificationData,
+          });
+        }
+      } catch (notificationError) {
+        console.error("Error creating order notification:", notificationError);
+        // Continue with order creation even if notification fails
+      }
 
       return c.json({
         status: "success",
@@ -246,10 +314,56 @@ export class OrderController {
       );
       if (!existingOrder) {
         return c.json({ status: "error", message: "Order not found" }, 404);
-      }
-
-      // Update order status
+      } // Update order status
       await OrderRepository.updateStatus(orderId, status);
+
+      // Get updated order for notification
+      const updatedOrder = await OrderRepository.findById(
+        orderId,
+        appUserId,
+        storeId,
+      );
+
+      // Create notification for order status change
+      try {
+        if (updatedOrder) {
+          const notificationData = {
+            orderId: updatedOrder.id,
+            orderNumber: updatedOrder.orderNumber,
+            previousStatus: existingOrder.status,
+            newStatus: status,
+            totalAmount: Number(updatedOrder.data_amount),
+          };
+
+          await StoreNotificationRepository.create({
+            storeId,
+            type: "order_status_change",
+            title: "Order Status Updated",
+            content: `Order #${updatedOrder.orderNumber} status changed from ${existingOrder.status} to ${status}`,
+            data: notificationData,
+          });
+
+          // Send real-time notification via Pusher
+          if (pusherServer) {
+            await pusherServer.trigger(
+              `store-${storeId}`,
+              "order-status-change",
+              {
+                type: "order_status_change",
+                title: "Order Status Updated",
+                content: `Order #${updatedOrder.orderNumber} status changed from ${existingOrder.status} to ${status}`,
+                data: notificationData,
+              },
+            );
+          }
+        }
+      } catch (notificationError) {
+        console.error(
+          "Error creating order status notification:",
+          notificationError,
+        );
+        // Continue with response even if notification fails
+      }
 
       return c.json({
         status: "success",

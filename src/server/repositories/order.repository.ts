@@ -4,6 +4,23 @@ import { AppOrder, OrderItem } from "@/lib/db/schema";
 import { CartRepository } from "@/server/repositories/cart.repository";
 
 // Define types based on actual database schema
+type OrderStatus =
+  | "pending"
+  | "processing"
+  | "shipped"
+  | "delivered"
+  | "cancelled";
+type PaymentStatus =
+  | "pending"
+  | "processing"
+  | "completed"
+  | "paid"
+  | "failed"
+  | "canceled"
+  | "refunded"
+  | "requires_action"
+  | "requires_payment_method";
+
 type OrderCreateData = {
   appUserId: string;
   storeId: string;
@@ -25,8 +42,8 @@ type OrderCreateData = {
   };
   paymentMethod: string;
   notes?: string;
-  status?: string;
-  paymentStatus?: string;
+  status?: OrderStatus;
+  paymentStatus?: PaymentStatus;
 };
 
 export class OrderRepository {
@@ -48,21 +65,20 @@ export class OrderRepository {
       const shippingCost = summary.subtotal >= 50 ? 0 : 15.0;
       const totalAmount =
         Math.round((summary.subtotal + tax + shippingCost) * 100) / 100;
-
       const [newOrder] = await db
         .insert(AppOrder)
         .values({
-          // Fix: Use correct field names that match the database schema
-          appUserId: orderData.appUserId, // ✅ This should match the schema
+          appUserId: orderData.appUserId,
           storeId: orderData.storeId,
           orderNumber: await this.generateOrderNumber(),
           shippingAddress: orderData.shippingAddress,
           billingAddress: orderData.billingAddress || orderData.shippingAddress,
           paymentMethod: orderData.paymentMethod,
           notes: orderData.notes,
-          status: orderData.status || "pending",
-          payment_status: orderData.paymentStatus || "pending",
-          data_amount: totalAmount.toString(), // Fix: Convert to string for decimal field
+          status: (orderData.status || "pending") as OrderStatus,
+          payment_status: (orderData.paymentStatus ||
+            "pending") as PaymentStatus,
+          data_amount: totalAmount.toString(),
         })
         .returning();
 
@@ -136,12 +152,31 @@ export class OrderRepository {
     }
   }
 
-  static async updateStatus(orderId: string, status: string) {
+  // Method for webhooks that don't require user authentication
+  static async findByIdWithoutUser(orderId: string) {
+    try {
+      return await db.query.AppOrder.findFirst({
+        where: eq(AppOrder.id, orderId),
+        with: {
+          items: {
+            with: {
+              product: true,
+            },
+          },
+          user: true,
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching order for webhook:", error);
+      throw new Error("Failed to fetch order for webhook");
+    }
+  }
+  static async updateStatus(orderId: string, status: OrderStatus) {
     try {
       return await db
         .update(AppOrder)
         .set({
-          status,
+          status: status,
           updated_at: new Date(),
         })
         .where(eq(AppOrder.id, orderId))
@@ -151,8 +186,10 @@ export class OrderRepository {
       throw new Error("Failed to update order status");
     }
   }
-
-  static async updatePaymentStatus(orderId: string, paymentStatus: string) {
+  static async updatePaymentStatus(
+    orderId: string,
+    paymentStatus: PaymentStatus,
+  ) {
     try {
       // ✅ Fixed: Use correct database field names
       return await db
@@ -168,11 +205,6 @@ export class OrderRepository {
       throw new Error("Failed to update payment status");
     }
   }
-
-  // Remove methods that don't match the schema
-  // static async findAll(userId: string) - Remove address relation that doesn't exist
-  // static async findByStatus - Remove address relation that doesn't exist
-  // static async findByPaymentStatus - Remove address relation that doesn't exist
 
   private static async generateOrderNumber(): Promise<string> {
     // Generate unique order number
