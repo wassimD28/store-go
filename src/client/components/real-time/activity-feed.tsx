@@ -13,7 +13,12 @@ import {
   Clock,
   Activity,
 } from "lucide-react";
-import { formatDistanceToNow, format, startOfMinute, subHours } from "date-fns";
+import {
+  formatDistanceToNow,
+  format,
+  startOfMinute,
+  subMinutes,
+} from "date-fns";
 import Pusher from "pusher-js";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
@@ -123,14 +128,13 @@ export function ActivityFeed() {
   const [activeView, setActiveView] = useState<"feed" | "chart">("feed");
   const params = useParams();
   const storeId = params.storeId as string;
-
-  // Generate time intervals for the past hour (12 5-minute intervals)
+  // Generate time intervals for the past 30 minutes (30 1-minute intervals)
   const generateTimeIntervals = () => {
     const intervals: ChartDataPoint[] = [];
     const now = new Date();
 
-    for (let i = 11; i >= 0; i--) {
-      const time = subHours(now, i * (5 / 60)); // 5-minute intervals
+    for (let i = 29; i >= 0; i--) {
+      const time = subMinutes(now, i); // 1-minute intervals
       const timeStart = startOfMinute(time);
 
       intervals.push({
@@ -156,12 +160,10 @@ export function ActivityFeed() {
       if (!storeId) return;
 
       try {
-        setLoading(true);
-
-        // Fetch data from the past hour
-        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+        setLoading(true); // Fetch data from the past 30 minutes
+        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
         const response = await fetch(
-          `/api/stores/${storeId}/activities?since=${oneHourAgo.toISOString()}&limit=1000`,
+          `/api/stores/${storeId}/activities?since=${thirtyMinutesAgo.toISOString()}&limit=1000`,
         );
 
         if (!response.ok) {
@@ -171,8 +173,7 @@ export function ActivityFeed() {
         const historicalActivities = await response.json();
 
         // Initialize chart data with time intervals
-        const intervals = generateTimeIntervals();
-        // Map historical activities to time intervals
+        const intervals = generateTimeIntervals(); // Map historical activities to time intervals
         historicalActivities.forEach(
           (activity: {
             id: string;
@@ -183,7 +184,7 @@ export function ActivityFeed() {
             const activityTime = new Date(activity.timestamp);
             const intervalIndex = Math.floor(
               (activityTime.getTime() - new Date(intervals[0].time).getTime()) /
-                (5 * 60 * 1000),
+                (1 * 60 * 1000), // 1-minute intervals
             );
 
             if (intervalIndex >= 0 && intervalIndex < intervals.length) {
@@ -272,14 +273,19 @@ export function ActivityFeed() {
           timestamp: new Date(),
           data: data.data as Record<string, unknown>,
         };
-
         setActivities((prev) => [newActivity, ...prev].slice(0, 10));
         // Update chart data with new activity
         setChartData((prevData) => {
           const newData = [...prevData];
-          const currentIntervalIndex = newData.length - 1; // Latest interval
+          const now = new Date();
+          const currentMinute = startOfMinute(now);
 
-          if (newData[currentIntervalIndex]) {
+          // Find the interval for the current minute
+          const currentIntervalIndex = newData.findIndex(
+            (interval) => interval.timeLabel === format(currentMinute, "HH:mm"),
+          );
+
+          if (currentIntervalIndex !== -1 && newData[currentIntervalIndex]) {
             newData[currentIntervalIndex][eventType as keyof ChartDataPoint]++;
             newData[currentIntervalIndex].total++;
           }
@@ -291,7 +297,6 @@ export function ActivityFeed() {
     eventTypes.forEach((eventType) => {
       channel.bind(eventType, handleActivity(eventType));
     });
-
     return () => {
       eventTypes.forEach((eventType) => {
         channel.unbind(eventType);
@@ -300,6 +305,31 @@ export function ActivityFeed() {
       pusher.disconnect();
     };
   }, [storeId]);
+
+  // Update chart data every second to create sliding window effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setChartData((prevData) => {
+        // Only update if we have data and we're on the chart view
+        if (prevData.length === 0) return prevData;
+
+        // Generate fresh intervals to maintain the sliding 30-minute window
+        const newIntervals = generateTimeIntervals();
+
+        // Preserve existing data within the new time window
+        const updatedIntervals = newIntervals.map((newInterval) => {
+          const existingInterval = prevData.find(
+            (prev) => prev.timeLabel === newInterval.timeLabel,
+          );
+          return existingInterval || newInterval;
+        });
+
+        return updatedIntervals;
+      });
+    }, 1000); // Update every second
+
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) {
     return (
@@ -343,11 +373,11 @@ export function ActivityFeed() {
               <TabsTrigger value="chart">Chart</TabsTrigger>
             </TabsList>
           </Tabs>
-        </div>
+        </div>{" "}
         <CardDescription>
           {activeView === "feed"
             ? "Latest activities in real-time"
-            : "Activity trends over the past hour"}
+            : "Activity trends over the past 30 minutes"}
         </CardDescription>
       </CardHeader>{" "}
       <CardContent className="flex-1 overflow-hidden p-0">
@@ -425,13 +455,15 @@ export function ActivityFeed() {
                   }}
                   className="h-full w-full"
                 >
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid strokeDasharray="3 3" />{" "}
                   <XAxis
                     dataKey="timeLabel"
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}
                     fontSize={12}
+                    interval="preserveStartEnd"
+                    tick={{ fontSize: 10 }}
                   />
                   <YAxis
                     tickLine={false}
@@ -451,7 +483,6 @@ export function ActivityFeed() {
                       />
                     }
                   />
-
                   {/* Render an area for each event type */}
                   <Area
                     type="monotone"
