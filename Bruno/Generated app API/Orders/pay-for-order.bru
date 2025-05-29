@@ -17,7 +17,7 @@ auth:bearer {
 body:json {
   {
     "paymentMethod": "credit_card",
-    "paymentToken": "tok_visa",
+    "paymentToken": "pm_1234567890abcdef",
     "savePaymentMethod": false
   }
 }
@@ -59,27 +59,25 @@ docs {
   - Order must exist and belong to the authenticated user
   - Order must not already be paid
   - Valid Stripe payment token required
-  
-  ## Request Body
+    ## Request Body
   
   ```json
   {
     "paymentMethod": "credit_card",
-    "paymentToken": "tok_visa",
+    "paymentToken": "pm_1234567890abcdef",
     "savePaymentMethod": false
   }
   ```
   
   ### Parameters
-  - `paymentMethod`: Payment method type (credit_card, debit_card, paypal, etc.)
-  - `paymentToken`: Stripe payment method ID created client-side
+  - `paymentMethod`: Payment method type (credit_card, debit_card, etc.)
+  - `paymentToken`: Stripe payment method ID created client-side (required)
   - `savePaymentMethod`: Optional - whether to save payment method for future use
   
   ## Response Scenarios
   
   ### 1. Successful Payment (No 3D Secure Required)
-  
-  ```json
+    ```json
   {
     "status": "success",
     "message": "Payment processed successfully",
@@ -87,7 +85,7 @@ docs {
       "paymentId": "pay_1234567890",
       "orderId": "82d94ef6-3727-4f1e-81c8-d487867834c2",
       "amount": 440,
-      "status": "succeeded"
+      "status": "paid"
     }
   }
   ```
@@ -137,7 +135,6 @@ docs {
   
   - `400`: Bad request (invalid order ID, missing payment method)
   - `401`: Unauthorized (invalid or missing JWT token)
-  - `404`: Order not found
-  - `409`: Order already paid
-  - `402`: Payment failed (insufficient funds, card declined, etc.)
+  - `404`: Order not found  - `409`: Order already paid
+  - `400`: Payment processing failed (Stripe error, invalid card, etc.)
 }

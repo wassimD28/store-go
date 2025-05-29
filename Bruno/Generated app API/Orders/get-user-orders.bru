@@ -33,21 +33,13 @@ script:pre-request {
 docs {
   # Get User Orders Endpoint
   
-  This endpoint retrieves all orders placed by the authenticated user. It provides a comprehensive order history for the user.
+  This endpoint retrieves all orders placed by the authenticated user. It returns a simplified list of orders without detailed item information.
   
   ## Authentication Requirements
   
   - This endpoint requires authentication using a JWT bearer token
   - The token must be obtained from the sign-in endpoint
   - Orders are specific to the authenticated user
-  
-  ## Query Parameters (Optional)
-  
-  | Parameter | Type   | Required | Description                                      |
-  |-----------|--------|----------|--------------------------------------------------|
-  | status    | string | No       | Filter by order status (e.g., "pending", "completed", "cancelled") |
-  | limit     | number | No       | Maximum number of orders to return (default: 10) |
-  | page      | number | No       | Page number for pagination (default: 1)          |
   
   ## Response Format
   
@@ -56,79 +48,43 @@ docs {
   ```json
   {
     "status": "success",
-    "data": {
-      "orders": [
-        {
-          "id": "order-uuid",
-          "orderNumber": "ORD-12345",
-          "userId": "user-uuid",
-          "storeId": "store-uuid",
-          "totalAmount": 1199.97,
-          "status": "delivered",
-          "shippingAddress": {
-            "street": "123 Main Street",
-            "city": "New York",
-            "state": "NY",
-            "zipCode": "10001",
-            "country": "USA"
-          },
-          "paymentMethod": "credit_card",
-          "created_at": "2023-05-01T14:30:00Z",
-          "updated_at": "2023-05-03T10:15:00Z",
-          "items": [
-            {
-              "productId": "product-uuid",
-              "productName": "Smartphone X",
-              "quantity": 1,
-              "price": 799.99,
-              "imageUrl": "https://example.com/images/smartphone-x.jpg"
-            },
-            {
-              "productId": "product-uuid-2",
-              "productName": "Wireless Headphones",
-              "quantity": 2,
-              "price": 199.99,
-              "imageUrl": "https://example.com/images/headphones.jpg"
-            }
-          ]
-        },
-        {
-          "id": "order-uuid-2",
-          "orderNumber": "ORD-12346",
-          "userId": "user-uuid",
-          "storeId": "store-uuid",
-          "totalAmount": 49.99,
-          "status": "processing",
-          "shippingAddress": {
-            "street": "123 Main Street",
-            "city": "New York",
-            "state": "NY",
-            "zipCode": "10001",
-            "country": "USA"
-          },
-          "paymentMethod": "paypal",
-          "created_at": "2023-05-10T09:20:00Z",
-          "updated_at": "2023-05-10T09:20:00Z",
-          "items": [
-            {
-              "productId": "product-uuid-3",
-              "productName": "Phone Case",
-              "quantity": 1,
-              "price": 49.99,
-              "imageUrl": "https://example.com/images/phone-case.jpg"
-            }
-          ]
-        }
-      ],
-      "pagination": {
-        "total": 5,
-        "page": 1,
-        "limit": 10,
-        "pages": 1
+    "data": [
+      {
+        "id": "order-uuid",
+        "orderNumber": "ORD-12345",
+        "status": "delivered",
+        "paymentStatus": "paid",
+        "totalAmount": 1199.97,
+        "itemCount": 2,
+        "created_at": "2023-05-01T14:30:00Z",
+        "updated_at": "2023-05-03T10:15:00Z"
+      },
+      {
+        "id": "order-uuid-2",
+        "orderNumber": "ORD-12346",
+        "status": "processing",
+        "paymentStatus": "paid",
+        "totalAmount": 49.99,
+        "itemCount": 1,
+        "created_at": "2023-05-10T09:20:00Z",
+        "updated_at": "2023-05-10T09:20:00Z"
       }
-    }
+    ]
   }
   ```
+  
+  ## Response Fields
+  
+  | Field | Type | Description |
+  |-------|------|-------------|
+  | id | string | Unique order identifier |
+  | orderNumber | string | Human-readable order number |
+  | status | string | Order status (pending, processing, shipped, delivered, cancelled) |
+  | paymentStatus | string | Payment status (pending, paid, failed, etc.) |
+  | totalAmount | number | Total order amount |
+  | itemCount | number | Number of items in the order |
+  | created_at | string | Order creation timestamp |
+  | updated_at | string | Last update timestamp |
   
   ## Error Responses
   
@@ -138,7 +94,8 @@ docs {
   | 500 | Server error | `{ "status": "error", "message": "Failed to fetch orders" }` |
   
   ## Related Endpoints
-    - `GET /api/mobile-app/orders/:orderId` - Get details for a specific order
+  
+  - `GET /api/mobile-app/orders/:orderId` - Get details for a specific order
   - `PUT /api/mobile-app/orders/:orderId` - Update order status
   - `POST /api/mobile-app/orders/:orderId/pay` - Pay for order
   - `POST /api/mobile-app/orders` - Create new order

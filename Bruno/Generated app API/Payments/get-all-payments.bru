@@ -31,7 +31,7 @@ script:pre-request {
 docs {
   # Get All User Payments
   
-  This endpoint retrieves all payment records for the authenticated user in their store.
+  This endpoint retrieves all payment records for the authenticated user in their store. The implementation uses `PaymentRepository.findAllByUser()` with proper user context verification.
   
   ## Expected Response
   
@@ -42,13 +42,32 @@ docs {
       {
         "id": "89505483-6bb5-4926-8476-08cf6a7b6dda",
         "order_id": "82d94ef6-3727-4f1e-81c8-d487867834c2",
-        "amount": "440.00",
+        "amount": 440.00,
         "currency": "usd",
         "payment_method": "credit_card",
-        "status": "succeeded",
-        "payment_date": "2024-01-15T10:30:00Z"
+        "status": "paid",
+        "payment_date": "2024-01-15T10:30:00.000Z",
+        "stripePaymentIntentId": "pi_1234567890abcdef",
+        "clientSecret": "pi_1234567890abcdef_secret_xyz",
+        "storeId": "store-uuid-1234"
       }
     ]
   }
   ```
+  
+  ## Response Fields
+  
+  - `amount`: Number (not string) representing the payment amount
+  - `status`: Payment status - typically "paid", "failed", "pending", "requires_action"
+  - `payment_date`: ISO timestamp with milliseconds
+  - `stripePaymentIntentId`: Stripe payment intent ID for tracking
+  - `clientSecret`: Client secret for payment intent (if applicable)
+  - `storeId`: Store identifier for multi-tenant support
+  
+  ## Error Responses
+  
+  | Status Code | Description | Response Body |
+  |-------------|-------------|---------------|
+  | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
+  | 500 | Server error | `{ "status": "error", "message": "Failed to fetch payments" }` |
 }

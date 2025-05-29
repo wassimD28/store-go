@@ -18,8 +18,14 @@ body:json {
   {
     "type": "credit_card",
     "isDefault": true,
-    "paymentToken": "tok_visa",
-    "cardholderName": "John Doe"
+    "stripePaymentMethodId": "pm_1234567890abcdef",
+    "details": {
+      "brand": "visa",
+      "last4": "4242",
+      "expiryMonth": "12",
+      "expiryYear": "2025",
+      "cardholderName": "John Doe"
+    }
   }
 }
 
@@ -39,10 +45,9 @@ script:pre-request {
   }
 }
 
-docs {
-  # Add Payment Method Endpoint
+docs {  # Add Payment Method Endpoint
   
-  This endpoint allows users to add a new payment method to their profile. The payment details are tokenized through a payment processor for security.
+  This endpoint allows users to add a new payment method to their profile. The payment details are tokenized through Stripe's secure payment processor for security.
   
   ## Authentication Requirements
   
@@ -57,31 +62,29 @@ docs {
   {
     "type": "credit_card",
     "isDefault": true,
-    "paymentToken": "tok_visa",
-    "cardholderName": "John Doe"
+    "stripePaymentMethodId": "pm_1234567890abcdef",
+    "details": {
+      "brand": "visa",
+      "last4": "4242",
+      "expiryMonth": "12",
+      "expiryYear": "2025",
+      "cardholderName": "John Doe"
+    }
   }
   ```
   
-  For PayPal:
-  
-  ```json
-  {
-    "type": "paypal",
-    "isDefault": false,
-    "paymentToken": "paypal-token",
-    "email": "john.doe@example.com"
-  }
-  ```
-  
-  | Field         | Type    | Required | Description |
-  |---------------|---------|----------|-------------|
-  | type          | string  | Yes      | Payment method type ("credit_card", "paypal", etc.) |
-  | isDefault     | boolean | No       | Whether this is the default payment method (defaults to false) |
-  | paymentToken  | string  | Yes      | Secure token from payment processor (e.g., Stripe token) |
-  | cardholderName| string  | Yes for credit cards | Name on the card |
-  | email         | string  | Yes for PayPal | Email associated with PayPal account |
-  
-  ## Response Format
+  | Field                 | Type    | Required | Description |
+  |-----------------------|---------|----------|-------------|
+  | type                  | string  | Yes      | Payment method type ("credit_card", "debit_card", "paypal", "apple_pay", "google_pay", "bank_transfer") |
+  | stripePaymentMethodId | string  | Yes      | Stripe Payment Method ID from Stripe SDK (e.g., "pm_1234567890abcdef") |
+  | isDefault             | boolean | No       | Whether this is the default payment method (defaults to false) |
+  | details               | object  | No       | Payment method details for display purposes |
+  | details.brand         | string  | No       | Card brand ("visa", "mastercard", etc.) |
+  | details.last4         | string  | No       | Last 4 digits of card |
+  | details.expiryMonth   | string  | No       | Card expiry month ("12") |
+  | details.expiryYear    | string  | No       | Card expiry year ("2025") |
+  | details.cardholderName| string  | No       | Name on the card |
+    ## Response Format
   
   The endpoint returns a JSON object with the following structure:
   
@@ -91,38 +94,68 @@ docs {
     "message": "Payment method added successfully",
     "data": {
       "id": "payment-method-uuid",
-      "userId": "user-uuid",
+      "storeId": "store-uuid",
+      "appUserId": "user-uuid",
       "type": "credit_card",
       "isDefault": true,
+      "stripePaymentMethodId": "pm_1234567890abcdef",
       "details": {
         "brand": "visa",
         "last4": "4242",
-        "expiryMonth": 12,
-        "expiryYear": 2025,
+        "expiryMonth": "12",
+        "expiryYear": "2025",
         "cardholderName": "John Doe"
       },
-      "created_at": "2023-05-15T10:30:00Z",
-      "updated_at": "2023-05-15T10:30:00Z"
+      "createdAt": "2024-01-15T10:30:00.000Z",
+      "updatedAt": "2024-01-15T10:30:00.000Z"
     }
   }
   ```
-  
-  ## Error Responses
+    ## Error Responses
   
   | Status Code | Description | Response Body |
   |-------------|-------------|---------------|
-  | 400 | Invalid request data | `{ "status": "error", "message": "Invalid request data", "errors": [...] }` |
-  | 400 | Invalid payment token | `{ "status": "error", "message": "Invalid payment token" }` |
+  | 400 | Invalid request data | `{ "status": "error", "message": "Invalid payment method data", "errors": [...] }` |
+  | 400 | Invalid Stripe payment method ID | `{ "status": "error", "message": "Invalid stripePaymentMethodId" }` |
   | 401 | Unauthorized | `{ "status": "error", "message": "Unauthorized" }` |
   | 422 | Payment processor error | `{ "status": "error", "message": "Payment processor error", "details": "..." }` |
   | 500 | Server error | `{ "status": "error", "message": "Failed to add payment method" }` |
   
   ## Security Implementation
   
-  - The API expects a tokenized payment method from a secure client-side integration
+  - The API expects a Stripe Payment Method ID from a secure client-side integration
   - Sensitive card data never hits our servers directly
-  - Only public tokens from the payment processor are handled by this endpoint
-  - Actual payment details are stored securely by the payment processor
+  - Only Stripe Payment Method IDs from the Stripe SDK are handled by this endpoint
+  - Actual payment details are stored securely by Stripe
+  - Payment methods are automatically attached to the user's Stripe Customer when used for payments
+  
+  ## Integration Notes
+  
+  ### Client-Side Integration
+  
+  Use Stripe's SDK to create payment methods on the client side:
+  
+  ```javascript
+  // Flutter/Dart example
+  final paymentMethod = await Stripe.instance.createPaymentMethod(
+    params: PaymentMethodParams.card(
+      paymentMethodData: PaymentMethodData(
+        billingDetails: BillingDetails(name: "John Doe")
+      ),
+    ),
+  );
+  
+  // Send paymentMethod.id to your backend
+  final response = await addPaymentMethod(
+    stripePaymentMethodId: paymentMethod.id
+  );
+  ```
+  
+  ### Backend Processing
+  
+  - The endpoint uses `PaymentRepository.createPaymentMethod()` for database storage
+  - If `isDefault` is true, other payment methods are automatically set to non-default
+  - Multi-tenant support with proper `storeId` and `appUserId` context verification
   
   ## Related Endpoints
   

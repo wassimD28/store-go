@@ -33,13 +33,13 @@ script:pre-request {
 docs {
   # Get Payment Methods Endpoint
   
-  This endpoint retrieves all saved payment methods for the authenticated user. These can be used during checkout to streamline the payment process.
+  This endpoint retrieves all saved payment methods for the authenticated user. The implementation uses `PaymentRepository.findPaymentMethodsByUser()` and returns data ordered by default status and creation date.
   
   ## Authentication Requirements
   
   - This endpoint requires authentication using a JWT bearer token
   - The token must be obtained from the sign-in endpoint
-  - Payment methods are specific to the authenticated user
+  - Payment methods are specific to the authenticated user and their store
   
   ## Response Format
   
@@ -51,33 +51,32 @@ docs {
     "data": [
       {
         "id": "payment-method-uuid",
-        "userId": "user-uuid",
+        "storeId": "store-uuid-1234",
+        "appUserId": "user-uuid-5678",
         "type": "credit_card",
         "isDefault": true,
+        "stripePaymentMethodId": "pm_1234567890abcdef",
         "details": {
           "brand": "visa",
           "last4": "4242",
-          "expiryMonth": 12,
-          "expiryYear": 2025,
+          "expiryMonth": "12",
+          "expiryYear": "2025",
           "cardholderName": "John Doe"
         },
-        "created_at": "2023-02-15T10:30:00Z",
-        "updated_at": "2023-02-15T10:30:00Z"
-      },
-      {
-        "id": "payment-method-uuid-2",
-        "userId": "user-uuid",
-        "type": "paypal",
-        "isDefault": false,
-        "details": {
-          "email": "john.doe@example.com"
-        },
-        "created_at": "2023-03-10T14:45:00Z",
-        "updated_at": "2023-03-10T14:45:00Z"
+        "createdAt": "2023-02-15T10:30:00.000Z",
+        "updatedAt": "2023-02-15T10:30:00.000Z"
       }
     ]
   }
   ```
+  
+  ## Response Fields
+  
+  - `type`: Payment method type - currently supports "credit_card", "debit_card", "paypal", "apple_pay", "google_pay", "bank_transfer"
+  - `stripePaymentMethodId`: Stripe payment method ID used for processing payments
+  - `isDefault`: Boolean indicating if this is the user's default payment method
+  - `details`: JSON object containing display-safe information (no sensitive data)
+  - `createdAt`/`updatedAt`: ISO timestamps with milliseconds
   
   ## Error Responses
   
@@ -88,9 +87,10 @@ docs {
   
   ## Security Considerations
   
-  - Credit card details are tokenized using the payment processor
-  - Only limited information (like last 4 digits) is sent to the client
-  - Full card details are never stored on our servers
+  - Payment methods are tokenized using Stripe's payment processor
+  - Only safe display information (like last 4 digits) is returned to the client
+  - Full payment details are never stored on our servers
+  - Each payment method includes `stripePaymentMethodId` for secure processing
   
   ## Related Endpoints
   
