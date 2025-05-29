@@ -98,11 +98,22 @@ export const cartStatusEnum = pgEnum("cart_status", [
 export const paymentStatusEnum = pgEnum("payment_status", [
   "pending",
   "processing",
-  "succeeded",
+  "completed",
+  "paid",
   "failed",
   "canceled",
+  "refunded",
   "requires_action",
   "requires_payment_method",
+]);
+
+// Add order status enum
+export const orderStatusEnum = pgEnum("order_status", [
+  "pending",
+  "processing",
+  "shipped",
+  "delivered",
+  "cancelled",
 ]);
 
 // Add payment method type enum

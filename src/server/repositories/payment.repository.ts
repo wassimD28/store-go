@@ -136,13 +136,12 @@ export class PaymentRepository {
       throw new Error("Failed to create payment");
     }
   }
-
   static async updateStatus(
     paymentId: string,
     status:
       | "pending"
       | "processing"
-      | "succeeded"
+      | "paid"
       | "failed"
       | "canceled"
       | "requires_action"

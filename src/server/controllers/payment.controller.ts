@@ -530,10 +530,9 @@ export class PaymentController {
             appUserId: appUserId,
           },
         });
-
         if (paymentIntent.status === "succeeded") {
           // Update payment with Stripe details
-          await PaymentRepository.updateStatus(newPayment.id, "succeeded");
+          await PaymentRepository.updateStatus(newPayment.id, "paid");
           await PaymentRepository.updateStripeDetails(
             newPayment.id,
             paymentIntent.id,
@@ -575,7 +574,7 @@ export class PaymentController {
           paymentId: newPayment.id,
           orderId: orderId,
           amount: Number(order.data_amount),
-          status: "succeeded",
+          status: "paid",
         },
       });
     } catch (error) {

@@ -63,7 +63,6 @@ export class PaymentService {
       // Retrieve the payment intent to check its status
       const paymentIntent =
         await stripe.paymentIntents.retrieve(paymentIntentId);
-
       if (paymentIntent.status !== "succeeded") {
         throw new Error(
           `Payment intent is not successful. Status: ${paymentIntent.status}`,
@@ -75,7 +74,7 @@ export class PaymentService {
         order_id: orderId,
         amount,
         payment_method: paymentMethod,
-        status: "succeeded",
+        status: "paid",
         currency: "usd",
         storeId: paymentIntent.metadata.storeId,
         payment_date: new Date(),

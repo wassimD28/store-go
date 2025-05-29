@@ -79,10 +79,9 @@ async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
     const payment = await PaymentRepository.findByStripePaymentIntentId(
       paymentIntent.id,
     );
-
     if (payment) {
       // Update payment status
-      await PaymentRepository.updateStatus(payment.id, "succeeded");
+      await PaymentRepository.updateStatus(payment.id, "paid");
 
       // Update order payment status
       await OrderRepository.updatePaymentStatus(orderId, "paid");

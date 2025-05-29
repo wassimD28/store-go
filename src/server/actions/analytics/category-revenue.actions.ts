@@ -41,7 +41,7 @@ export async function getCategoryRevenueData(
       .where(
         and(
           eq(AppPayment.storeId, storeId),
-          eq(AppPayment.status, "succeeded"),
+          eq(AppPayment.status, "paid"),
           eq(AppOrder.storeId, storeId),
           eq(AppProduct.storeId, storeId),
           eq(AppCategory.storeId, storeId),

@@ -9,7 +9,7 @@ export const createPaymentSchema = z.object({
     .enum([
       "pending",
       "processing",
-      "succeeded",
+      "paid",
       "failed",
       "canceled",
       "requires_action",
@@ -30,7 +30,7 @@ export const updatePaymentSchema = z.object({
     .enum([
       "pending",
       "processing",
-      "succeeded",
+      "paid",
       "failed",
       "canceled",
       "requires_action",

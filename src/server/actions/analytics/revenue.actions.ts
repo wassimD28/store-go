@@ -54,7 +54,7 @@ export async function getRevenueData(
       .where(
         and(
           eq(AppPayment.storeId, storeId),
-          eq(AppPayment.status, "succeeded"),
+          eq(AppPayment.status, "paid"),
           gte(AppPayment.created_at, startDate),
         ),
       )
@@ -163,19 +163,14 @@ export async function getRevenueStats(
   growthPeriod: string;
 }> {
   try {
-    const now = new Date();
-
-    // Get total revenue
+    const now = new Date(); // Get total revenue
     const totalResult = await db
       .select({
         total: sql<number>`COALESCE(SUM(CAST(${AppPayment.amount} AS DECIMAL)), 0)`,
       })
       .from(AppPayment)
       .where(
-        and(
-          eq(AppPayment.storeId, storeId),
-          eq(AppPayment.status, "succeeded"),
-        ),
+        and(eq(AppPayment.storeId, storeId), eq(AppPayment.status, "paid")),
       );
 
     let current = 0;
@@ -193,7 +188,6 @@ export async function getRevenueStats(
         );
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
-
         const dailyResult = await db
           .select({
             today: sql<number>`COALESCE(SUM(CASE WHEN ${AppPayment.created_at} >= ${today} THEN CAST(${AppPayment.amount} AS DECIMAL) ELSE 0 END), 0)`,
@@ -201,10 +195,7 @@ export async function getRevenueStats(
           })
           .from(AppPayment)
           .where(
-            and(
-              eq(AppPayment.storeId, storeId),
-              eq(AppPayment.status, "succeeded"),
-            ),
+            and(eq(AppPayment.storeId, storeId), eq(AppPayment.status, "paid")),
           );
 
         current = Number(dailyResult[0]?.today) || 0;
@@ -220,7 +211,6 @@ export async function getRevenueStats(
 
         const twoWeeksAgo = new Date(now);
         twoWeeksAgo.setDate(now.getDate() - 14);
-
         const weeklyResult = await db
           .select({
             thisWeek: sql<number>`COALESCE(SUM(CASE WHEN ${AppPayment.created_at} >= ${oneWeekAgo} THEN CAST(${AppPayment.amount} AS DECIMAL) ELSE 0 END), 0)`,
@@ -228,10 +218,7 @@ export async function getRevenueStats(
           })
           .from(AppPayment)
           .where(
-            and(
-              eq(AppPayment.storeId, storeId),
-              eq(AppPayment.status, "succeeded"),
-            ),
+            and(eq(AppPayment.storeId, storeId), eq(AppPayment.status, "paid")),
           );
 
         current = Number(weeklyResult[0]?.thisWeek) || 0;
@@ -253,10 +240,7 @@ export async function getRevenueStats(
           })
           .from(AppPayment)
           .where(
-            and(
-              eq(AppPayment.storeId, storeId),
-              eq(AppPayment.status, "succeeded"),
-            ),
+            and(eq(AppPayment.storeId, storeId), eq(AppPayment.status, "paid")),
           );
 
         current = Number(monthlyResult[0]?.thisMonth) || 0;
