@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, BarChart3 } from "lucide-react";
 import { Label, Pie, PieChart } from "recharts";
 
 import {
@@ -46,10 +46,13 @@ export function RevenueCategoryPieChart({
     topCategoryPercentage: number;
   }>({ totalRevenue: 0, topCategory: "", topCategoryPercentage: 0 });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setError(null);
         const [data, statsData] = await Promise.all([
           getCategoryRevenueData(storeId),
           getCategoryRevenueStats(storeId),
@@ -58,7 +61,13 @@ export function RevenueCategoryPieChart({
         setStats(statsData);
       } catch (error) {
         console.error("Error fetching category revenue data:", error);
+        setError("Failed to load revenue data");
         setCategoryData([]);
+        setStats({
+          totalRevenue: 0,
+          topCategory: "",
+          topCategoryPercentage: 0,
+        });
       } finally {
         setLoading(false);
       }
@@ -79,10 +88,15 @@ export function RevenueCategoryPieChart({
     revenue: item.revenue,
     fill: item.color,
   }));
-
   const totalRevenue = React.useMemo(() => {
     return categoryData.reduce((acc, curr) => acc + curr.revenue, 0);
   }, [categoryData]);
+  // Check if there's no revenue data
+  const hasNoRevenue =
+    totalRevenue === 0 ||
+    categoryData.length === 0 ||
+    (categoryData.length === 1 && categoryData[0].category === "No Data");
+
   if (loading) {
     return (
       <Card className="flex flex-col">
@@ -95,6 +109,71 @@ export function RevenueCategoryPieChart({
             <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900"></div>
           </div>
         </CardContent>
+      </Card>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <Card className="flex flex-col">
+        <CardHeader className="items-center pb-0">
+          <CardTitle>Revenue Distribution by Category</CardTitle>
+          <CardDescription>Error loading data</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 pb-0">
+          <div className="mx-auto flex aspect-square max-h-[250px] items-center justify-center">
+            <div className="text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+                <BarChart3 className="h-8 w-8 text-red-500" />
+              </div>
+              <h3 className="mb-2 text-lg font-semibold text-red-600">
+                Failed to Load Data
+              </h3>
+              <p className="max-w-[200px] text-sm text-muted-foreground">
+                {error}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter className="flex-col gap-2 text-sm">
+          <div className="text-center leading-none text-muted-foreground">
+            Please try refreshing the page
+          </div>
+        </CardFooter>
+      </Card>
+    );
+  }
+
+  // Show no data state when there's no revenue
+  if (hasNoRevenue) {
+    return (
+      <Card className="flex flex-col">
+        <CardHeader className="items-center pb-0">
+          <CardTitle>Revenue Distribution by Category</CardTitle>
+          <CardDescription>Total Revenue: {formatCurrency(0)}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 pb-0">
+          <div className="mx-auto flex aspect-square max-h-[250px] items-center justify-center">
+            {" "}
+            <div className="text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                <BarChart3 className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="mb-2 text-lg font-semibold text-muted-foreground">
+                No Revenue Data
+              </h3>
+              <p className="max-w-[200px] text-sm text-muted-foreground">
+                Start making sales to see your revenue distribution by category
+              </p>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter className="flex-col gap-2 text-sm">
+          <div className="text-center leading-none text-muted-foreground">
+            Revenue breakdown will appear here once you have sales
+          </div>
+        </CardFooter>
       </Card>
     );
   }
@@ -184,14 +263,16 @@ export function RevenueCategoryPieChart({
               </div>
             </div>
           </div>
-        </div>
+        </div>{" "}
       </CardContent>
       <CardFooter className="flex-col gap-2 text-sm">
-        <div className="flex items-center gap-2 font-medium leading-none">
-          Top Category: {stats.topCategory} (
-          {stats.topCategoryPercentage.toFixed(1)}%)
-          <TrendingUp className="h-4 w-4" />
-        </div>
+        {stats.topCategory && stats.topCategory !== "No Data" ? (
+          <div className="flex items-center gap-2 font-medium leading-none">
+            Top Category: {stats.topCategory} (
+            {stats.topCategoryPercentage.toFixed(1)}%)
+            <TrendingUp className="h-4 w-4" />
+          </div>
+        ) : null}
         <div className="leading-none text-muted-foreground">
           Revenue breakdown by product categories
         </div>

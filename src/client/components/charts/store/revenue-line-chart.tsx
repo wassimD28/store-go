@@ -33,9 +33,10 @@ const chartConfig = {
 
 interface RevenueLineChartProps {
   storeId: string;
+  className?: string;
 }
 
-export function RevenueLineChart({ storeId }: RevenueLineChartProps) {
+export function RevenueLineChart({ storeId , className}: RevenueLineChartProps) {
   // Cache key for sessionStorage
   const cacheKey = `revenue-chart-cache-${storeId}`;
 
@@ -162,12 +163,12 @@ export function RevenueLineChart({ storeId }: RevenueLineChartProps) {
   };
 
   return (
-    <Card>
-      <CardContent>
+    <Card className={`grid h-full min-h-full grid-rows-[85%_15%] ${className}`}>
+      <CardContent className="h-full min-h-full">
         <Tabs
           value={activePeriod}
           onValueChange={handlePeriodChange}
-          className="space-y-4"
+          className="h-full min-h-full"
         >
           <TabsList className="mt-3 grid w-full grid-cols-3">
             <TabsTrigger value="daily">Daily</TabsTrigger>
@@ -175,22 +176,23 @@ export function RevenueLineChart({ storeId }: RevenueLineChartProps) {
             <TabsTrigger value="monthly">Monthly</TabsTrigger>
           </TabsList>
 
-          <TabsContent value={activePeriod} className="space-y-4">
+          <TabsContent value={activePeriod} className="h-[85%]">
             {loading ? (
-              <div className="flex h-[200px] items-center justify-center">
+              <div className="flex h-full min-h-full w-full items-center justify-center">
                 <div className="text-muted-foreground">
                   Loading revenue data...
                 </div>
               </div>
             ) : (
-              <ChartContainer config={chartConfig}>
+              <ChartContainer config={chartConfig} className="h-full w-full">
                 <AreaChart
                   accessibilityLayer
                   data={revenueData}
                   margin={{
-                    left: 12,
-                    right: 12,
+                    left: 0,
+                    right: 6,
                   }}
+                  className="h-full w-full"
                 >
                   <defs>
                     <clipPath id="clipAboveXAxis">

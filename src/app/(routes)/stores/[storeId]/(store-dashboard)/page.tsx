@@ -10,7 +10,7 @@ export default async function StorePage({ params }: StorePageProps) {
   const resolvedParams = await params;
   const storeId = resolvedParams.storeId;
   return (
-    <div className="px-6 pl-[80px]">
+    <div className="h-full px-6 pb-6 pl-[80px]">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Store Analytics</h1>
         <p className="mt-2 text-muted-foreground">
@@ -18,13 +18,10 @@ export default async function StorePage({ params }: StorePageProps) {
           revenue trends, and key business metrics.
         </p>
       </div>{" "}
-      <div className="grid grid-cols-3 grid-rows-2 gap-4">
-        <RevenueLineChart storeId={storeId} />
+      <div className="grid h-[60%] grid-cols-3 grid-rows-[1fr_1fr] gap-4">
+        <RevenueLineChart className="col-span-2" storeId={storeId} />
         <RevenueCategoryPieChart storeId={storeId} />
-        <TopTenSellingProductsBarChart
-          className="row-span-2"
-          storeId={storeId}
-        />
+        <TopTenSellingProductsBarChart storeId={storeId} />
         <div className="rounded-md bg-purple-400/10"></div>
       </div>
     </div>
