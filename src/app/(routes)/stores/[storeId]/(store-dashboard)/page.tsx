@@ -1,6 +1,7 @@
 import { RevenueCategoryPieChart } from "@/client/components/charts/store/revenue-category-pie-chart";
 import { RevenueLineChart } from "@/client/components/charts/store/revenue-line-chart";
 import { TopTenSellingProductsBarChart } from "@/client/components/charts/store/topten-selling-products-bar-chart";
+import { ActivityFeed } from "@/client/components/real-time/activity-feed";
 
 interface StorePageProps {
   params: Promise<{ storeId: string }>;
@@ -22,7 +23,7 @@ export default async function StorePage({ params }: StorePageProps) {
         <RevenueLineChart className="col-span-2 h-full" storeId={storeId} />
         <RevenueCategoryPieChart className="h-full" storeId={storeId} />
         <TopTenSellingProductsBarChart className="h-full" storeId={storeId} />
-        <div className="h-full rounded-md bg-purple-400/10"></div>
+        <ActivityFeed />
       </div>
     </div>
   );

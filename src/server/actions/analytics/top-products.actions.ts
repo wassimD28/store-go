@@ -27,7 +27,9 @@ export async function getTopSellingProductsData(
 ): Promise<TopProductData[]> {
   try {
     const now = new Date();
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1); // Query to get top selling products this month
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Query to get top selling products this month
     const result = await db
       .select({
         productId: AppProduct.id,
@@ -47,8 +49,6 @@ export async function getTopSellingProductsData(
           eq(AppProduct.storeId, storeId),
           eq(AppOrder.storeId, storeId),
           gte(AppOrder.created_at, firstDayOfMonth),
-          // Include both pending and delivered orders for analytics
-          sql`${AppOrder.status} IN ('delivered', 'pending')`,
         ),
       )
       .groupBy(AppProduct.id, AppProduct.name)
@@ -89,8 +89,6 @@ export async function getTopProductsStats(
           eq(AppProduct.storeId, storeId),
           eq(AppOrder.storeId, storeId),
           gte(AppOrder.created_at, firstDayOfMonth),
-          // Include both pending and delivered orders for analytics
-          sql`${AppOrder.status} IN ('delivered', 'pending')`,
         ),
       );
 
@@ -108,8 +106,6 @@ export async function getTopProductsStats(
           eq(AppProduct.storeId, storeId),
           eq(AppOrder.storeId, storeId),
           gte(AppOrder.created_at, firstDayOfMonth),
-          // Include both pending and delivered orders for analytics
-          sql`${AppOrder.status} IN ('delivered', 'pending')`,
         ),
       )
       .groupBy(AppProduct.id, AppProduct.name)
