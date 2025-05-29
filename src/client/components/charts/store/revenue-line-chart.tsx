@@ -155,12 +155,47 @@ export function RevenueLineChart({ storeId , className}: RevenueLineChartProps) 
       style: "currency",
       currency: "USD",
     }).format(value);
-  };
-  const periodLabels = {
+  };  const periodLabels = {
     daily: "Today (24 Hours)",
     weekly: "Last 7 Days",
     monthly: "This Month (Days)",
   };
+
+  // Show loading state with consistent Card structure
+  if (loading) {
+    return (
+      <Card className={`grid h-full min-h-full grid-rows-[85%_15%] ${className}`}>
+        <CardContent className="h-full min-h-full">
+          <Tabs
+            value={activePeriod}
+            onValueChange={handlePeriodChange}
+            className="h-full min-h-full"
+          >
+            <TabsList className="mt-3 grid w-full grid-cols-3">
+              <TabsTrigger value="daily">Daily</TabsTrigger>
+              <TabsTrigger value="weekly">Weekly</TabsTrigger>
+              <TabsTrigger value="monthly">Monthly</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value={activePeriod} className="h-[85%]">
+              <div className="flex h-full min-h-full w-full items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900"></div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+        <CardFooter>
+          <div className="flex w-full items-start gap-2 text-sm">
+            <div className="grid gap-2">
+              <div className="flex items-center gap-2 leading-none text-muted-foreground">
+                Loading revenue data...
+              </div>
+            </div>
+          </div>
+        </CardFooter>
+      </Card>
+    );
+  }
 
   return (
     <Card className={`grid h-full min-h-full grid-rows-[85%_15%] ${className}`}>
@@ -174,17 +209,8 @@ export function RevenueLineChart({ storeId , className}: RevenueLineChartProps) 
             <TabsTrigger value="daily">Daily</TabsTrigger>
             <TabsTrigger value="weekly">Weekly</TabsTrigger>
             <TabsTrigger value="monthly">Monthly</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value={activePeriod} className="h-[85%]">
-            {loading ? (
-              <div className="flex h-full min-h-full w-full items-center justify-center">
-                <div className="text-muted-foreground">
-                  Loading revenue data...
-                </div>
-              </div>
-            ) : (
-              <ChartContainer config={chartConfig} className="h-full w-full">
+          </TabsList>          <TabsContent value={activePeriod} className="h-[85%]">
+            <ChartContainer config={chartConfig} className="h-full w-full">
                 <AreaChart
                   accessibilityLayer
                   data={revenueData}
@@ -254,11 +280,9 @@ export function RevenueLineChart({ storeId , className}: RevenueLineChartProps) 
                     connectNulls={true}
                     clipPath="url(#clipAboveXAxis)"
                     baseValue={0} // Explicitly set base value to 0
-                    isAnimationActive={true} // Re-enable animations
-                  />
+                    isAnimationActive={true} />
                 </AreaChart>
               </ChartContainer>
-            )}
           </TabsContent>
         </Tabs>
       </CardContent>

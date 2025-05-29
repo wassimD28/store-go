@@ -91,25 +91,22 @@ export function TopTenSellingProductsBarChart({
       currency: "USD",
     }).format(value);
   };
-
   if (loading) {
     return (
-      <Card className={className}>
+      <Card className={`flex h-full flex-col ${className || ""}`}>
         <CardHeader>
           <CardTitle>Top 10 Best Selling Products</CardTitle>
           <CardDescription>Loading...</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex h-[300px] items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900"></div>
-          </div>
+        <CardContent className="flex flex-1 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900"></div>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className={className}>
+    <Card className={`flex h-full flex-col ${className || ""}`}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Package className="h-5 w-5" />
@@ -120,13 +117,13 @@ export function TopTenSellingProductsBarChart({
           {stats.totalProducts} products
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1">
         {chartData.length === 0 ? (
-          <div className="flex h-[300px] items-center justify-center text-muted-foreground">
+          <div className="flex h-full items-center justify-center text-muted-foreground">
             No sales data available for this month
           </div>
         ) : (
-          <ChartContainer config={chartConfig}>
+          <ChartContainer config={chartConfig} className="h-full">
             <BarChart
               accessibilityLayer
               data={chartData}
@@ -135,6 +132,7 @@ export function TopTenSellingProductsBarChart({
                 left: 10,
                 right: 40,
               }}
+              className="h-full"
             >
               <XAxis type="number" dataKey="totalQuantitySold" hide />
               <YAxis
@@ -181,7 +179,7 @@ export function TopTenSellingProductsBarChart({
                   }
                   return null;
                 }}
-              />
+              />{" "}
               <Bar
                 dataKey="totalQuantitySold"
                 fill="var(--color-totalQuantitySold)"

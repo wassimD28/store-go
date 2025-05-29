@@ -16,13 +16,13 @@ export default async function StorePage({ params }: StorePageProps) {
         <p className="mt-2 text-muted-foreground">
           Comprehensive analytics and insights for your store performance,
           revenue trends, and key business metrics.
-        </p>
+        </p>{" "}
       </div>{" "}
-      <div className="grid h-[60%] grid-cols-3 grid-rows-[1fr_1fr] gap-4">
-        <RevenueLineChart className="col-span-2" storeId={storeId} />
-        <RevenueCategoryPieChart storeId={storeId} />
-        <TopTenSellingProductsBarChart storeId={storeId} />
-        <div className="rounded-md bg-purple-400/10"></div>
+      <div className="grid min-h-[600px] grid-cols-3 grid-rows-[400px_400px] gap-4">
+        <RevenueLineChart className="col-span-2 h-full" storeId={storeId} />
+        <RevenueCategoryPieChart className="h-full" storeId={storeId} />
+        <TopTenSellingProductsBarChart className="h-full" storeId={storeId} />
+        <div className="h-full rounded-md bg-purple-400/10"></div>
       </div>
     </div>
   );

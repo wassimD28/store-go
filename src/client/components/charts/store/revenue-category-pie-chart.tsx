@@ -34,10 +34,12 @@ const chartConfig = {
 
 interface RevenueCategoryPieChartProps {
   storeId: string;
+  className?: string;
 }
 
 export function RevenueCategoryPieChart({
   storeId,
+  className,
 }: RevenueCategoryPieChartProps) {
   const [categoryData, setCategoryData] = useState<CategoryRevenueData[]>([]);
   const [stats, setStats] = useState<{
@@ -96,10 +98,9 @@ export function RevenueCategoryPieChart({
     totalRevenue === 0 ||
     categoryData.length === 0 ||
     (categoryData.length === 1 && categoryData[0].category === "No Data");
-
   if (loading) {
     return (
-      <Card className="flex flex-col">
+      <Card className={`flex h-full flex-col ${className || ""}`}>
         <CardHeader className="items-center pb-0">
           <CardTitle>Revenue Distribution by Category</CardTitle>
           <CardDescription>Loading...</CardDescription>
@@ -116,7 +117,7 @@ export function RevenueCategoryPieChart({
   // Show error state
   if (error) {
     return (
-      <Card className="flex flex-col">
+      <Card className={`flex h-full flex-col ${className || ""}`}>
         <CardHeader className="items-center pb-0">
           <CardTitle>Revenue Distribution by Category</CardTitle>
           <CardDescription>Error loading data</CardDescription>
@@ -148,7 +149,7 @@ export function RevenueCategoryPieChart({
   // Show no data state when there's no revenue
   if (hasNoRevenue) {
     return (
-      <Card className="flex flex-col">
+      <Card className={`flex h-full flex-col ${className || ""}`}>
         <CardHeader className="items-center pb-0">
           <CardTitle>Revenue Distribution by Category</CardTitle>
           <CardDescription>Total Revenue: {formatCurrency(0)}</CardDescription>
@@ -179,7 +180,7 @@ export function RevenueCategoryPieChart({
   }
 
   return (
-    <Card className="flex flex-col">
+    <Card className={`flex h-full flex-col ${className || ""}`}>
       <CardHeader className="items-center pb-0">
         <CardTitle>Revenue Distribution by Category</CardTitle>
         <CardDescription>
