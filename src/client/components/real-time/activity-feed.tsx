@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   CheckCircle,
@@ -121,13 +120,15 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function ActivityFeed() {
+interface ActivityFeedProps {
+  storeId: string;
+}
+
+export function ActivityFeed({ storeId }: ActivityFeedProps) {
   const [activities, setActivities] = useState<ActivityEvent[]>([]);
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeView, setActiveView] = useState<"feed" | "chart">("feed");
-  const params = useParams();
-  const storeId = params.storeId as string;
   // Generate time intervals for the past 30 minutes (30 1-minute intervals)
   const generateTimeIntervals = () => {
     const intervals: ChartDataPoint[] = [];

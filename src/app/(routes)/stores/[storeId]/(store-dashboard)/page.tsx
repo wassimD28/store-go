@@ -21,9 +21,9 @@ export default async function StorePage({ params }: StorePageProps) {
       </div>{" "}
       <div className="grid min-h-[600px] grid-cols-3 grid-rows-[400px_400px] gap-4">
         <RevenueLineChart className="col-span-2 h-full" storeId={storeId} />
-        <RevenueCategoryPieChart className="h-full" storeId={storeId} />
+        <RevenueCategoryPieChart className="h-full" storeId={storeId} />{" "}
         <TopTenSellingProductsBarChart className="h-full" storeId={storeId} />
-        <ActivityFeed />
+        <ActivityFeed storeId={storeId} />
       </div>
     </div>
   );
