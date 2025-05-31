@@ -5,7 +5,7 @@ function TextLogoIcon({
   className = "",
   width = 125,
   height = 34,
-  color = "#1C0262",
+  color = "hsl(var(--primary))",
   iconColor = "white",
 }: SVGIcon) {
   return (
