@@ -24,7 +24,9 @@ export function GridMotion({
 }: GridMotionProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const mouseXRef = useRef(window.innerWidth / 2);
+  const mouseXRef = useRef(
+    typeof window !== "undefined" ? window.innerWidth / 2 : 0,
+  );
   const totalItems = 28; // 4 rows × 7 columns = 28 items
   const defaultItems = Array.from(
     { length: totalItems },
@@ -32,8 +34,9 @@ export function GridMotion({
   );
   const combinedItems =
     items.length > 0 ? items.slice(0, totalItems) : defaultItems;
-
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     gsap.ticker.lagSmoothing(0);
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -49,7 +52,7 @@ export function GridMotion({
           const direction = index % 2 === 0 ? 1 : -1;
           // Reduce movement significantly for middle rows
           const rowMultiplier = index === 1 || index === 2 ? 0.3 : 0.7;
-          const mouseProgress = mouseXRef.current / window.innerWidth;
+          const mouseProgress = mouseXRef.current / (window?.innerWidth || 1);
           const moveAmount =
             (mouseProgress * maxMoveAmount * rowMultiplier -
               maxMoveAmount * rowMultiplier) *
@@ -88,7 +91,7 @@ export function GridMotion({
         }}
       >
         {" "}
-        <div className="z-2 -rotate-15 relative grid h-[120vh] w-[120vw] flex-none origin-top-left -translate-x-10 -translate-y-10 grid-cols-[100%] grid-rows-[repeat(4,1fr)] gap-3">
+        <div className="z-2 relative grid h-[120vh] w-[120vw] flex-none origin-top-left -translate-x-10 -translate-y-10 -rotate-15 grid-cols-[100%] grid-rows-[repeat(4,1fr)] gap-3">
           {[...Array(4)].map((_, rowIndex) => (
             <div
               key={rowIndex}
