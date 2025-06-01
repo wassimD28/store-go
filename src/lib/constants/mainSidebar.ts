@@ -36,19 +36,9 @@ export const getStoreSideBarData = (storeId: string): SideBarData[] => [
     route: `/stores/${storeId}/customers/list`,
   },
   {
-    name: "Orders",
-    icon: ShoppingCartIcon,
-    route: `/stores/${storeId}/orders`,
-  },
-  {
     name: "Generation",
     icon: LinkIcon,
     route: `/stores/${storeId}/app-generation/generation-jobs`,
-  },
-  {
-    name: "Analytics",
-    icon: StarIcon,
-    route: `/stores/${storeId}/analytics`,
   },
   {
     name: "Settings",
@@ -72,11 +62,6 @@ export const dashboardSideBarData: SideBarData[] = [
     name: "Templates",
     icon: StarIcon,
     route: "/dashboard/templates",
-  },
-  {
-    name: "Billing",
-    icon: SettingIcon,
-    route: "/settings",
   },
   {
     name: "Settings",

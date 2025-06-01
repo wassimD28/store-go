@@ -6,7 +6,7 @@ function TextLogoIcon({
   width = 125,
   height = 34,
   color = "hsl(var(--primary))",
-  iconColor = "white",
+  iconColor = "hsl(var(--primary-foreground))",
 }: SVGIcon) {
   return (
     <svg

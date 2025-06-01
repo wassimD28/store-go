@@ -60,6 +60,7 @@
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.39.3",
     "framer-motion": "^12.6.3",
+    "gsap": "^3.13.0",
     "hono": "^4.7.1",
     "imagekit": "^6.0.0",
     "imagekitio-next": "^1.0.1",

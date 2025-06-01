@@ -1,4 +1,3 @@
-import DriverIcon from "@/client/components/icons/sidebar/driverIcon";
 import LinkIcon from "@/client/components/icons/sidebar/linkIcon";
 import SettingIcon from "@/client/components/icons/sidebar/settingIcon";
 import ExternalDriveIcon from "@/client/components/icons/sidebar/externalDriveIcon";
@@ -16,16 +15,6 @@ export const dashboard: SideBarData[] = [
     name: "All Stores",
     icon: ExternalDriveIcon,
     route: "/dashboard",
-  },
-  {
-    name: "Create Store",
-    icon: DriverIcon,
-    route: "/dashboard/new",
-  },
-  {
-    name: "Analytics",
-    icon: StarIcon,
-    route: "/dashboard/analytics",
   },
 ];
 
@@ -46,7 +35,6 @@ export const team: SideBarData[] = [
     route: "/team/invitations",
   },
 ];
-
 
 export const settings: SideBarData[] = [
   {
@@ -78,16 +66,6 @@ export const getProductSideBar = (storeId: string): SideBarData[] => [
     icon: ExternalDriveIcon,
     route: `/stores/${storeId}/products/categories`,
   },
-  {
-    name: "Attributes",
-    icon: TagIcon,
-    route: `/stores/${storeId}/products/attributes`,
-  },
-  {
-    name: "Inventory",
-    icon: TagIcon,
-    route: `/stores/${storeId}/products/inventory`,
-  },
 ];
 
 export const getTemplatesSideBar = (storeId: string): SideBarData[] => [
@@ -100,11 +78,6 @@ export const getTemplatesSideBar = (storeId: string): SideBarData[] => [
     name: "Customizations",
     icon: CustomizeIcon,
     route: `/stores/${storeId}/templates/customizations`,
-  },
-  {
-    name: "Customizations",
-    icon: LinkIcon,
-    route: `/stores/${storeId}/templates/customization`,
   },
 ];
 
@@ -213,10 +186,5 @@ export const getCustomersSideBar = (storeId: string): SideBarData[] => [
     name: "Authenticated",
     icon: LinkIcon,
     route: `/stores/${storeId}/customers/list`,
-  },
-  {
-    name: "Banned",
-    icon: LinkIcon,
-    route: `/stores/${storeId}/customers/banned`,
   },
 ];
