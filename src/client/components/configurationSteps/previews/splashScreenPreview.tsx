@@ -23,7 +23,7 @@ function SplashScreenPreview() {
 
   return (
    <Tilt className="h-full" isRevese rotationFactor={8}>
-    <div className="h-full flex-center scale-95">
+    <div className="h-full flex-center scale-95 2xl:scale-[0.76]">
       <MobilePreview>
         <div
           style={{ backgroundColor }}
